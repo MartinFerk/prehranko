@@ -8,6 +8,9 @@
 # macOS
 .DS_Store
 
+
+.env
+
 # Windows
 Thumbs.db
 ehthumbs.db
@@ -23,6 +26,7 @@ Desktop.ini
 *.swo
 *.bak
 *.tmp
+
 
 # Buildi
 **/build/
