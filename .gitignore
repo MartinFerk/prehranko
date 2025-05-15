@@ -1,0 +1,34 @@
+# Node modules
+**/node_modules/
+
+# Expo
+**/.expo/
+**/.expo-shared/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Log datoteke
+**/*.log
+
+# Editorji / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# Buildi
+**/build/
+**/dist/
+**/android/
+**/ios/
+
+# Git repozitoriji znotraj podmap (če obstajajo)
+**/.git
