@@ -6,6 +6,7 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
+    console.log("➡️ Poskušam se prijaviti z:", email, password);
     try {
       const res = await fetch('http://192.168.1.158:5000/api/auth/login', {
         method: 'POST',
@@ -16,28 +17,58 @@ export default function LoginScreen({ navigation }) {
       });
 
       const data = await res.json();
+      console.log("⬅️ Odgovor:", data);
+
       if (res.ok) {
         Alert.alert('Uspeh', data.message || 'Prijava uspešna!');
-        // navigation.navigate('Home'); <-- če imaš HomeScreen
+        navigation.navigate('Home');
       } else {
         Alert.alert('Napaka', data.message || 'Prijava ni uspela');
       }
     } catch (err) {
       Alert.alert('Napaka', 'Napaka pri povezavi s strežnikom');
-      console.error(err);
+      console.error("❌ Napaka:", err);
     }
   };
 
   return (
     <View style={styles.container}>
-      <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={styles.input} />
-      <TextInput placeholder="Geslo" value={password} onChangeText={setPassword} secureTextEntry style={styles.input} />
+      <TextInput
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Geslo"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        style={styles.input}
+      />
       <Button title="Prijava" onPress={handleLogin} />
+      <View style={{ marginTop: 10 }} />
+      <Button
+        title="Registriraj se"
+        onPress={() => navigation.navigate('Register')}
+        color="#888"
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center' },
-  input: { borderBottomWidth: 1, marginBottom: 15 },
+  container: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+  },
+  input: {
+    borderBottomWidth: 1,
+    marginBottom: 15,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
 });
