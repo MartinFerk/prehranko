@@ -1,4 +1,7 @@
-require('dotenv').config();
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -23,8 +26,8 @@ app.get('/', (req, res) => {
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 
-// Zagon strežnika – dostopen z drugih naprav (npr. telefon z Expo Go)
+// Zagon strežnika
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`📡 Strežnik posluša na http://192.168.1.158:${PORT}`);
+  console.log(`📡 Strežnik posluša na portu ${PORT}`);
 });
