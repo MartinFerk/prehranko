@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Prehranko",
-    "slug": "Prehranko",
+    "slug": "prehranko",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,17 +13,36 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.JMP.Prehranko",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.JMP.Prehranko"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "owner": "prehranko",
+    "extra": {
+      "eas": {
+        "projectId": "a8512cce-a098-4657-a1ab-6f474a57f7f2"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a8512cce-a098-4657-a1ab-6f474a57f7f2",
+      "enabled": true,
+      "fallbackToCacheTimeout": 0
     }
   }
 }

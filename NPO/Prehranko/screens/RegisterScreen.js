@@ -1,13 +1,31 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet } from 'react-native';
+import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
 
 export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleRegister = () => {
-    alert(`Registriran uporabnik: ${email}`);
-    navigation.navigate('Login');
+  const handleRegister = async () => {
+    try {
+      const res = await fetch('http://192.168.1.158:5000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        Alert.alert('Uspeh', data.message || 'Registracija uspešna!');
+        navigation.navigate('Login');
+      } else {
+        Alert.alert('Napaka', data.message || 'Registracija ni uspela');
+      }
+    } catch (err) {
+      Alert.alert('Napaka', 'Napaka pri povezavi s strežnikom');
+      console.error(err);
+    }
   };
 
   return (
