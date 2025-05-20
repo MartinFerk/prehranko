@@ -8,7 +8,7 @@ export default function LoginScreen({ navigation }) {
   const handleLogin = async () => {
     console.log("➡️ Poskušam se prijaviti z:", email, password);
     try {
-      const res = await fetch('http://192.168.1.158:5000/api/auth/login', {
+      const res = await fetch('https://prehranko-production.up.railway.app/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
