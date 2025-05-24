@@ -1,8 +1,8 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template_string
 import cv2
 import numpy as np
-import io
 from PIL import Image
+import io
 
 app = Flask(__name__)
 
@@ -23,9 +23,43 @@ def detect_skin_regions(image):
 
     return mask
 
+# Basic upload + auto-submit HTML
+HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Face Skin Detection</title>
+</head>
+<body>
+  <h2>Upload an image</h2>
+  <input type="file" id="fileInput" accept="image/*">
+  <p id="result">Waiting for image...</p>
+  <script>
+    const input = document.getElementById('fileInput');
+    input.addEventListener('change', async () => {
+      const file = input.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const res = await fetch('/detect-face', {
+        method: 'POST',
+        body: formData
+      });
+
+      const json = await res.json();
+      document.getElementById('result').innerText =
+        '✅ Skin Detected: ' + json.skin_detected +
+        ' | Skin Area Ratio: ' + json.skin_area_ratio.toFixed(4);
+    });
+  </script>
+</body>
+</html>
+"""
+
 @app.route("/", methods=["GET"])
-def home():
-    return "✅ Face detection server is running!"
+def index():
+    return render_template_string(HTML)
 
 @app.route("/detect-face", methods=["POST"])
 def detect_face():
@@ -39,7 +73,6 @@ def detect_face():
 
     skin_mask = detect_skin_regions(image_bgr)
 
-    # Count non-zero pixels to decide if skin-like region exists
     skin_area = cv2.countNonZero(skin_mask)
     total_area = skin_mask.shape[0] * skin_mask.shape[1]
     skin_ratio = skin_area / total_area
