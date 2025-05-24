@@ -1,6 +1,7 @@
 // services/auth.js
 import { Alert } from 'react-native';
 import { API_BASE_URL } from './api';
+import { CAMERA_API_URL } from './api';
 
 export const loginUser = async (email, password) => {
   try {
@@ -35,6 +36,35 @@ export const registerUser = async (email, password) => {
     return data;
   } catch (err) {
     console.error('❌ Napaka:', err);
+    throw err;
+  }
+};
+
+export const preprocessImage = async (photoUri) => {
+  try {
+    const formData = new FormData();
+    formData.append('image', {
+      uri: photoUri,
+      name: 'photo.jpg',
+      type: 'image/jpg',
+    });
+
+    console.log('📤 Pošiljam sliko na strežnik ...');
+    const res = await fetch(`${CAMERA_API_URL}/preprocess`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Obdelava slike ni uspela');
+    }
+    return data;
+  } catch (err) {
+    console.error('❌ Napaka pri pošiljanju slike:', err);
     throw err;
   }
 };
