@@ -1,8 +1,8 @@
 import React, { useRef, useState } from 'react';
-import { View, Button, StyleSheet, Image } from 'react-native';
+import { View, Button, StyleSheet, Image, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 
-export default function CameraScreen() {
+export default function CameraScreen({ navigation })  {
   const cameraRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [image, setImage] = useState(null);
@@ -20,7 +20,7 @@ export default function CameraScreen() {
   if (cameraRef.current) {
     try {
       console.log("📸 Zajemam sliko ...");
-      const photo = await cameraRef.current.takePictureAsync(); // <-- PRAVILNA METODA
+      const photo = await cameraRef.current.takePictureAsync();
       console.log("✅ Zajem uspel:", photo.uri);
 
       const formData = new FormData();
@@ -44,17 +44,25 @@ export default function CameraScreen() {
 
       if (json.image_base64) {
         console.log("✅ Strežnik vrnil obdelano sliko.");
-        setImage(`data:image/jpeg;base64,${json.image_base64}`);
-      } else {
-        console.warn("⚠️ Strežnik ni vrnil base64 slike:", json);
+        setImage(`data:image/png;base64,${json.image_base64}`);
       }
+
+      if (json.authorized === true) {
+        Alert.alert("2FA uspešna", "Dostop dovoljen");
+        navigation.navigate('Home'); // ⬅️ Preusmeritev
+      } else {
+        Alert.alert("2FA neuspešna", "Obraz ni prepoznan. Poskusi znova.");
+      }
+
     } catch (err) {
       console.error("❌ Napaka pri pošiljanju slike:", err);
+      Alert.alert("Napaka", "Napaka pri preverjanju identitete.");
     }
   } else {
     console.warn("⚠️ Kamera ni inicializirana.");
   }
 };
+
 
 
   return (
