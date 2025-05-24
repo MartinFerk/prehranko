@@ -1,5 +1,6 @@
 // styles/theme.js
-// datoteka s stili, prosim definiraj barve in razmike, ki jih bomo uporabljali v aplikaciji - ne delaj lastnih stilov v ostalih datotekah hvala
+// datoteka s stili, prosim definiraj barve in razmike, ki jih bomo uporabljali v aplikaciji 
+// - ne delaj lastnih stilov v ostalih datotekah razen ce so za specificen element in jih ne uporabljas drugje hvala
 // ne uporabljaj CSS, ampak definiraj barve in razmike kot JavaScript objekt
 
 export const theme = {
