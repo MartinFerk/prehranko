@@ -1,5 +1,10 @@
+// screens/RegisterScreen.js
 import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Alert, StyleSheet } from 'react-native';
+import AuthInput from '../components/TextInput';
+import AuthButton from '../components/AuthButton';
+import { registerUser } from '../services/auth';
+import { theme } from '../styles/theme';
 
 export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -7,37 +12,38 @@ export default function RegisterScreen({ navigation }) {
 
   const handleRegister = async () => {
     try {
-      const res = await fetch('http://192.168.1.158:5000/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        Alert.alert('Uspeh', data.message || 'Registracija uspešna!');
-        navigation.navigate('Login');
-      } else {
-        Alert.alert('Napaka', data.message || 'Registracija ni uspela');
-      }
+      await registerUser(email, password);
+      Alert.alert('Uspeh', 'Registracija uspešna!');
+      navigation.navigate('Login');
     } catch (err) {
-      Alert.alert('Napaka', 'Napaka pri povezavi s strežnikom');
-      console.error(err);
+      Alert.alert('Napaka', err.message || 'Napaka pri povezavi s strežnikom');
     }
   };
 
   return (
     <View style={styles.container}>
-      <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={styles.input} />
-      <TextInput placeholder="Geslo" value={password} onChangeText={setPassword} secureTextEntry style={styles.input} />
-      <Button title="Registracija" onPress={handleRegister} />
+      <AuthInput
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+      />
+      <AuthInput
+        placeholder="Geslo"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
+      <AuthButton title="Registracija" onPress={handleRegister} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center' },
-  input: { borderBottomWidth: 1, marginBottom: 15 },
+  container: {
+    flex: 1,
+    padding: theme.spacing.large,
+    justifyContent: 'center',
+    backgroundColor: theme.colors.background,
+  },
 });
