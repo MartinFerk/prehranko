@@ -15,12 +15,12 @@ def preprocess_image(image_bgr):
     image_blurred = cv2.GaussianBlur(image_resized, (5, 5), 0)
 
     # Optional: convert to grayscale
-    image_gray = cv2.cvtColor(image_blurred, cv2.COLOR_BGR2GRAY)
+    #image_gray = cv2.cvtColor(image_blurred, cv2.COLOR_BGR2GRAY)
 
     # Convert grayscale back to 3-channel image for display
-    image_final = cv2.cvtColor(image_gray, cv2.COLOR_GRAY2BGR)
+    #image_final = cv2.cvtColor(image_gray, cv2.COLOR_GRAY2BGR)
 
-    return image_final
+    return image_blurred
 
 def encode_image_to_base64(image_bgr):
     _, buffer = cv2.imencode('.png', image_bgr)
