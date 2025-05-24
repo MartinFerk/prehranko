@@ -5,7 +5,7 @@ import { View, Text, Button, StyleSheet } from 'react-native';
 export default function HomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Pozdravljen v aplikaciji!</Text>
+      <Text style={styles.title}>Prehranko!</Text>
       <Button title="Odjava" onPress={() => navigation.navigate('Login')} />
     </View>
   );

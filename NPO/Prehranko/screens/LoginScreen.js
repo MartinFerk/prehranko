@@ -1,5 +1,10 @@
+// screens/LoginScreen.js
 import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Alert, StyleSheet } from 'react-native';
+import AuthInput from '../components/TextInput';
+import AuthButton from '../components/AuthButton';
+import { loginUser } from '../services/auth';
+import { theme } from '../styles/theme';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -8,52 +13,35 @@ export default function LoginScreen({ navigation }) {
   const handleLogin = async () => {
     console.log("➡️ Poskušam se prijaviti z:", email, password);
     try {
-      const res = await fetch('https://prehranko-production.up.railway.app/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-      console.log("⬅️ Odgovor:", data);
-
-      if (res.ok) {
-        Alert.alert('2FA', 'Za nadaljevanje boš preusmerjen na preverjanje s kamero.');
-        navigation.navigate('CameraScreen', { email: email }); // preusmeri na 2FA zaslon
-      } else {
-        Alert.alert('Napaka', data.message || 'Prijava ni uspela');
-      }
+      const data = await loginUser(email, password);
+      Alert.alert('2FA', 'Za nadaljevanje boš preusmerjen na preverjanje s kamero.');
+      navigation.navigate('CameraScreen', { email });
     } catch (err) {
-      Alert.alert('Napaka', 'Napaka pri povezavi s strežnikom');
+      Alert.alert('Napaka', err.message || 'Napaka pri povezavi s strežnikom');
       console.error("❌ Napaka:", err);
     }
   };
 
   return (
     <View style={styles.container}>
-      <TextInput
+      <AuthInput
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
-        autoCapitalize="none"
         keyboardType="email-address"
-        style={styles.input}
       />
-      <TextInput
+      <AuthInput
         placeholder="Geslo"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
-        style={styles.input}
       />
-      <Button title="Prijava" onPress={handleLogin} />
-      <View style={{ marginTop: 10 }} />
-      <Button
+      <AuthButton title="Prijava" onPress={handleLogin} />
+      <View style={styles.buttonSpacing} />
+      <AuthButton
         title="Registriraj se"
         onPress={() => navigation.navigate('Register')}
-        color="#888"
+        color={theme.colors.secondary}
       />
     </View>
   );
@@ -62,13 +50,11 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: theme.spacing.large,
     justifyContent: 'center',
+    backgroundColor: theme.colors.background,
   },
-  input: {
-    borderBottomWidth: 1,
-    marginBottom: 15,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+  buttonSpacing: {
+    marginTop: theme.spacing.medium,
   },
 });
