@@ -20,8 +20,8 @@ export default function LoginScreen({ navigation }) {
       console.log("⬅️ Odgovor:", data);
 
       if (res.ok) {
-        Alert.alert('Uspeh', data.message || 'Prijava uspešna!');
-        navigation.navigate('Home');
+        Alert.alert('2FA', 'Za nadaljevanje boš preusmerjen na preverjanje s kamero.');
+        navigation.navigate('CameraScreen', { email: email }); // preusmeri na 2FA zaslon
       } else {
         Alert.alert('Napaka', data.message || 'Prijava ni uspela');
       }

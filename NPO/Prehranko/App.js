@@ -7,6 +7,7 @@ import RegisterScreen from "./screens/RegisterScreen";
 import * as Updates from 'expo-updates';
 import { useEffect } from 'react';
 import HomeScreen from './screens/HomeScreen';
+import CameraScreen from './screens/CameraScreen';
 
 
 
@@ -30,6 +31,7 @@ export default function App() {
       <Stack.Navigator initialRouteName="Login">
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="CameraScreen" component={CameraScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
       </Stack.Navigator>
     </NavigationContainer>
