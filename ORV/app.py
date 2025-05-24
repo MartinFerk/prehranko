@@ -1,72 +1,27 @@
-from flask import Flask, request, render_template_string, jsonify
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import cv2
 import numpy as np
 from PIL import Image
-import io
 import base64
 
 app = Flask(__name__)
 
+# You can allow everything during development:
+CORS(app)
+
+# OR: safer in production (replace with your frontend domain)
+# CORS(app, resources={r"/preprocess": {"origins": "https://yourfrontenddomain.com"}})
+
 def preprocess_image(image_bgr):
-    # Resize to standard size
     image_resized = cv2.resize(image_bgr, (400, 400))
-    
-    # Optional: blur
     image_blurred = cv2.GaussianBlur(image_resized, (5, 5), 0)
-
-    # Optional: convert to grayscale
-    #image_gray = cv2.cvtColor(image_blurred, cv2.COLOR_BGR2GRAY)
-
-    # Convert grayscale back to 3-channel image for display
-    #image_final = cv2.cvtColor(image_gray, cv2.COLOR_GRAY2BGR)
-
     return image_blurred
 
 def encode_image_to_base64(image_bgr):
     _, buffer = cv2.imencode('.png', image_bgr)
     encoded = base64.b64encode(buffer).decode('utf-8')
     return f"data:image/png;base64,{encoded}"
-
-HTML = """
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Image Preprocessing Preview</title>
-</head>
-<body>
-  <h2>Upload an image to preprocess it</h2>
-  <input type="file" id="fileInput" accept="image/*">
-  <br><br>
-  <img id="preview" style="max-width: 400px; display: none;" />
-  <script>
-    const input = document.getElementById('fileInput');
-    const preview = document.getElementById('preview');
-
-    input.addEventListener('change', async () => {
-      const file = input.files[0];
-      if (!file) return;
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const res = await fetch('/preprocess', {
-        method: 'POST',
-        body: formData
-      });
-
-      const json = await res.json();
-      if (json.image_base64) {
-        preview.src = json.image_base64;
-        preview.style.display = 'block';
-      }
-    });
-  </script>
-</body>
-</html>
-"""
-
-@app.route("/", methods=["GET"])
-def index():
-    return render_template_string(HTML)
 
 @app.route("/preprocess", methods=["POST"])
 def preprocess_route():
@@ -82,6 +37,3 @@ def preprocess_route():
     image_base64 = encode_image_to_base64(preprocessed)
 
     return jsonify({ "image_base64": image_base64 })
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
