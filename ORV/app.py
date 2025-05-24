@@ -23,6 +23,10 @@ def detect_skin_regions(image):
 
     return mask
 
+@app.route("/", methods=["GET"])
+def home():
+    return "✅ Face detection server is running!"
+
 @app.route("/detect-face", methods=["POST"])
 def detect_face():
     if "image" not in request.files:
