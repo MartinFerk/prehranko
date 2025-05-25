@@ -1,24 +1,19 @@
 // styles/theme.js
-// datoteka s stili, prosim definiraj barve in razmike, ki jih bomo uporabljali v aplikaciji 
-// - ne delaj lastnih stilov v ostalih datotekah razen ce so za specificen element in jih ne uporabljas drugje hvala
+// datoteka s stili, primarno za barve in ali razmike
 // ne uporabljaj CSS, ampak definiraj barve in razmike kot JavaScript objekt
 
 export const theme = {
   colors: {
-    primary: '#007AFF',
-    secondary: '#888',
-    background: '#FFFFFF',
+    background: '#FFFFFF', // Svetlo bež
+    primary: '#FFC107', // Rumena
+    secondary: '#FF9800', // Svetlo oranžna
+    accent: '#F44336', // Temno oranžna
+    cardBackground: '#F5F0E7', // Bela za kartice (lahko ostane)
+    text: '#4A4A4A', // Temno siva za besedilo (dodano za konsistenco)
   },
   spacing: {
-    tiny: 4,
     small: 8,
-    medium: 15,
-    large: 20,
+    medium: 16,
+    large: 24,
   },
-};
-
-export const colors = {
-  primary: '#007AFF',
-  secondary: '#888',
-  error: '#FF3B30',
 };
