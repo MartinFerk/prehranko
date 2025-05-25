@@ -66,9 +66,9 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: theme.spacing.large,
     justifyContent: 'center',
-    backgroundColor: theme.colors.background,
+    paddingHorizontal: theme.spacing.large,
+    backgroundColor: theme.colors.background, // Svetlo bež ozadje
   },
   buttonSpacing: {
     marginTop: theme.spacing.medium,

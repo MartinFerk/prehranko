@@ -1,14 +1,40 @@
 // screens/SettingsScreen.js
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import AuthButton from '../components/AuthButton';
 import { theme } from '../styles/theme';
 
 export default function SettingsScreen({ navigation }) {
+  const handleLogout = () => {
+    Alert.alert(
+      'Odjava',
+      'Ali ste prepričani, da se želite odjaviti?',
+      [
+        { text: 'Prekliči', style: 'cancel' },
+        {
+          text: 'Odjavi se',
+          style: 'destructive',
+          onPress: () => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Nastavitve</Text>
       <Text style={styles.description}>Tukaj bodo nastavitve aplikacije.</Text>
+      <AuthButton
+        title="Odjava"
+        onPress={handleLogout}
+        color={theme.colors.accent} // Temno oranžna za odjavo
+      />
+      <View style={styles.buttonSpacing} />
       <AuthButton
         title="Nazaj"
         onPress={() => navigation.goBack()}
@@ -34,7 +60,11 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 16,
-    color: theme.colors.secondary,
+    color: theme.colors.text,
     marginBottom: theme.spacing.large,
+    textAlign: 'center',
+  },
+  buttonSpacing: {
+    marginTop: theme.spacing.medium,
   },
 });
