@@ -1,6 +1,6 @@
 // screens/RegisterScreen.js
 import React, { useState } from 'react';
-import { View, Alert, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Alert, StyleSheet, ActivityIndicator } from 'react-native';
 import AuthInput from '../components/TextInput';
 import AuthButton from '../components/AuthButton';
 import { registerUser } from '../services/auth';
@@ -41,35 +41,38 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <AuthInput
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-      />
-      <AuthInput
-        placeholder="Geslo"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <AuthInput
-        placeholder="Potrdi geslo"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-      />
-      {loading ? (
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      ) : (
-        <AuthButton title="Registriraj se" onPress={handleRegister} />
-      )}
-      <View style={styles.buttonSpacing} />
-      <AuthButton
-        title="Nazaj na prijavo"
-        onPress={() => navigation.navigate('Login')}
-        color={theme.colors.secondary}
-      />
+      <Text style={styles.title}>Registracija v Prehranko</Text>
+      <View style={styles.inputContainer}>
+        <AuthInput
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+        />
+        <AuthInput
+          placeholder="Geslo"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+        <AuthInput
+          placeholder="Potrdi geslo"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry
+        />
+        {loading ? (
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        ) : (
+          <AuthButton title="Registriraj se" onPress={handleRegister} />
+        )}
+        <View style={styles.buttonSpacing} />
+        <AuthButton
+          title="Nazaj na prijavo"
+          onPress={() => navigation.navigate('Login')}
+          color={theme.colors.secondary}
+        />
+      </View>
     </View>
   );
 }
@@ -79,7 +82,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: theme.spacing.large,
-    backgroundColor: theme.colors.background, // Svetlo bež ozadje
+    backgroundColor: theme.colors.background,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+    textAlign: 'center',
+    marginBottom: theme.spacing.large,
+  },
+  inputContainer: {
+    width: '65%', // 65% širine zaslona
+    alignSelf: 'center',
   },
   buttonSpacing: {
     marginTop: theme.spacing.medium,
