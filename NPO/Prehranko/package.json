@@ -32,6 +32,7 @@
     "react-native-web": "^0.20.0"
   },
   "devDependencies": {
+    "@react-native-community/cli": "latest",
     "@babel/core": "^7.20.0"
   },
   "private": true
