@@ -1,6 +1,6 @@
 // screens/LoginScreen.js
 import React, { useState } from 'react';
-import { View, Alert, StyleSheet } from 'react-native';
+import { View, Alert, StyleSheet, ActivityIndicator } from 'react-native';
 import AuthInput from '../components/TextInput';
 import AuthButton from '../components/AuthButton';
 import { loginUser } from '../services/auth';
@@ -9,16 +9,28 @@ import { theme } from '../styles/theme';
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    console.log("➡️ Poskušam se prijaviti z:", email, password);
+    if (!email || !password) {
+      Alert.alert('Napaka', 'Prosimo, izpolnite vsa polja.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      Alert.alert('Napaka', 'Vnesite veljaven email naslov.');
+      return;
+    }
+    setLoading(true);
     try {
-      const data = await loginUser(email, password);
-      Alert.alert('2FA', 'Za nadaljevanje boš preusmerjen na preverjanje s kamero.');
-      navigation.navigate('CameraScreen', { email });
+      console.log('➡️ Poskušam se prijaviti z:', email, password);
+      await loginUser(email, password);
+      Alert.alert('Uspeh', 'Prijava uspešna!');
+      navigation.navigate('Home', { email }); // Preusmeri na HomeScreen
     } catch (err) {
       Alert.alert('Napaka', err.message || 'Napaka pri povezavi s strežnikom');
-      console.error("❌ Napaka:", err);
+      console.error('❌ Napaka:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -36,7 +48,11 @@ export default function LoginScreen({ navigation }) {
         onChangeText={setPassword}
         secureTextEntry
       />
-      <AuthButton title="Prijava" onPress={handleLogin} />
+      {loading ? (
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      ) : (
+        <AuthButton title="Prijava" onPress={handleLogin} />
+      )}
       <View style={styles.buttonSpacing} />
       <AuthButton
         title="Registriraj se"
