@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import '../styles.css'; // Uvozi CSS
+import '../styles.css';
 
 const Navbar = () => {
   return (
@@ -14,9 +14,6 @@ const Navbar = () => {
         </li>
         <li>
           <Link to="/profile" className="nav-link">Profil</Link>
-        </li>
-        <li>
-          <Link to="/camera" className="nav-link">CameraScreen</Link>
         </li>
       </ul>
     </nav>
