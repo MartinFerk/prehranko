@@ -11,6 +11,13 @@ export default function RegisterScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [photoTaken, setPhotoTaken] = useState(false);
+
+    const handleTakePhoto = () => {
+    Alert.alert('2FA', 'Odpri kamero za verifikacijo.');
+    navigation.navigate('CameraScreen');
+    setPhotoTaken(true); // začasno za test – to nastaviš šele po uspešnem slikanju
+     };
 
   const handleRegister = async () => {
     if (!email || !password || !confirmPassword) {
@@ -25,19 +32,27 @@ export default function RegisterScreen({ navigation }) {
       Alert.alert('Napaka', 'Gesli se ne ujemata.');
       return;
     }
-    setLoading(true);
-    try {
-      console.log('➡️ Poskušam se registrirati z:', email, password);
-      await registerUser(email, password);
-      Alert.alert('Uspeh', 'Registracija uspešna! Prijava je na voljo.');
-      navigation.navigate('Login');
-    } catch (err) {
-      Alert.alert('Napaka', err.message || 'Napaka pri povezavi s strežnikom');
-      console.error('❌ Napaka:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+
+   
+ // Namesto registracije → odpri kamero
+  navigation.navigate('CameraScreen', {
+    onPhotoTaken: async () => {
+      setPhotoTaken(true);
+      setLoading(true);
+      try {
+        console.log('➡️ Registriram z:', email, password);
+        await registerUser(email, password);
+        Alert.alert('Uspeh', 'Registracija uspešna! Prijava je na voljo.');
+        navigation.navigate('Login');
+      } catch (err) {
+        Alert.alert('Napaka', err.message || 'Napaka pri povezavi s strežnikom');
+        console.error('❌ Napaka:', err);
+      } finally {
+        setLoading(false);
+      }
+    },
+  });
+};
 
   return (
     <View style={styles.container}>
