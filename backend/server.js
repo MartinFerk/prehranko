@@ -27,7 +27,7 @@ app.get('/', (req, res) => {
 });
 
 const activityRoutes = require('./routes/activities');
-app.use('/activities', activityRoutes);
+app.use('/api/activities', activityRoutes);
 
 // Avtentikacija
 const authRoutes = require('./routes/auth');
