@@ -13,7 +13,6 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/camera" element={<CameraScreen />} />
       </Routes>
     </Router>
   );
