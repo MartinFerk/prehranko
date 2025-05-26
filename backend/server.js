@@ -8,6 +8,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const User = require('./models/User');
 
 const app = express();
 
@@ -45,14 +46,37 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ➕ NOVA pot za nalaganje slike
-app.post('/api/upload-face-image', upload.single('image'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: 'Slika ni bila prejeta' });
+app.post('/api/upload-face-image', upload.single('image'), async (req, res) => {
+  if (!req.file || !req.body.email) {
+    return res.status(400).json({ message: 'Manjka slika ali email' });
   }
 
-  console.log('✅ Slika prejeta od:', req.body.email);
-  res.json({ message: 'Slika uspešno shranjena', filename: req.file.filename });
+  try {
+    // 1. Preberi sliko kot binarno
+    const imageBuffer = fs.readFileSync(req.file.path);
+    const imageBase64 = imageBuffer.toString('base64');
+
+    // 2. Shrani base64 direktno v MongoDB
+    const user = await User.findOneAndUpdate(
+      { email: req.body.email },
+      { faceImage: imageBase64 },
+      { new: true }
+    );
+
+    // 3. Počisti datoteko iz diska (ni več potrebna)
+    fs.unlinkSync(req.file.path);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Uporabnik ni najden' });
+    }
+
+    res.json({ message: 'Slika uspešno shranjena v MongoDB (base64)' });
+  } catch (err) {
+    console.error('❌ Napaka pri shranjevanju slike:', err);
+    res.status(500).json({ message: 'Napaka pri shranjevanju slike' });
+  }
 });
+
 
 // Zagon strežnika
 const PORT = process.env.PORT || 5000;
