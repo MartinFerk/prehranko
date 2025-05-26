@@ -16,16 +16,27 @@ export default function LoginScreen({ navigation }) {
       Alert.alert('Napaka', 'Prosimo, izpolnite vsa polja.');
       return;
     }
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       Alert.alert('Napaka', 'Vnesite veljaven email naslov.');
       return;
     }
+
     setLoading(true);
+
     try {
       console.log('➡️ Poskušam se prijaviti z:', email, password);
-      await loginUser(email, password);
+
+      const result = await loginUser(email, password);
+
+      console.log('⬅️ Odgovor:', result);
+      console.log('🐞 DEBUG rezultat:', JSON.stringify(result, null, 2));
+
       Alert.alert('Uspeh', 'Prijava uspešna!');
+
+      // ✅ Only passing email now
       navigation.navigate('Home', { email });
+
     } catch (err) {
       Alert.alert('Napaka', err.message || 'Napaka pri povezavi s strežnikom');
       console.error('❌ Napaka:', err);
@@ -34,35 +45,36 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Prijava v Prehranko</Text>
-      <View style={styles.inputContainer}>
-        <AuthInput
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-        />
-        <AuthInput
-          placeholder="Geslo"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        {loading ? (
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        ) : (
-          <AuthButton title="Prijava" onPress={handleLogin} />
-        )}
-        <View style={styles.buttonSpacing} />
-        <AuthButton
-          title="Registriraj se"
-          onPress={() => navigation.navigate('Register')}
-          color={theme.colors.primary} // Enaka barva kot "Prijava"
-        />
+      <View style={styles.container}>
+        <Text style={styles.title}>Prijava v Prehranko</Text>
+        <View style={styles.inputContainer}>
+          <AuthInput
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+          />
+          <AuthInput
+              placeholder="Geslo"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+          />
+          {loading ? (
+              <ActivityIndicator size="large" color={theme.colors.primary} />
+          ) : (
+              <AuthButton title="Prijava" onPress={handleLogin} />
+          )}
+          <View style={styles.buttonSpacing} />
+          <AuthButton
+              title="Registriraj se"
+              onPress={() => navigation.navigate('Register')}
+              color={theme.colors.primary} // Enaka barva kot "Prijava"
+          />
+        </View>
       </View>
-    </View>
   );
 }
 

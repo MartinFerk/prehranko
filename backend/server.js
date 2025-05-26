@@ -26,6 +26,9 @@ app.get('/', (req, res) => {
   res.send('🚀 Strežnik deluje!');
 });
 
+const activityRoutes = require('./routes/activities');
+app.use('/activities', activityRoutes);
+
 // Avtentikacija
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
