@@ -12,7 +12,7 @@ const DATA = [
 ];
 
 export default function HomeScreen({ navigation, route }) {
-  const { email } = route.params || { email: 'Uporabnik' };
+  const { email} = route.params || { email: 'Uporabnik' };
 
   const handleSettingsPress = () => {
     navigation.navigate('SettingsScreen');
@@ -67,10 +67,10 @@ export default function HomeScreen({ navigation, route }) {
           color={theme.colors.primary}
         />
         <IconButton
-          iconName="bar-chart"
-          title="Funkcija 1"
-          onPress={() => handleFutureFeature('Funkcija 1')}
-          color={theme.colors.secondary}
+            iconName="bar-chart"
+            title="Sledenje"
+            onPress={() => navigation.navigate('ActivityScreen', { email })}
+            color={theme.colors.secondary}
         />
         <IconButton
           iconName="book"

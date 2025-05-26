@@ -40,6 +40,25 @@ export const registerUser = async (email, password) => {
   }
 };
 
+export const sendActivity = async (activityObject) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/activities`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(activityObject),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Napaka pri pošiljanju aktivnosti');
+    console.log('✅ Aktivnost poslana:', data);
+    return data;
+  } catch (err) {
+    console.error('❌ Napaka pri pošiljanju aktivnosti:', err.message);
+    throw err;
+  }
+};
+
+
 export const preprocessImage = async (photoUri) => {
   try {
     const formData = new FormData();
