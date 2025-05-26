@@ -80,7 +80,7 @@ export const uploadFaceImage = async (photoUri, email) => {
     formData.append('email', email);
 
     console.log('📤 Pošiljam 2FA sliko na strežnik ...');
-    const res = await fetch(`${API_BASE_URL}/api/upload-face-image`, {
+    const res = await fetch(`${API_BASE_URL}/upload-face-image`, {
       method: 'POST',
       body: formData
     
