@@ -5,9 +5,10 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import AuthButton from '../components/AuthButton';
 import { preprocessImage } from '../services/auth';
 import { theme } from '../styles/theme';
+import { uploadFaceImage } from '../services/auth';
 
 export default function CameraScreen({ navigation, route }) {
-  const { email } = route.params || { email: 'Uporabnik' };
+  const { email, onPhotoTaken } = route.params || {};
   const cameraRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [image, setImage] = useState(null);
@@ -23,36 +24,37 @@ export default function CameraScreen({ navigation, route }) {
   }
 
   const takePhoto = async () => {
-    if (cameraRef.current) {
-      setLoading(true);
-      try {
-        console.log('📸 Zajemam sliko ...');
-        const photo = await cameraRef.current.takePictureAsync();
-        console.log('✅ Zajem uspel:', photo.uri);
+  if (!cameraRef.current) {
+    console.warn('⚠️ Kamera ni inicializirana.');
+    return;
+  }
 
-        const data = await preprocessImage(photo.uri);
+  setLoading(true);
 
-        if (data.image_base64) {
-          console.log('✅ Strežnik vrnil obdelano sliko.');
-          setImage(`data:image/png;base64,${data.image_base64}`);
-        }
+  try {
+    console.log('📸 Zajemam sliko ...');
+    const photo = await cameraRef.current.takePictureAsync();
+    console.log('✅ Zajem uspel:', photo.uri);
 
-        if (data.authorized === true) {
-          Alert.alert('Preverjanje uspešno', 'Obraz je bil prepoznan.');
-          navigation.navigate('Home', { email }); // Vrnitev na HomeScreen
-        } else {
-          Alert.alert('Preverjanje neuspešno', 'Obraz ni prepoznan. Poskusi znova.');
-        }
-      } catch (err) {
-        Alert.alert('Napaka', err.message || 'Napaka pri preverjanju identitete.');
-        console.error('❌ Napaka:', err);
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      console.warn('⚠️ Kamera ni inicializirana.');
-    }
-  };
+    // 1. Pošlji sliko na strežnik (shrani v bazo / disk)
+    const uploadResult = await uploadFaceImage(photo.uri, email);
+    console.log('📤 Strežnik odgovoril:', uploadResult);
+
+    Alert.alert('Uspeh', 'Slika je bila uspešno shranjena.');
+
+    // 2. Pokliči funkcijo iz RegisterScreen, če obstaja
+    if (onPhotoTaken) onPhotoTaken();
+
+    // 3. Vrni se na prejšnji zaslon
+    navigation.goBack();
+
+  } catch (err) {
+    Alert.alert('Napaka', err.message || 'Napaka pri pošiljanju slike');
+    console.error('❌ Napaka pri slikanju ali nalaganju:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <View style={styles.container}>
