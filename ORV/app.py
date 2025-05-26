@@ -33,7 +33,7 @@ def detect_skin(image_pil):
     skin_ratio = skin_pixels / total_pixels
     print(f"🧪 Kožni piksli: {skin_pixels}, razmerje: {skin_ratio:.3f}")
 
-    return bool(skin_ratio > 0.05)
+    return bool(skin_ratio > 0.20)
   # 5% kože = domnevna oseba
 
 @app.route("/", methods=["GET"])
