@@ -43,10 +43,9 @@ export default function CameraScreen({ navigation, route }) {
     Alert.alert('Uspeh', 'Slika je bila uspešno shranjena.');
 
     // 2. Pokliči funkcijo iz RegisterScreen, če obstaja
-    if (onPhotoTaken) onPhotoTaken();
-
-    // 3. Vrni se na prejšnji zaslon
-    navigation.goBack();
+    if (onPhotoTaken && typeof onPhotoTaken === 'function') {
+      onPhotoTaken(); // ⬅️ naj sama funkija naredi `navigate('Login')`
+    }
 
   } catch (err) {
     Alert.alert('Napaka', err.message || 'Napaka pri pošiljanju slike');
