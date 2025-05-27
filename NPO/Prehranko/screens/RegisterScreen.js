@@ -13,12 +13,6 @@ export default function RegisterScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [photoTaken, setPhotoTaken] = useState(false);
 
-    const handleTakePhoto = () => {
-    Alert.alert('2FA', 'Odpri kamero za verifikacijo.');
-    navigation.navigate('CameraScreen');
-    setPhotoTaken(true); // začasno za test – to nastaviš šele po uspešnem slikanju
-     };
-
   const handleRegister = async () => {
   if (!email || !password || !confirmPassword) {
     Alert.alert('Napaka', 'Prosimo, izpolnite vsa polja.');

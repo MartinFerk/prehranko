@@ -87,3 +87,32 @@ export const preprocessImage = async (photoUri) => {
     throw err;
   }
 };
+
+
+export const uploadFaceImage = async (photoUri, email) => {
+  try {
+    const formData = new FormData();
+    formData.append('image', {
+      uri: photoUri,
+      name: `${email}_2fa.jpg`,
+      type: 'image/jpeg',
+    });
+    formData.append('email', email);
+
+    console.log('📤 Pošiljam 2FA sliko na strežnik ...');
+    const res = await fetch(`${API_BASE_URL}/upload-face-image`, {
+      method: 'POST',
+      body: formData
+    
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Nalaganje slike ni uspelo');
+    }
+    return data;
+  } catch (err) {
+    console.error('❌ Napaka pri nalaganju slike:', err);
+    throw err;
+  }
+};
