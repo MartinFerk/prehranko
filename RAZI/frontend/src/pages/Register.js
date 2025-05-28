@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { registerUser } from './auth'; // ali kamor si dal to funkcijo
-import './styles.css';
+import { registerUser } from '../api/auth';     // ⬅️ popravljena pot
+import '../styles.css'; 
 
 const Register = () => {
   const [email, setEmail] = useState('');

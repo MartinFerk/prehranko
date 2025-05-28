@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // ⬅️ Dodano
 import '../styles.css';
-import { trigger2FA } from '../api/auth'; // ⬅️ Uvoziš funkcijo, ki pošlje zahtevo
-// (po želji dodaj tudi loginUser iz tvojega Express backenda)
+import { trigger2FA } from '../api/auth';
 import { API_BASE_URL } from '../api/api';
-
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate(); // ⬅️ Hook za navigacijo
 
   const handleLogin = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/login`, { 
+      const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, from: "web" }),
@@ -22,9 +22,7 @@ const Login = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Napaka pri prijavi');
 
-      // ✅ Po uspešni prijavi sproži 2FA
       await trigger2FA(email);
-
       alert('✅ Prijava uspešna. Počakaj na preverjanje obraza na telefonu.');
     } catch (err) {
       alert('❌ ' + err.message);
@@ -61,6 +59,15 @@ const Login = () => {
         </div>
         <button className="login-button" onClick={handleLogin} disabled={loading}>
           {loading ? 'Prijavljam...' : 'Prijavi se'}
+        </button>
+
+        {/* ⬇️ Dodan gumb za registracijo */}
+        <button
+          className="login-button"
+          style={{ marginTop: '1rem', backgroundColor: '#555' }}
+          onClick={() => navigate('/register')}
+        >
+          Ustvari račun
         </button>
       </div>
     </div>

@@ -25,7 +25,7 @@ export const verifyFaceImage = async (imageUri, email) => {
 
 export const trigger2FA = async (email) => {
   try {
-    const res = await fetch(`${process.env.REACT_APP_API_URL}/trigger2fa`, {
+    const res = await fetch(`${API_BASE_URL}/trigger2fa`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
@@ -36,6 +36,55 @@ export const trigger2FA = async (email) => {
     return data;
   } catch (err) {
     console.error('❌ Napaka pri trigger2FA:', err.message);
+    throw err;
+  }
+};
+
+
+export const registerUser = async (email, password) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    // ⛔ tukaj je pogosto napaka
+    let data;
+    try {
+      data = await res.json();  // to fail-a, če backend vrne HTML
+    } catch {
+      throw new Error("Strežnik ni vrnil veljavnega JSON (morda napačen endpoint?)");
+    }
+
+    if (!res.ok) throw new Error(data.message || "Napaka pri registraciji");
+    return data;
+  } catch (err) {
+    throw err;
+  }
+};
+
+
+export const loginUser = async (email, password) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, from: "web" }),
+    });
+
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      throw new Error("❌ Strežnik ni vrnil veljavnega JSON (verjetno napaka 500 ali napačen URL)");
+    }
+
+    if (!res.ok) throw new Error(data.message || "Napaka pri prijavi");
+
+    return data;
+  } catch (err) {
+    console.error("❌ Napaka pri loginu:", err.message);
     throw err;
   }
 };
