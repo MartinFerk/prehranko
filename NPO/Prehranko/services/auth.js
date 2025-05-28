@@ -1,8 +1,5 @@
-// services/auth.js
-import { Alert } from 'react-native';
 import { API_BASE_URL } from './api';
 import { CAMERA_API_URL } from './api';
-import { publishActivityMQTT } from './mqtt'; // ✅ Correct import
 
 export const loginUser = async (email, password) => {
   try {
@@ -11,14 +8,16 @@ export const loginUser = async (email, password) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
+
     const data = await res.json();
     console.log('⬅️ Odgovor:', data);
+
     if (!res.ok) {
       throw new Error(data.message || 'Prijava ni uspela');
     }
     return data;
   } catch (err) {
-    console.error('❌ Napaka:', err);
+    console.error('❌ Napaka pri prijavi:', err.message);
     throw err;
   }
 };
@@ -30,25 +29,19 @@ export const registerUser = async (email, password) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
+
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.message || 'Registracija ni uspela');
     }
     return data;
   } catch (err) {
-    console.error('❌ Napaka:', err);
+    console.error('❌ Napaka pri registraciji:', err.message);
     throw err;
   }
 };
 
 export const sendActivity = async (activityObject) => {
-  try {
-    publishActivityMQTT(activityObject); // 🟢 Send via MQTT
-    console.log('📤 Aktivnost poslana preko MQTT');
-  } catch (e) {
-    console.warn('⚠️ MQTT ni uspel:', e.message);
-  }
-
   try {
     const res = await fetch(`${API_BASE_URL}/activities`, {
       method: 'POST',
@@ -57,11 +50,11 @@ export const sendActivity = async (activityObject) => {
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Napaka pri pošiljanju aktivnosti (HTTP)');
-    console.log('✅ Aktivnost poslana (HTTP fallback)');
+    if (!res.ok) throw new Error(data.message || 'Napaka pri pošiljanju aktivnosti');
+    console.log('✅ Aktivnost poslana na strežnik');
     return data;
   } catch (err) {
-    console.error('❌ Napaka pri HTTP pošiljanju aktivnosti:', err.message);
+    console.error('❌ Napaka pri pošiljanju aktivnosti:', err.message);
     throw err;
   }
 };
@@ -90,7 +83,7 @@ export const preprocessImage = async (photoUri) => {
     }
     return data;
   } catch (err) {
-    console.error('❌ Napaka pri pošiljanju slike:', err);
+    console.error('❌ Napaka pri obdelavi slike:', err.message);
     throw err;
   }
 };
@@ -108,7 +101,7 @@ export const uploadFaceImage = async (photoUri, email) => {
     console.log('📤 Pošiljam 2FA sliko na strežnik ...');
     const res = await fetch(`${API_BASE_URL}/upload-face-image`, {
       method: 'POST',
-      body: formData
+      body: formData,
     });
 
     const data = await res.json();
@@ -117,7 +110,7 @@ export const uploadFaceImage = async (photoUri, email) => {
     }
     return data;
   } catch (err) {
-    console.error('❌ Napaka pri nalaganju slike:', err);
+    console.error('❌ Napaka pri nalaganju slike:', err.message);
     throw err;
   }
 };
