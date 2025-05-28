@@ -22,3 +22,21 @@ export const verifyFaceImage = async (imageUri, email) => {
   if (!response.ok) throw new Error(result.error || "Napaka pri preverjanju obraza");
   return result;
 };
+
+export const trigger2FA = async (email) => {
+  try {
+    const res = await fetch(`${process.env.REACT_APP_API_URL}/trigger2fa`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || '2FA zahteva ni uspela');
+    return data;
+  } catch (err) {
+    console.error('❌ Napaka pri trigger2FA:', err.message);
+    throw err;
+  }
+};
+
