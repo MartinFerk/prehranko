@@ -4,6 +4,9 @@ const Activity = require('./models/Activity');
 const MQTT_URL = 'ws://prehrankomosquitto-production.up.railway.app:8080';
 const TOPIC = 'prehranko/activities';
 
+console.log('🚀 Starting MQTT Listener...');
+console.log('📡 Connecting to:', MQTT_URL);
+
 const client = mqtt.connect(MQTT_URL, {
     connectTimeout: 5000,
     clientId: `backend_${Math.random().toString(16).slice(2, 8)}`,
@@ -11,44 +14,50 @@ const client = mqtt.connect(MQTT_URL, {
     reconnectPeriod: 1000,
 });
 
-// 🔌 Connection established
 client.on('connect', () => {
-    console.log('📡 MQTT povezava vzpostavljena');
+    console.log('✅ MQTT connection established');
+    console.log(`🔔 Subscribing to topic: ${TOPIC}`);
 
     client.subscribe(TOPIC, (err) => {
         if (err) {
-            console.error('❌ Napaka pri naročanju na temo:', err.message);
+            console.error('❌ Subscription error:', err.message);
         } else {
-            console.log(`✅ Naročen na temo: ${TOPIC}`);
+            console.log(`📬 Subscribed to ${TOPIC} successfully`);
         }
     });
 });
 
-// 📩 Handle incoming MQTT messages
 client.on('message', async (topic, message) => {
+    console.log(`📩 Received message on topic ${topic}`);
+    console.log('📦 Raw payload:', message.toString());
+
     try {
         const payload = JSON.parse(message.toString());
 
-        // 🛡️ Validate payload structure
         const { activityId, userEmail, stats } = payload;
         if (!activityId || !userEmail || !Array.isArray(stats)) {
-            console.warn('⚠️ Neveljavni podatki:', payload);
+            console.warn('⚠️ Invalid payload structure:', payload);
             return;
         }
 
+        console.log('📝 Valid activity received, saving to DB...');
         const newActivity = new Activity(payload);
         await newActivity.save();
-        console.log('✅ Aktivnost shranjena iz MQTT:', activityId);
+
+        console.log('✅ Activity saved to MongoDB:', activityId);
     } catch (err) {
-        console.error('❌ Napaka pri obdelavi MQTT sporočila:', err.message);
+        console.error('❌ Error handling message:', err.message);
     }
 });
 
-// ⚠️ Handle errors
 client.on('error', (err) => {
-    console.error('❌ Napaka MQTT:', err.message);
+    console.error('❌ MQTT connection error:', err.message);
 });
 
 client.on('reconnect', () => {
-    console.log('🔁 Poskus ponovne povezave na MQTT strežnik...');
+    console.log('🔁 Reconnecting to MQTT...');
+});
+
+client.on('close', () => {
+    console.log('🔌 MQTT connection closed');
 });
