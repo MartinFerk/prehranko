@@ -2,6 +2,7 @@
 import { Alert } from 'react-native';
 import { API_BASE_URL } from './api';
 import { CAMERA_API_URL } from './api';
+import { connect } from '../../MQTT/'
 
 export const loginUser = async (email, password) => {
   try {
