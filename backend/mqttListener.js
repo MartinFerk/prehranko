@@ -1,7 +1,7 @@
 const mqtt = require('mqtt');
 const Activity = require('./models/Activity');
 
-const MQTT_URL = 'ws://prehrankomosquitto-production.up.railway.app';
+const MQTT_URL = 'wss://prehrankomosquitto-production.up.railway.app:8080';
 const TOPIC = 'prehranko/activities';
 
 console.log('🚀 Starting MQTT Listener...');
