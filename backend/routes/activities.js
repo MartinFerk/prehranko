@@ -5,6 +5,9 @@ const mqtt = require('mqtt');
 const MQTT_URL = 'ws://prehrankomosquitto-production.up.railway.app';
 const TOPIC = 'prehranko/activities';
 
+console.log('🚀 Initializing MQTT client for /api/activities route...');
+console.log('📡 Connecting to:', MQTT_URL);
+
 const mqttClient = mqtt.connect(MQTT_URL, {
     connectTimeout: 5000,
     clientId: `server_${Math.random().toString(16).slice(2, 8)}`,
@@ -13,32 +16,49 @@ const mqttClient = mqtt.connect(MQTT_URL, {
 });
 
 mqttClient.on('connect', () => {
-    console.log('📡 MQTT client (route) connected');
+    console.log('✅ MQTT client (route) connected successfully');
+});
+
+mqttClient.on('error', (err) => {
+    console.error('❌ MQTT client error (route):', err.message);
+});
+
+mqttClient.on('reconnect', () => {
+    console.log('🔁 Reconnecting MQTT client (route)...');
+});
+
+mqttClient.on('close', () => {
+    console.log('🔌 MQTT client (route) connection closed');
+});
+
+mqttClient.on('offline', () => {
+    console.log('⚠️ MQTT client (route) is offline');
 });
 
 router.post('/', (req, res) => {
     const { activityId, userEmail, stats } = req.body;
 
-    console.log('📥 Prejeta aktivnost (POST)', { activityId, userEmail });
+    console.log('📥 Received POST /api/activities');
+    console.log('🔍 Payload:', JSON.stringify(req.body, null, 2));
 
     if (!activityId || !userEmail || !Array.isArray(stats)) {
-        console.warn('⚠️ Napačen payload');
+        console.warn('⚠️ Invalid payload format — missing required fields');
         return res.status(400).json({ message: 'Missing activity data' });
     }
 
-    // ✅ Send response immediately
+    // Respond to client immediately
     res.status(202).json({ message: 'Activity accepted (MQTT async)' });
 
-    // 📨 Publish to MQTT in background
+    // Publish to MQTT broker
     mqttClient.publish(
         TOPIC,
         JSON.stringify({ activityId, userEmail, stats }),
         {},
         (err) => {
             if (err) {
-                console.warn('⚠️ MQTT publish error:', err.message);
+                console.warn('❌ MQTT publish failed:', err.message);
             } else {
-                console.log('📤 Aktivnost poslana na MQTT:', activityId);
+                console.log('📤 Activity published to MQTT successfully:', activityId);
             }
         }
     );
