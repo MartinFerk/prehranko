@@ -1,69 +1,83 @@
 from flask import Flask, request, jsonify
-from PIL import Image, ImageFilter
+from PIL import Image
 import numpy as np
-import io
-import base64
+import cv2
+from pymongo import MongoClient
+import os
+from dotenv import load_dotenv
 
+# UVOZIM funkcije iz drugih datotek
+from features import lbp_descriptor, cosine_similarity
+from face_utils import detect_skin_hsv, find_face_box
+
+# === Mongo povezava ===
+load_dotenv()
+mongo_uri = os.getenv("MONGO_URI")
+client = MongoClient(mongo_uri)
+db = client["face_auth"]
+users = db["users"]
+
+# === Flask App ===
 app = Flask(__name__)
 
-def preprocess_image(image_pil):
-    return image_pil.resize((400, 400)).filter(ImageFilter.GaussianBlur(radius=2))
+def extract_face_features(image_pil):
+    mask = detect_skin_hsv(image_pil)
+    box = find_face_box(mask)
+    if not box:
+        raise Exception("Ni bilo mogoče zaznati obraza.")
+    x, y, w, h = box
+    gray = image_pil.convert("L").crop((x, y, x+w, y+h)).resize((100, 100))
+    return lbp_descriptor(np.array(gray))
 
-def encode_image_to_base64(image_pil):
-    buffer = io.BytesIO()
-    image_pil.save(buffer, format="PNG")
-    encoded = base64.b64encode(buffer.getvalue()).decode('utf-8')
-    return f"data:image/png;base64,{encoded}"
+# === API ROUTES ===
+@app.route("/")
+def home():
+    return "✅ 2FA API with MongoDB running"
 
-def detect_skin(image_pil):
-    # Pretvori sliko v HSV
-    image_np = np.array(image_pil.convert("HSV"))
-    h, s, v = image_np[:, :, 0], image_np[:, :, 1], image_np[:, :, 2]
+@app.route("/register", methods=["POST"])
+def register():
+    email = request.form.get("email")
+    files = request.files.getlist("images")
+    if not email or len(files) < 5:
+        return jsonify({"error": "Email and 5 images required"}), 400
 
-    # Kožni razpon (posplošen)
-    skin_mask = (
-        (h > 0) & (h < 50) &     # Hue za svetlo rjavo/rožnato
-        (s > 40) & (s < 200) &   # Saturation mora biti srednji
-        (v > 80) & (v < 255)     # Brightness mora biti srednji
-    )
+    features = []
+    for file in files:
+        image = Image.open(file.stream).convert("RGB")
+        try:
+            feat = extract_face_features(image)
+            features.append(feat.tolist())
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
 
-    skin_pixels = np.sum(skin_mask)
-    total_pixels = image_np.shape[0] * image_np.shape[1]
+    users.replace_one({"email": email}, {"email": email, "features": features}, upsert=True)
+    return jsonify({"registered": True})
 
-    skin_ratio = skin_pixels / total_pixels
-    print(f"🧪 Kožni piksli: {skin_pixels}, razmerje: {skin_ratio:.3f}")
+@app.route("/verify", methods=["POST"])
+def verify():
+    email = request.form.get("email")
+    file = request.files.get("image")
+    if not email or not file:
+        return jsonify({"error": "Email and image required"}), 400
 
-    return bool(skin_ratio > 0.20)
-  # 5% kože = domnevna oseba
+    user = users.find_one({"email": email})
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
-@app.route("/", methods=["GET"])
-def index():
-    return "<h1>API is running</h1>"
-
-@app.route("/preprocess", methods=["POST"])
-def preprocess_route():
-    if "image" not in request.files:
-        return jsonify({"error": "No image uploaded"}), 400
-
+    image = Image.open(file.stream).convert("RGB")
     try:
-        file = request.files["image"]
-        img = Image.open(file.stream).convert("RGB")
-        preprocessed = preprocess_image(img)
-        authorized = detect_skin(preprocessed)
-        image_base64 = encode_image_to_base64(preprocessed)
-
-        return jsonify({
-            "image_base64": image_base64,
-            "authorized": authorized
-        })
-
+        feat = extract_face_features(image)
     except Exception as e:
-        print("❌ Napaka pri obdelavi slike:", str(e))
-        return jsonify({
-            "error": "Image processing failed",
-            "details": str(e),
-            "authorized": False
-        }), 500
+        return jsonify({"error": str(e)}), 400
 
+    similarities = [cosine_similarity(feat, np.array(f)) for f in user["features"]]
+    best = max(similarities)
+
+    return jsonify({
+        "verified": best > 0.85,
+        "similarity": round(best, 3)
+    })
+
+# === Railway Start ===
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
