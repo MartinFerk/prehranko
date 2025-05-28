@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import '../styles.css';
 import { trigger2FA } from '../api/auth'; // ⬅️ Uvoziš funkcijo, ki pošlje zahtevo
 // (po želji dodaj tudi loginUser iz tvojega Express backenda)
+import { API_BASE_URL } from '../api/api';
+
 
 const Login = () => {
   const [email, setEmail] = useState('');
