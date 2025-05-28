@@ -8,6 +8,7 @@ console.log('🚀 Starting MQTT Listener...');
 console.log('📡 Connecting to:', MQTT_URL);
 
 const client = mqtt.connect(MQTT_URL, {
+    protocol: 'ws', // Explicit WebSocket protocol
     connectTimeout: 5000,
     clientId: `backend_${Math.random().toString(16).slice(2, 8)}`,
     clean: true,
@@ -27,6 +28,14 @@ client.on('connect', () => {
     });
 });
 
+// ✅ Log raw MQTT stream errors if handshake fails
+if (client.stream) {
+    client.stream.on('error', (err) => {
+        console.error('🔍 Stream error (possibly during handshake):', err.message);
+    });
+}
+
+// 📩 Handle incoming MQTT messages
 client.on('message', async (topic, message) => {
     console.log(`📩 Received message on topic ${topic}`);
     console.log('📦 Raw payload:', message.toString());
@@ -43,21 +52,29 @@ client.on('message', async (topic, message) => {
         console.log('📝 Valid activity received, saving to DB...');
         const newActivity = new Activity(payload);
         await newActivity.save();
-
         console.log('✅ Activity saved to MongoDB:', activityId);
     } catch (err) {
         console.error('❌ Error handling message:', err.message);
     }
 });
 
-client.on('error', (err) => {
-    console.error('❌ MQTT connection error:', err.message);
-});
-
+// 🔁 Reconnection and status logs
 client.on('reconnect', () => {
     console.log('🔁 Reconnecting to MQTT...');
 });
 
 client.on('close', () => {
     console.log('🔌 MQTT connection closed');
+});
+
+client.on('offline', () => {
+    console.log('⚠️ MQTT client went offline');
+});
+
+client.on('end', () => {
+    console.log('🔚 MQTT client ended connection');
+});
+
+client.on('error', (err) => {
+    console.error('❌ MQTT connection error:', err.message);
 });
