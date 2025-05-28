@@ -2,7 +2,7 @@
 import { Alert } from 'react-native';
 import { API_BASE_URL } from './api';
 import { CAMERA_API_URL } from './api';
-import { connect } from '../../MQTT/'
+import { publishActivityMQTT } from './mqtt'; // ✅ Correct import
 
 export const loginUser = async (email, password) => {
   try {
@@ -43,6 +43,13 @@ export const registerUser = async (email, password) => {
 
 export const sendActivity = async (activityObject) => {
   try {
+    publishActivityMQTT(activityObject); // 🟢 Send via MQTT
+    console.log('📤 Aktivnost poslana preko MQTT');
+  } catch (e) {
+    console.warn('⚠️ MQTT ni uspel:', e.message);
+  }
+
+  try {
     const res = await fetch(`${API_BASE_URL}/activities`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -50,15 +57,14 @@ export const sendActivity = async (activityObject) => {
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Napaka pri pošiljanju aktivnosti');
-    console.log('✅ Aktivnost poslana:', data);
+    if (!res.ok) throw new Error(data.message || 'Napaka pri pošiljanju aktivnosti (HTTP)');
+    console.log('✅ Aktivnost poslana (HTTP fallback)');
     return data;
   } catch (err) {
-    console.error('❌ Napaka pri pošiljanju aktivnosti:', err.message);
+    console.error('❌ Napaka pri HTTP pošiljanju aktivnosti:', err.message);
     throw err;
   }
 };
-
 
 export const preprocessImage = async (photoUri) => {
   try {
@@ -89,7 +95,6 @@ export const preprocessImage = async (photoUri) => {
   }
 };
 
-
 export const uploadFaceImage = async (photoUri, email) => {
   try {
     const formData = new FormData();
@@ -104,7 +109,6 @@ export const uploadFaceImage = async (photoUri, email) => {
     const res = await fetch(`${API_BASE_URL}/upload-face-image`, {
       method: 'POST',
       body: formData
-    
     });
 
     const data = await res.json();
