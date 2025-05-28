@@ -22,25 +22,22 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Prijava
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, from } = req.body;
 
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: 'Uporabnik ne obstaja' });
 
-    
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Napačno geslo' });
 
     if (from === "web") {
-    // 🔐 Samo za spletno prijavo sprožimo 2FA
-    user.pending2FA = true;
-    await user.save();
-    return res.json({ message: 'Prijava uspešna – preveri 2FA na telefonu' });
-  }
+      // 🔐 Samo za spletno prijavo sprožimo 2FA
+      user.pending2FA = true;
+      await user.save();
+      return res.json({ message: 'Prijava uspešna – preveri 2FA na telefonu' });
+    }
 
     res.status(200).json({ message: 'Prijava uspešna' });
   } catch (err) {
@@ -48,10 +45,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.get('/check2fa', async (req, res) => {
-  const user = await User.findOne({ email: req.query.email });
-  res.json({ pending2FA: user?.pending2FA || false });
-});
 
 
 module.exports = router;
