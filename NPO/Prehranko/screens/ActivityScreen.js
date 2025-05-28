@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet, ScrollView } from 'react-native';
 import * as FileSystem from 'expo-file-system';
-import { v4 as uuidv4 } from 'uuid';
-import { sendActivity } from '../services/auth'; // ali pot do tvoje API datoteke
-
+import { sendActivity } from '../services/auth';
 
 export default function ActivityScreen({ route }) {
     const { email } = route.params || {};
@@ -20,7 +18,7 @@ export default function ActivityScreen({ route }) {
         setIsRecording(true);
 
         const collected = [];
-        const activityId = simpleId(); // <- custom safe ID
+        const activityId = simpleId();
 
         function generateMockLocation() {
             const offsetLat = (Math.random() - 0.5) * 0.0018;
@@ -67,6 +65,7 @@ export default function ActivityScreen({ route }) {
                 setIsRecording(false);
                 console.log('⏹️ Snemanje končano');
 
+                // Pošlji na backend (ta bo MQTT naprej)
                 sendActivity({
                     activityId,
                     userEmail: email,
@@ -83,17 +82,14 @@ export default function ActivityScreen({ route }) {
                 console.error('❌ Napaka pri shranjevanju:', err.message);
                 setIsRecording(false);
             });
-
     };
 
-// UUID alternativa
     function simpleId() {
         return 'xxxxxxxxyxxx'.replace(/[xy]/g, c => {
             const r = Math.random() * 16 | 0;
             return r.toString(16);
         });
     }
-
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
