@@ -19,10 +19,17 @@ mqttClient.on('connect', () => {
 router.post('/', (req, res) => {
     const { activityId, userEmail, stats } = req.body;
 
+    console.log('📥 Prejeta aktivnost (POST)', { activityId, userEmail });
+
     if (!activityId || !userEmail || !Array.isArray(stats)) {
+        console.warn('⚠️ Napačen payload');
         return res.status(400).json({ message: 'Missing activity data' });
     }
 
+    // ✅ Send response immediately
+    res.status(202).json({ message: 'Activity accepted (MQTT async)' });
+
+    // 📨 Publish to MQTT in background
     mqttClient.publish(
         TOPIC,
         JSON.stringify({ activityId, userEmail, stats }),
@@ -30,11 +37,9 @@ router.post('/', (req, res) => {
         (err) => {
             if (err) {
                 console.warn('⚠️ MQTT publish error:', err.message);
-                return res.status(500).json({ message: 'Failed to publish to MQTT' });
+            } else {
+                console.log('📤 Aktivnost poslana na MQTT:', activityId);
             }
-
-            console.log('📤 Activity published to MQTT');
-            res.status(202).json({ message: 'Activity forwarded to MQTT (listener will save it)' });
         }
     );
 });
