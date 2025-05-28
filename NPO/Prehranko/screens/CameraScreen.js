@@ -11,7 +11,7 @@ export default function CameraScreen({ navigation, route }) {
   const { email, onPhotoTaken } = route.params || {};
   const cameraRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
-  const [image, setImage] = useState(null);
+  const [image, setImage] = useState([]);
   const [loading, setLoading] = useState(false);
 
   if (!permission) return <View />;
@@ -24,36 +24,30 @@ export default function CameraScreen({ navigation, route }) {
   }
 
   const takePhoto = async () => {
-  if (!cameraRef.current) {
-    console.warn('⚠️ Kamera ni inicializirana.');
-    return;
-  }
+  if (!cameraRef.current) return;
 
   setLoading(true);
-
   try {
-    console.log('📸 Zajemam sliko ...');
-    const photo = await cameraRef.current.takePictureAsync();
-    console.log('✅ Zajem uspel:', photo.uri);
+    const photo = await cameraRef.current.takePictureAsync({ base64: true });
 
-    // 1. Pošlji sliko na strežnik (shrani v bazo / disk)
-    const uploadResult = await uploadFaceImage(photo.uri, email);
-    console.log('📤 Strežnik odgovoril:', uploadResult);
+    const newImages = [...images, photo.uri];
+    setImages(newImages);
 
-    Alert.alert('Uspeh', 'Slika je bila uspešno shranjena.');
-
-    // 2. Pokliči funkcijo iz RegisterScreen, če obstaja
-    if (onPhotoTaken && typeof onPhotoTaken === 'function') {
-      onPhotoTaken(); // ⬅️ naj sama funkija naredi `navigate('Login')`
+    if (newImages.length === 5) {
+      const result = await uploadFaceImages(newImages, email);
+      Alert.alert('✅ Obrazne značilke shranjene');
+      if (onPhotoTaken) onPhotoTaken();
+    } else {
+      Alert.alert('✅ Zajeta slika', `Zajeta ${newImages.length}/5`);
     }
-
   } catch (err) {
-    Alert.alert('Napaka', err.message || 'Napaka pri pošiljanju slike');
-    console.error('❌ Napaka pri slikanju ali nalaganju:', err);
+    console.error(err);
+    Alert.alert('Napaka', 'Ni uspelo zajeti slike');
   } finally {
     setLoading(false);
   }
 };
+
 
   return (
     <View style={styles.container}>
