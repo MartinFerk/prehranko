@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mqtt = require('mqtt');
 
-const MQTT_URL = 'ws://prehrankomosquitto-production.up.railway.app';
+const MQTT_URL = 'ws://prehrankomosquitto-production.up.railway.app:80';
 const TOPIC = 'prehranko/activities';
 
 console.log('🚀 Initializing MQTT client for /api/activities route...');
