@@ -1,14 +1,13 @@
 const mqtt = require('mqtt');
 const Activity = require('./models/Activity');
 
-const MQTT_URL = 'wss://prehrankomosquitto-production.up.railway.app:80';
+const MQTT_URL = 'mqtt://prehrankomosquitto.railway.internal:1883';
 const TOPIC = 'prehranko/activities';
 
 console.log('🚀 Starting MQTT Listener...');
-console.log('📡 Connecting to:', MQTT_URL);
+console.log('📡 Connecting to internal broker at:', MQTT_URL);
 
 const client = mqtt.connect(MQTT_URL, {
-    protocol: 'ws', // Explicit WebSocket protocol
     connectTimeout: 5000,
     clientId: `backend_${Math.random().toString(16).slice(2, 8)}`,
     clean: true,
@@ -27,13 +26,6 @@ client.on('connect', () => {
         }
     });
 });
-
-// ✅ Log raw MQTT stream errors if handshake fails
-if (client.stream) {
-    client.stream.on('error', (err) => {
-        console.error('🔍 Stream error (possibly during handshake):', err.message);
-    });
-}
 
 // 📩 Handle incoming MQTT messages
 client.on('message', async (topic, message) => {
