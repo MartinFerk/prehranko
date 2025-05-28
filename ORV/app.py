@@ -72,11 +72,17 @@ def verify():
 
     similarities = [cosine_similarity(feat, np.array(f)) for f in user["features"]]
     best = max(similarities)
+    verified = best > 0.85
+
+    # ✅ Če je uspešna primerjava, zbriši pending2FA
+    if verified:
+        users.update_one({"email": email}, {"$set": {"pending2FA": False}})
 
     return jsonify({
-        "verified": best > 0.85,
+        "verified": verified,
         "similarity": round(best, 3)
     })
+
 
 # === Railway Start ===
 if __name__ == "__main__":

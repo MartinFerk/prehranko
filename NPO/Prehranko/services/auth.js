@@ -1,12 +1,13 @@
 import { API_BASE_URL } from './api';
 import { CAMERA_API_URL } from './api';
+import * as FileSystem from 'expo-file-system';
 
 export const loginUser = async (email, password) => {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, from: "app" }),
     });
 
     const data = await res.json();
@@ -88,29 +89,31 @@ export const preprocessImage = async (photoUri) => {
   }
 };
 
-export const uploadFaceImage = async (photoUri, email) => {
-  try {
-    const formData = new FormData();
-    formData.append('image', {
-      uri: photoUri,
-      name: `${email}_2fa.jpg`,
-      type: 'image/jpeg',
-    });
-    formData.append('email', email);
 
-    console.log('📤 Pošiljam 2FA sliko na strežnik ...');
-    const res = await fetch(`${API_BASE_URL}/upload-face-image`, {
-      method: 'POST',
-      body: formData,
-    });
 
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.message || 'Nalaganje slike ni uspelo');
-    }
-    return data;
-  } catch (err) {
-    console.error('❌ Napaka pri nalaganju slike:', err.message);
-    throw err;
-  }
-};
+export async function uploadFaceImages(imageUris, email) {
+  const formData = new FormData();
+
+  formData.append("email", email);
+  imageUris.forEach((uri, index) => {
+    const filename = uri.split('/').pop();
+    formData.append("images", {
+      uri,
+      name: filename || `image${index + 1}.jpg`,
+      type: "image/jpeg",
+    });
+  });
+
+  const response = await fetch("https://prehrankopython-production.up.railway.app/register", {
+    method: "POST",
+    body: formData,
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "Napaka pri registraciji obraza");
+  return result;
+}
+
