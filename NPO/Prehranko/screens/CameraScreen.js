@@ -40,10 +40,19 @@ export default function CameraScreen({ navigation, route }) {
       }
 
       console.log('📤 Pošiljam slike na strežnik ...');
-      const res = await uploadFaceImagesForRegistration(photoUris, email);
-      console.log('✅ Odgovor strežnika:', res);
+const result = await uploadFaceImagesForRegistration(photoUris, email);
+console.log('✅ Odgovor strežnika:', result);
 
-      Alert.alert('Uspeh', '5 slik uspešno shranjenih.');
+// ⚠️ Preverimo, če Python strežnik res vrne features
+if (!result.features || !Array.isArray(result.features)) {
+  throw new Error("Manjkajo značilke (features) v odgovoru.");
+}
+
+// 🔐 Pošlji značilke Express backendu za shranjevanje v MongoDB
+await saveFeaturesToBackend(email, result.features);
+console.log('✅ Značilke shranjene v Express backend.');
+
+Alert.alert('Uspeh', 'Značilke uspešno shranjene.');;
 
       if (onPhotoTaken && typeof onPhotoTaken === 'function') {
         onPhotoTaken(); // Preusmeritev ali drugo dejanje

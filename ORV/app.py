@@ -37,6 +37,8 @@ def extract_face_features(image_pil):
     x, y, w, h = faces[0]
     face_crop = gray[y:y+h, x:x+w]
     face_resized = cv2.resize(face_crop, (100, 100))
+    print("➡️ Velikost slike:", image_pil.size)
+
 
     # Izračunaj značilke z LBP
     return lbp_descriptor(face_resized)
@@ -55,22 +57,19 @@ def register():
         return jsonify({"error": "Email and 5 images required"}), 400
 
     features = []
-    for i, file in enumerate(files):
+    for i, file in enumerate(files[:5]):  # omeji že tukaj
         print(f"📷 Obdelujem sliko {i+1} za {email}")
 
-        # ✅ CHECK: velikost datoteke
         if hasattr(file, 'content_length') and file.content_length and file.content_length > 3 * 1024 * 1024:
             print(f"⚠️ Slika {i+1} je prevelika, preskočena.")
             continue
 
-        # ✅ CHECK: odpiranje slike
         try:
             image = Image.open(file.stream).convert("RGB")
         except Exception as e:
             print(f"❌ Napaka pri odpiranju slike {i+1}: {e}")
             continue
 
-        # ✅ CHECK: zaznava obraza
         try:
             feat = extract_face_features(image)
             features.append(feat.tolist())
@@ -84,14 +83,13 @@ def register():
     if len(features) < 3:
         return jsonify({"error": "Premalo uspešnih zaznav obraza"}), 400
 
-    # 🔐 Shrani v MongoDB
     users.replace_one(
         {"email": email},
         {"email": email, "features": features},
         upsert=True
     )
 
-    return jsonify({"registered": True})
+    return jsonify({"features": True})
 
 
 
