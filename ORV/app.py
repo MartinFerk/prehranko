@@ -20,14 +20,26 @@ users = db["users"]
 # === Flask App ===
 app = Flask(__name__)
 
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
 def extract_face_features(image_pil):
-    mask = detect_skin_hsv(image_pil)
-    box = find_face_box(mask)
-    if not box:
-        raise Exception("Ni bilo mogoce zaznati obraza.")
-    x, y, w, h = box
-    gray = image_pil.convert("L").crop((x, y, x+w, y+h)).resize((100, 100))
-    return lbp_descriptor(np.array(gray))
+    # Pretvori PIL sliko v OpenCV format (NumPy array)
+    image_cv = np.array(image_pil)
+    gray = cv2.cvtColor(image_cv, cv2.COLOR_RGB2GRAY)
+
+    # Detekcija obrazov
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+
+    if len(faces) == 0:
+        raise Exception("❌ Obraz ni bil zaznan (OpenCV)")
+
+    # Uporabi prvi najdeni obraz
+    x, y, w, h = faces[0]
+    face_crop = gray[y:y+h, x:x+w]
+    face_resized = cv2.resize(face_crop, (100, 100))
+
+    # Izračunaj značilke z LBP
+    return lbp_descriptor(face_resized)
 
 # === API ROUTES ===
 @app.route("/")
@@ -43,13 +55,14 @@ def register():
 
     features = []
     for i, file in enumerate(files):
+        print(f"📷 Obdelujem sliko {i+1} za {email}")
         image = Image.open(file.stream).convert("RGB")
         try:
             feat = extract_face_features(image)
             features.append(feat.tolist())
             print(f"✅ Slika {i+1} uspešno obdelana.")
         except Exception as e:
-            print(f"⚠️ Slika {i+1}: {e}")
+            print(f"❌ Napaka pri zaznavi obraza na sliki {i+1}: {e}")
             continue
 
     if len(features) < 3:
