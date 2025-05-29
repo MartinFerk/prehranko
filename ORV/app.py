@@ -53,7 +53,7 @@ def register():
     print("🚀 POST /register prejet")
     email = request.form.get("email")
     files = request.files.getlist("images")
-    if not email or len(files) < 5:
+    if not email or len(files) < 3:
         return jsonify({"error": "Email and 5 images required"}), 400
 
     features = []

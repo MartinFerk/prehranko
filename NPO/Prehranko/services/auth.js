@@ -1,7 +1,7 @@
 import { API_BASE_URL } from './api';
 import { CAMERA_API_URL } from './api';
 import * as FileSystem from 'expo-file-system';
-import axios from 'axios';
+
 
 export const loginUser = async (email, password) => {
   try {
