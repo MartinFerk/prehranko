@@ -102,8 +102,8 @@ router.post('/register-face', upload.array('images'), async (req, res) => {
   const { email } = req.body;
   const files = req.files;
 
-  if (!email || !files || files.length < 3) {
-    return res.status(400).json({ message: 'Potrebne so vsaj 3 slike in email' });
+  if (!email || !files || files.length < 5) {
+    return res.status(400).json({ message: 'Potrebnih je 5 slik in email' });
   }
 
   try {
@@ -114,17 +114,15 @@ router.post('/register-face', upload.array('images'), async (req, res) => {
     });
 
     const response = await axios.post('https://prehrankopython-production.up.railway.app/register', form, {
-  headers: form.getHeaders(),
-});
+      headers: form.getHeaders(),
+    });
 
+    files.forEach(f => fs.unlinkSync(f.path)); // počistimo slike
 
-    files.forEach(f => fs.unlinkSync(f.path)); // očistimo slike
-
-    if (response.data && response.data.message?.includes("shranjene")) {
-  return res.json({ message: 'Registracija uspešna' });
-    }
-    else {
-      return res.status(400).json({ message: response.data.message || 'Napaka' });
+    if (response.data.registered) {
+      return res.json({ message: '✅ Registracija obraznih značilk uspešna' });
+    } else {
+      return res.status(400).json({ message: response.data.error || 'Napaka pri registraciji' });
     }
 
   } catch (err) {
@@ -132,6 +130,7 @@ router.post('/register-face', upload.array('images'), async (req, res) => {
     return res.status(500).json({ message: 'Napaka pri komunikaciji s prepoznavo obraza' });
   }
 });
+
 
 router.post('/verify-face', upload.single('image'), async (req, res) => {
   const { email } = req.body;

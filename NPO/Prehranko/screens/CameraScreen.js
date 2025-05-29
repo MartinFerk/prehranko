@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { View, Image, StyleSheet, Alert, ActivityIndicator, Text } from 'react-native';
+import { View, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import AuthButton from '../components/AuthButton';
 import { theme } from '../styles/theme';
@@ -9,9 +9,7 @@ export default function CameraScreen({ navigation, route }) {
   const { email, onPhotoTaken } = route.params || {};
   const cameraRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
-  const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [lastImage, setLastImage] = useState(null);
 
   if (!permission) return <View />;
   if (permission.status !== 'granted') {
@@ -22,27 +20,38 @@ export default function CameraScreen({ navigation, route }) {
     );
   }
 
-  const takePhoto = async () => {
-    if (!cameraRef.current) return;
+  const takeFivePhotos = async () => {
+    if (!cameraRef.current) {
+      console.warn('⚠️ Kamera ni inicializirana.');
+      return;
+    }
 
     setLoading(true);
-    try {
-      const photo = await cameraRef.current.takePictureAsync({ base64: false });
-      const newImages = [...images, photo.uri];
-      setImages(newImages);
-      setLastImage(photo.uri);
 
-      if (newImages.length === 5) {
-        await uploadFaceImagesForRegistration(newImages, email);
-        Alert.alert("✅ Registracija uspešna – značilke obraza shranjene");
-        setImages([]);
-        if (onPhotoTaken) onPhotoTaken();
-      } else {
-        Alert.alert("📸 Zajeta slika", `Zajeta ${newImages.length}/5`);
+    try {
+      const photoUris = [];
+
+      for (let i = 0; i < 5; i++) {
+        console.log(`📸 Zajem slike ${i + 1} ...`);
+        const photo = await cameraRef.current.takePictureAsync();
+        console.log(`✅ Slika ${i + 1} zajeta:`, photo.uri);
+        photoUris.push(photo.uri);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 sekunda pavze
       }
+
+      console.log('📤 Pošiljam slike na strežnik ...');
+      const res = await uploadFaceImagesForRegistration(photoUris, email);
+      console.log('✅ Odgovor strežnika:', res);
+
+      Alert.alert('Uspeh', '5 slik uspešno shranjenih.');
+
+      if (onPhotoTaken && typeof onPhotoTaken === 'function') {
+        onPhotoTaken(); // Preusmeritev ali drugo dejanje
+      }
+
     } catch (err) {
-      console.error(err);
-      Alert.alert("❌ Napaka", "Ni uspelo zajeti ali poslati slike");
+      Alert.alert('Napaka', err.message || 'Napaka pri pošiljanju slik.');
+      console.error('❌ Napaka:', err);
     } finally {
       setLoading(false);
     }
@@ -51,15 +60,11 @@ export default function CameraScreen({ navigation, route }) {
   return (
     <View style={styles.container}>
       <CameraView style={StyleSheet.absoluteFill} facing="front" ref={cameraRef} />
-      <View style={styles.overlay}>
-        <Text style={styles.counterText}>Zajetih slik: {images.length} / 5</Text>
+      <View style={styles.buttonContainer}>
         {loading ? (
           <ActivityIndicator size="large" color={theme.colors.primary} />
         ) : (
-          <AuthButton title="Zajemi obraz" onPress={takePhoto} />
-        )}
-        {lastImage && (
-          <Image source={{ uri: lastImage }} style={styles.previewImage} />
+          <AuthButton title="Zajemi 5 slik" onPress={takeFivePhotos} />
         )}
       </View>
     </View>
@@ -71,21 +76,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  overlay: {
+  buttonContainer: {
     position: 'absolute',
     bottom: theme.spacing.large,
     alignSelf: 'center',
-    alignItems: 'center',
-  },
-  counterText: {
-    fontSize: 16,
-    color: 'white',
-    marginBottom: theme.spacing.small,
-  },
-  previewImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    marginTop: theme.spacing.medium,
   },
 });

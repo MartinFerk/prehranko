@@ -91,41 +91,43 @@ export const preprocessImage = async (photoUri) => {
 
 
 
-router.post('/upload-face-image', upload.array('images', 5), async (req, res) => {
-  const { email } = req.body;
-  const files = req.files;
+export const uploadFaceImage = async (uri, email) => {
+  const formData = new FormData();
+  formData.append('image', {
+    uri,
+    name: 'photo.jpg',
+    type: 'image/jpeg',
+  });
+  formData.append('email', email);
 
-  if (!email || !files || files.length < 3) {
-    return res.status(400).json({ message: 'Potrebne so vsaj 3 slike in email' });
-  }
-
-  const form = new FormData();
-  form.append('email', email);
-  files.forEach((file) => {
-    form.append('images', fs.createReadStream(file.path));
+  const res = await fetch('https://prehranko-production.up.railway.app/api/upload-face-image', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    body: formData,
   });
 
-  try {
-    const response = await axios.post('https://prehranko-production.up.railway.app/api/register-face', form, {
-      headers: form.getHeaders(),
-    });
+  // 👉 najprej preverimo, če je sploh JSON
+  const text = await res.text();
 
-    files.forEach((f) => fs.unlinkSync(f.path));
-
-    if (response.data.success) {
-      return res.json({ message: 'Uspeh', result: response.data });
-    } else {
-      return res.status(400).json({ message: response.data.message || 'Napaka v prepoznavi obraza' });
-    }
-  } catch (err) {
-    console.error('❌ Napaka pri povezavi na Python strežnik:', err.message);
-    return res.status(500).json({ message: 'Napaka pri komunikaciji s prepoznavo obraza' });
+  if (!res.ok) {
+    console.error('❌ Server returned HTML or error text:', text.slice(0, 100));
+    throw new Error('Strežnik vrnil napako: ' + text.slice(0, 100));
   }
-});
+
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error('❌ Strežnik ni vrnil veljavnega JSON. Dobil sem:\n' + text.slice(0, 100));
+  }
+};
+
+
 export const uploadFaceImagesForRegistration = async (images, email) => {
   const formData = new FormData();
-
   formData.append("email", email);
+
   images.forEach((uri, index) => {
     formData.append("images", {
       uri,
@@ -134,7 +136,7 @@ export const uploadFaceImagesForRegistration = async (images, email) => {
     });
   });
 
-  const res = await fetch('https://prehranko-production.up.railway.app/api/auth/register-face', {
+  const res = await fetch('https://prehrankopython-production.up.railway.app/register', {
     method: 'POST',
     body: formData,
   });
@@ -150,6 +152,9 @@ export const uploadFaceImagesForRegistration = async (images, email) => {
     throw new Error("Strežnik ni vrnil veljavnega JSON odgovora. Prejeto: " + text.slice(0, 100));
   }
 };
+
+
+
 
 
 
