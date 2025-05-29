@@ -129,6 +129,52 @@ app.post('/api/save-embeddings', async (req, res) => {
 });
 
 
+// POST IN GET ZA SHRANJEVANJE IN PRIDOBIVANJE KALORIČNEGA CILJA
+app.post('/api/goals/set', async (req, res) => {
+  const { email, caloricGoal } = req.body;
+
+  if (!email || !caloricGoal || isNaN(caloricGoal) || caloricGoal <= 0) {
+    return res.status(400).json({ message: 'Manjka email ali veljaven kalorični cilj' });
+  }
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { email },
+      { caloricGoal: parseInt(caloricGoal) },
+      { new: true, upsert: false }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'Uporabnik ni najden' });
+    }
+
+    res.status(200).json({ message: 'Kalorični cilj uspešno shranjen', caloricGoal: user.caloricGoal });
+  } catch (err) {
+    console.error('❌ Napaka pri shranjevanju kaloričnega cilja:', err);
+    res.status(500).json({ error: 'Napaka pri shranjevanju kaloričnega cilja' });
+  }
+});
+
+app.get('/api/goals/get', async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Manjka email' });
+  }
+
+  try {
+    const user = await User.findOne({ email }, 'caloricGoal'); // Pridobi samo caloricGoal
+
+    if (!user) {
+      return res.status(404).json({ message: 'Uporabnik ni najden' });
+    }
+
+    res.status(200).json({ caloricGoal: user.caloricGoal || null });
+  } catch (err) {
+    console.error('❌ Napaka pri pridobivanju kaloričnega cilja:', err);
+    res.status(500).json({ error: 'Napaka pri pridobivanju kaloričnega cilja' });
+  }
+});
 
 // Zagon strežnika
 const PORT = process.env.PORT || 5000;
