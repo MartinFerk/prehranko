@@ -7,6 +7,8 @@ import { preprocessImage } from '../services/auth';
 import { theme } from '../styles/theme';
 import { uploadFaceImage } from '../services/auth';
 
+import * as FileSystem from 'expo-file-system';
+
 export default function CameraScreen({ navigation, route }) {
   const { email, onPhotoTaken } = route.params || {};
   const cameraRef = useRef(null);
@@ -23,7 +25,7 @@ export default function CameraScreen({ navigation, route }) {
     );
   }
 
-  const takePhoto = async () => {
+  const takeMultiplePhotos = async () => {
   if (!cameraRef.current) {
     console.warn('⚠️ Kamera ni inicializirana.');
     return;
@@ -32,28 +34,68 @@ export default function CameraScreen({ navigation, route }) {
   setLoading(true);
 
   try {
-    console.log('📸 Zajemam sliko ...');
-    const photo = await cameraRef.current.takePictureAsync();
-    console.log('✅ Zajem uspel:', photo.uri);
+    const photos = [];
 
-    // 1. Pošlji sliko na strežnik (shrani v bazo / disk)
-    const uploadResult = await uploadFaceImage(photo.uri, email);
-    console.log('📤 Strežnik odgovoril:', uploadResult);
+    for (let i = 0; i < 5; i++) {
+      console.log(`📸 Zajem slike ${i + 1}/5 ...`);
+      const photo = await cameraRef.current.takePictureAsync({ base64: false });
+      photos.push(photo);
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
 
-    Alert.alert('Uspeh', 'Slika je bila uspešno shranjena.');
+    // 🔁 Pošlji vse slike Python strežniku
+    const formData = new FormData();
+    photos.forEach((photo, index) => {
+      formData.append('images', {
+        uri: photo.uri,
+        name: `photo${index + 1}.jpg`,
+        type: 'image/jpeg',
+      });
+    });
 
-    // 2. Pokliči funkcijo iz RegisterScreen, če obstaja
+    const res = await fetch('http://<YOUR_PYTHON_SERVER_IP>:5000/extract-embeddings', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.embeddings) {
+      throw new Error('Napaka pri ekstrakciji značilk');
+    }
+
+    console.log('✅ Značilke pridobljene:', data.embeddings);
+
+    // (Neobvezno) ➕ Pošlji slike in značilke v svoj Node strežnik
+    const uploadResult = await fetch('http://<YOUR_NODE_SERVER>/api/save-embeddings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        embeddings: data.embeddings,
+      }),
+    });
+
+    const uploadResponse = await uploadResult.json();
+    console.log('💾 Shramba na backend:', uploadResponse);
+
+    Alert.alert('Uspeh', 'Značilke uspešno pridobljene in shranjene.');
+
     if (onPhotoTaken && typeof onPhotoTaken === 'function') {
-      onPhotoTaken(); // ⬅️ naj sama funkija naredi `navigate('Login')`
+      onPhotoTaken();
     }
 
   } catch (err) {
-    Alert.alert('Napaka', err.message || 'Napaka pri pošiljanju slike');
-    console.error('❌ Napaka pri slikanju ali nalaganju:', err);
+    Alert.alert('Napaka', err.message || 'Napaka pri procesiranju slik');
+    console.error('❌ Napaka:', err);
   } finally {
     setLoading(false);
   }
 };
+
 
   return (
     <View style={styles.container}>
@@ -62,7 +104,7 @@ export default function CameraScreen({ navigation, route }) {
         {loading ? (
           <ActivityIndicator size="large" color={theme.colors.primary} />
         ) : (
-          <AuthButton title="Zajemi in pošlji" onPress={takePhoto} />
+          <AuthButton title="Zajemi 5 slik" onPress={takeMultiplePhotos} />
         )}
       </View>
       {image && (
