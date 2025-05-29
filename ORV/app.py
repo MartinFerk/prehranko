@@ -57,7 +57,20 @@ def register():
     features = []
     for i, file in enumerate(files):
         print(f"📷 Obdelujem sliko {i+1} za {email}")
-        image = Image.open(file.stream).convert("RGB")
+
+        # ✅ CHECK: velikost datoteke
+        if hasattr(file, 'content_length') and file.content_length and file.content_length > 3 * 1024 * 1024:
+            print(f"⚠️ Slika {i+1} je prevelika, preskočena.")
+            continue
+
+        # ✅ CHECK: odpiranje slike
+        try:
+            image = Image.open(file.stream).convert("RGB")
+        except Exception as e:
+            print(f"❌ Napaka pri odpiranju slike {i+1}: {e}")
+            continue
+
+        # ✅ CHECK: zaznava obraza
         try:
             feat = extract_face_features(image)
             features.append(feat.tolist())
@@ -65,19 +78,21 @@ def register():
         except Exception as e:
             print(f"❌ Napaka pri zaznavi obraza na sliki {i+1}: {e}")
             continue
-    print("✅ Register končan")
+
+    print(f"🔢 Skupno uspešnih zaznav: {len(features)}")
 
     if len(features) < 3:
         return jsonify({"error": "Premalo uspešnih zaznav obraza"}), 400
 
-    # 🔐 Tukaj shraniš uporabnika v MongoDB
+    # 🔐 Shrani v MongoDB
     users.replace_one(
         {"email": email},
         {"email": email, "features": features},
         upsert=True
     )
 
-    return jsonify({"ok": True})
+    return jsonify({"registered": True})
+
 
 
 
