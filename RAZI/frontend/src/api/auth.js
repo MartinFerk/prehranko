@@ -28,7 +28,7 @@ export const trigger2FA = async (email) => {
     const res = await fetch(`${API_BASE_URL}/auth/trigger2fa`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, from: "web" }),
+      body: JSON.stringify({ email }),
     });
 
     let data;
