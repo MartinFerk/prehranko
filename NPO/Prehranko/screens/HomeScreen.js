@@ -42,18 +42,22 @@ export default function HomeScreen({ navigation, route }) {
     };
 
     const fetchCaloricGoal = async () => {
+      console.log('📩 Pošiljam zahtevo za /api/goals/get:', { email }); // Dodaj beleženje
       try {
         const res = await fetch(
-          `https://prehranko-production.up.railway.app/api/goals/get?email=${email}`
+          `https://prehranko-production.up.railway.app/api/goals/get?email=${encodeURIComponent(email)}`
         );
         const data = await res.json();
+        console.log('🌐 Odgovor od /api/goals/get:', { status: res.status, data }); // Dodaj beleženje
+
         if (res.ok) {
           setCaloricGoal(data.caloricGoal);
         } else {
-          setCaloricGoal(null); // Ni cilja
+          setCaloricGoal(null);
         }
       } catch (err) {
         console.error('Napaka pri pridobivanju kaloričnega cilja:', err.message);
+        setCaloricGoal(null);
       }
     };
 
