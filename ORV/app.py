@@ -1,118 +1,39 @@
 from flask import Flask, request, jsonify
-from PIL import Image
+from PIL import Image, ImageFilter
 import numpy as np
-<<<<<<< HEAD
 import io
-=======
-import cv2
-from pymongo import MongoClient
-import os
-from dotenv import load_dotenv
->>>>>>> a8712e69610882c9d183af12c60aaddf9d3f3b34
 
-# UVOZIM funkcije iz drugih datotek
-from features import lbp_descriptor, cosine_similarity
-from face_utils import detect_skin_hsv, find_face_box
-
-# === Mongo povezava ===
-load_dotenv()
-mongo_uri = os.getenv("MONGO_URI")
-client = MongoClient(mongo_uri)
-db = client["face_auth"]
-users = db["users"]
-
-# === Flask App ===
 app = Flask(__name__)
 
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-def extract_face_features(image_pil):
-    # Pretvori PIL sliko v OpenCV format (NumPy array)
-    image_cv = np.array(image_pil)
-    gray = cv2.cvtColor(image_cv, cv2.COLOR_RGB2GRAY)
-
-    # Detekcija obrazov
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
-
-    if len(faces) == 0:
-        raise Exception("❌ Obraz ni bil zaznan (OpenCV)")
-
-    # Uporabi prvi najdeni obraz
-    x, y, w, h = faces[0]
-    face_crop = gray[y:y+h, x:x+w]
-    face_resized = cv2.resize(face_crop, (100, 100))
-    print("➡️ Velikost slike:", image_pil.size)
+def preprocess_image(image_pil):
+    return image_pil.resize((400, 400)).filter(ImageFilter.GaussianBlur(radius=2))
 
 
-    # Izračunaj značilke z LBP
-    return lbp_descriptor(face_resized)
-
-# === API ROUTES ===
-@app.route("/")
-def home():
-    return "✅ 2FA API with MongoDB running"
-
-@app.route("/register", methods=["POST"])
-def register():
-    print("🚀 POST /register prejet")
-    email = request.form.get("email")
-    files = request.files.getlist("images")
-    if not email or len(files) < 3:
-        return jsonify({"error": "Email and 5 images required"}), 400
-
-    features = []
-    for i, file in enumerate(files[:5]):  # omeji že tukaj
-        print(f"📷 Obdelujem sliko {i+1} za {email}")
-
-        if hasattr(file, 'content_length') and file.content_length and file.content_length > 3 * 1024 * 1024:
-            print(f"⚠️ Slika {i+1} je prevelika, preskočena.")
-            continue
-
-        try:
-            image = Image.open(file.stream).convert("RGB")
-        except Exception as e:
-            print(f"❌ Napaka pri odpiranju slike {i+1}: {e}")
-            continue
-
-        try:
-            feat = extract_face_features(image)
-            features.append(feat.tolist())
-            print(f"✅ Slika {i+1} uspešno obdelana.")
-        except Exception as e:
-            print(f"❌ Napaka pri zaznavi obraza na sliki {i+1}: {e}")
-            continue
-
-    print(f"🔢 Skupno uspešnih zaznav: {len(features)}")
-
-    if len(features) < 3:
-        return jsonify({"error": "Premalo uspešnih zaznav obraza"}), 400
-
-    users.replace_one(
-        {"email": email},
-        {"email": email, "features": features},
-        upsert=True
-    )
-
-    return jsonify({"features": True})
+def extract_face_embedding(image_pil):
+    # Simulacija 128-dimenzionalnega vektorja značilk
+    return np.random.rand(128).tolist()
 
 
+@app.route("/", methods=["GET"])
+def index():
+    return "<h1>Face Embedding API teče</h1>"
 
 
-@app.route("/verify", methods=["POST"])
-def verify():
-    email = request.form.get("email")
-    file = request.files.get("image")
-    if not email or not file:
-        return jsonify({"error": "Email and image required"}), 400
->>>>>>> a8712e69610882c9d183af12c60aaddf9d3f3b34
+@app.route("/extract-embeddings", methods=["POST"])
+def extract_embeddings():
+    if "images" not in request.files:
+        return jsonify({"error": "Ni naloženih slik (images)"}), 400
 
-    user = users.find_one({"email": email})
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+    images = request.files.getlist("images")
+    if len(images) == 0:
+        return jsonify({"error": "Seznam slik je prazen"}), 400
+    if len(images) > 5:
+        return jsonify({"error": "Največ 5 slik je dovoljeno"}), 400
 
-    image = Image.open(file.stream).convert("RGB")
+    embeddings = []
+
     try:
-<<<<<<< HEAD
         for file in images:
             img = Image.open(file.stream).convert("RGB")
             preprocessed = preprocess_image(img)
@@ -132,26 +53,5 @@ def verify():
         }), 500
 
 
-=======
-        feat = extract_face_features(image)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-    similarities = [cosine_similarity(feat, np.array(f)) for f in user["features"]]
-    best = max(similarities)
-    verified = best > 0.85
-
-    # ✅ Če je uspešna primerjava, zbriši pending2FA
-    if verified:
-        users.update_one({"email": email}, {"$set": {"pending2FA": False}})
-
-    return jsonify({
-        "verified": verified,
-        "similarity": round(best, 3)
-    })
-
-
-# === Railway Start ===
->>>>>>> a8712e69610882c9d183af12c60aaddf9d3f3b34
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
