@@ -41,18 +41,29 @@ def register():
     if not email or len(files) < 5:
         return jsonify({"error": "Email and 5 images required"}), 400
 
-   features = []
-for file in files:
-    image = Image.open(file.stream).convert("RGB")
-    try:
-        feat = extract_face_features(image)
-        features.append(feat.tolist())
-    except Exception as e:
-        print(f"⚠️ Obraz ni zaznan v eni izmed slik: {e}")
-        continue
+    features = []
+    for i, file in enumerate(files):
+        image = Image.open(file.stream).convert("RGB")
+        try:
+            feat = extract_face_features(image)
+            features.append(feat.tolist())
+            print(f"✅ Slika {i+1} uspešno obdelana.")
+        except Exception as e:
+            print(f"⚠️ Slika {i+1}: {e}")
+            continue
 
-if len(features) < 3:
-    return jsonify({"error": "Premalo uspešnih zaznav obraza"}), 400
+    if len(features) < 3:
+        return jsonify({"error": "Premalo uspešnih zaznav obraza"}), 400
+
+    # 🔐 Tukaj shraniš uporabnika v MongoDB
+    users.replace_one(
+        {"email": email},
+        {"email": email, "features": features},
+        upsert=True
+    )
+
+    return jsonify({"registered": True})
+
 
 
 @app.route("/verify", methods=["POST"])
