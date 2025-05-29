@@ -35,6 +35,49 @@ app.use('/api/activities', activityRoutes);
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const email = req.body.email?.replace(/[@.]/g, '_') || 'unknown';
+    cb(null, `${email}_${Date.now()}.jpg`);
+  },
+});
+const upload = multer({ storage });
+
+// ➕ Dodaj ta endpoint
+app.post('/api/upload-face-image', upload.single('image'), async (req, res) => {
+  if (!req.file || !req.body.email) {
+    return res.status(400).json({ message: 'Manjka slika ali email' });
+  }
+
+  try {
+    const imageBuffer = fs.readFileSync(req.file.path);
+    const imageBase64 = imageBuffer.toString('base64');
+
+    const user = await User.findOneAndUpdate(
+      { email: req.body.email },
+      { faceImage: imageBase64 },
+      { new: true }
+    );
+
+    fs.unlinkSync(req.file.path);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Uporabnik ni najden' });
+    }
+
+    res.json({ message: 'Slika uspešno shranjena v MongoDB (base64)' });
+  } catch (err) {
+    console.error('❌ Napaka pri shranjevanju slike:', err);
+    res.status(500).json({ message: 'Napaka pri shranjevanju slike' });
+  }
+});
+
 
 
 // Zagon strežnika

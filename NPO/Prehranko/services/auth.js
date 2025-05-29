@@ -91,29 +91,36 @@ export const preprocessImage = async (photoUri) => {
 
 
 
-export async function uploadFaceImages(imageUris, email) {
+export const uploadFaceImage = async (uri, email) => {
   const formData = new FormData();
-
-  formData.append("email", email);
-  imageUris.forEach((uri, index) => {
-    const filename = uri.split('/').pop();
-    formData.append("images", {
-      uri,
-      name: filename || `image${index + 1}.jpg`,
-      type: "image/jpeg",
-    });
+  formData.append('image', {
+    uri,
+    name: 'photo.jpg',
+    type: 'image/jpeg',
   });
+  formData.append('email', email);
 
-  const response = await fetch("https://prehrankopython-production.up.railway.app/register", {
-    method: "POST",
-    body: formData,
+  const res = await fetch('https://prehranko-production.up.railway.app/api/upload-face-image', {
+    method: 'POST',
     headers: {
-      "Content-Type": "multipart/form-data",
+      'Content-Type': 'multipart/form-data',
     },
+    body: formData,
   });
 
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || "Napaka pri registraciji obraza");
-  return result;
-}
+  // 👉 najprej preverimo, če je sploh JSON
+  const text = await res.text();
+
+  if (!res.ok) {
+    console.error('❌ Server returned HTML or error text:', text.slice(0, 100));
+    throw new Error('Strežnik vrnil napako: ' + text.slice(0, 100));
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error('❌ Strežnik ni vrnil veljavnega JSON. Dobil sem:\n' + text.slice(0, 100));
+  }
+};
+
 
