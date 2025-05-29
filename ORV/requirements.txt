@@ -3,3 +3,5 @@ opencv-python
 numpy
 pillow
 flask-cors
+pymongo
+python-dotenv

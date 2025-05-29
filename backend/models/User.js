@@ -3,11 +3,12 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  faceImages: { type: [String], default: [] },
-  faceEmbeddings: {
-  type: [[Number]], // 2D array, npr. [[0.1, 0.2, ...], [0.3, 0.5, ...]]
-  default: [],
-},
+  // Shrani seznam značilk (vektorjev)
+  features: {
+    type: [[Number]], // array of arrays of floats
+    required: false    // optional, če še ni 2FA aktivirano
+  },
+  pending2FA: { type: Boolean, default: false }
 });
 
 module.exports = mongoose.model('User', userSchema);

@@ -1,12 +1,14 @@
 import { API_BASE_URL } from './api';
 import { CAMERA_API_URL } from './api';
+import * as FileSystem from 'expo-file-system';
+
 
 export const loginUser = async (email, password) => {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, from: "app" }),
     });
 
     const data = await res.json();
@@ -88,29 +90,94 @@ export const preprocessImage = async (photoUri) => {
   }
 };
 
-export const uploadFaceImage = async (photoUri, email) => {
+
+
+export const uploadFaceImage = async (uri, email) => {
+  const formData = new FormData();
+  formData.append('image', {
+    uri,
+    name: 'photo.jpg',
+    type: 'image/jpeg',
+  });
+  formData.append('email', email);
+
+  const res = await fetch('https://prehranko-production.up.railway.app/api/upload-face-image', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    body: formData,
+  });
+
+  // 👉 najprej preverimo, če je sploh JSON
+  const text = await res.text();
+
+  if (!res.ok) {
+    console.error('❌ Server returned HTML or error text:', text.slice(0, 100));
+    throw new Error('Strežnik vrnil napako: ' + text.slice(0, 100));
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error('❌ Strežnik ni vrnil veljavnega JSON. Dobil sem:\n' + text.slice(0, 100));
+  }
+};
+
+
+export const uploadFaceImagesForRegistration = async (photoUris, email) => {
   try {
     const formData = new FormData();
-    formData.append('image', {
-      uri: photoUri,
-      name: `${email}_2fa.jpg`,
-      type: 'image/jpeg',
+    photoUris.forEach((uri, i) => {
+      formData.append('images', {
+        uri,
+        name: `photo${i + 1}.jpg`,
+        type: 'image/jpeg'
+      });
     });
     formData.append('email', email);
 
-    console.log('📤 Pošiljam 2FA sliko na strežnik ...');
-    const res = await fetch(`${API_BASE_URL}/upload-face-image`, {
+    const res = await fetch(`${CAMERA_API_URL}/register`, {
       method: 'POST',
       body: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
     });
 
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.message || 'Nalaganje slike ni uspelo');
+      throw new Error(data.message || 'Napaka pri registraciji obraznih značilk');
     }
-    return data;
+    return data; // pričakujemo { features: [...] }
   } catch (err) {
-    console.error('❌ Napaka pri nalaganju slike:', err.message);
+    console.error('❌ Napaka pri nalaganju značilk:', err);
     throw err;
   }
 };
+
+export const saveFeaturesToBackend = async (email, features) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/save-features`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, features })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Napaka pri shranjevanju značilk');
+    }
+    return data;
+  } catch (err) {
+    console.error('❌ Napaka pri shranjevanju značilk:', err);
+    throw err;
+  }
+};
+
+
+
+
+

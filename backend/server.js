@@ -12,6 +12,7 @@ const fs = require('fs');
 const multer = require('multer');
 const User = require('./models/User');
 
+
 const app = express();
 
 // Middleware
@@ -35,7 +36,6 @@ app.use('/api/activities', activityRoutes);
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 
-// ➕ NOVO: Face Upload endpoint (brez ločenega routerja)
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
@@ -50,46 +50,22 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// ➕ NOVA pot za nalaganje slike
+// ➕ Dodaj ta endpoint
 app.post('/api/upload-face-image', upload.single('image'), async (req, res) => {
   if (!req.file || !req.body.email) {
     return res.status(400).json({ message: 'Manjka slika ali email' });
   }
 
   try {
-    // 1. Preberi sliko kot binarno
     const imageBuffer = fs.readFileSync(req.file.path);
     const imageBase64 = imageBuffer.toString('base64');
 
-    // 2. Shrani base64 direktno v MongoDB
-  const user = await User.findOneAndUpdate(
-  { email: req.body.email },
-  {
-    $push: {
-      faceImages: imageBase64,
-      faceEmbeddings: preprocessData.embedding
-    }
-  },
-  { new: true }
-  );
+    const user = await User.findOneAndUpdate(
+      { email: req.body.email },
+      { faceImage: imageBase64 },
+      { new: true }
+    );
 
-  const preprocessRes = await fetch('http://prehrankopython-production.up.railway.app/preprocess', {
-  method: 'POST',
-  body: (() => {
-    const formData = new FormData();
-    formData.append('image', fs.createReadStream(req.file.path));
-    return formData;
-  })(),
-  headers: {} // FormData sam doda content-type
-  });
-
-  const preprocessData = await preprocessRes.json();
-
-  if (!preprocessData.embedding) {
-  return res.status(500).json({ message: 'Obdelava slike ni uspela (ni embedding)' });
-  }
-
-    // 3. Počisti datoteko iz diska (ni več potrebna)
     fs.unlinkSync(req.file.path);
 
     if (!user) {
@@ -127,6 +103,7 @@ app.post('/api/save-embeddings', async (req, res) => {
     res.status(500).json({ message: 'Napaka pri shranjevanju značilk' });
   }
 });
+
 
 
 
