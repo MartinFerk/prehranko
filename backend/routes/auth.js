@@ -77,6 +77,24 @@ router.get('/status', async (req, res) => {
   }
 });
 
+router.post('/complete2fa', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: "Email je obvezen" });
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "Uporabnik ne obstaja" });
+
+    user.pending2FA = false;
+    await user.save();
+
+    res.json({ message: "2FA uspešno potrjen" });
+  } catch (err) {
+    res.status(500).json({ message: "Napaka pri potrditvi 2FA" });
+  }
+});
+
+
 
 
 
