@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
   faceEmbeddings: {
   type: [[Number]], // 2D array, npr. [[0.1, 0.2, ...], [0.3, 0.5, ...]]
   default: [],
+  caloricGoal: { type: Number, default: null }, // Dodano polje za kaloricen cilj
 },
 });
 
