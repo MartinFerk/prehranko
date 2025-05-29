@@ -45,6 +45,25 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Sproži 2FA ročno (uporablja ga frontend po loginu)
+router.post('/trigger2fa', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: "Email je obvezen" });
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "Uporabnik ne obstaja" });
+
+    user.pending2FA = true;
+    await user.save();
+
+    res.json({ message: "2FA sprožen" });
+  } catch (err) {
+    res.status(500).json({ message: "Napaka pri sprožitvi 2FA" });
+  }
+});
+
+
 
 
 module.exports = router;

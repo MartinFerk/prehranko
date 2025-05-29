@@ -25,13 +25,19 @@ export const verifyFaceImage = async (imageUri, email) => {
 
 export const trigger2FA = async (email) => {
   try {
-    const res = await fetch(`${API_BASE_URL}/trigger2fa`, {
+    const res = await fetch(`${API_BASE_URL}/auth/trigger2fa`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, password, from: "web" }),
     });
 
-    const data = await res.json();
+    let data;
+try {
+  data = await res.json();
+} catch (err) {
+  throw new Error("❌ Strežnik ni vrnil JSON – verjetno Railway error stran ali napačen URL.");
+}
+
     if (!res.ok) throw new Error(data.message || '2FA zahteva ni uspela');
     return data;
   } catch (err) {
