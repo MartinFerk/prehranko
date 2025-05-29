@@ -3,6 +3,8 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
+const FormData = require('form-data');
+const fs = require('fs');
 
 const router = express.Router();
 
@@ -100,36 +102,66 @@ router.post('/register-face', upload.array('images'), async (req, res) => {
   const { email } = req.body;
   const files = req.files;
 
-  if (!email || !files || files.length === 0) {
-    return res.status(400).json({ message: 'Manjkajo podatki ali slike' });
+  if (!email || !files || files.length < 3) {
+    return res.status(400).json({ message: 'Potrebne so vsaj 3 slike in email' });
   }
 
   try {
-    const formData = new FormData();
-    formData.append('email', email);
-    files.forEach((file) => {
-      formData.append('images', fs.createReadStream(file.path));
+    const form = new FormData();
+    form.append('email', email);
+    files.forEach(file => {
+      form.append('images', fs.createReadStream(file.path));
     });
 
-    const response = await axios.post('http://localhost:5000/register', formData, {
-      headers: formData.getHeaders(),
+    const response = await axios.post('http://localhost:5000/register', form, {
+      headers: form.getHeaders(),
     });
 
-    // Pobriši slike iz uploads/
-    files.forEach((file) => fs.unlinkSync(file.path));
+    files.forEach(f => fs.unlinkSync(f.path)); // očistimo slike
 
-    if (response.data.success) {
-      return res.json({ message: 'Značilke uspešno registrirane' });
-    } else {
-      return res.status(400).json({ message: 'Registracija ni uspela' });
+    if (response.data && response.data.message?.includes("shranjene")) {
+  return res.json({ message: 'Registracija uspešna' });
+    }
+    else {
+      return res.status(400).json({ message: response.data.message || 'Napaka' });
     }
 
   } catch (err) {
-    console.error('❌ Napaka pri pošiljanju v Python strežnik:', err.message);
+    console.error('❌ Napaka pri povezavi na Python strežnik:', err.message);
     return res.status(500).json({ message: 'Napaka pri komunikaciji s prepoznavo obraza' });
   }
 });
 
+router.post('/verify-face', upload.single('image'), async (req, res) => {
+  const { email } = req.body;
+  const file = req.file;
+
+  if (!email || !file) {
+    return res.status(400).json({ message: 'Manjka slika ali email' });
+  }
+
+  try {
+    const form = new FormData();
+    form.append('email', email);
+    form.append('image', fs.createReadStream(file.path));
+
+    const response = await axios.post('http://localhost:5000/verify', form, {
+      headers: form.getHeaders(),
+    });
+
+    fs.unlinkSync(file.path);
+
+    if (response.data.success) {
+      return res.json({ message: 'Obraz preverjen, 2FA uspešna' });
+    } else {
+      return res.status(401).json({ message: 'Obraz ni prepoznan' });
+    }
+
+  } catch (err) {
+    console.error('❌ Napaka pri preverjanju obraza:', err.message);
+    return res.status(500).json({ message: 'Napaka pri preverjanju' });
+  }
+});
 
 
 
