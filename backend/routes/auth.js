@@ -113,9 +113,10 @@ router.post('/register-face', upload.array('images'), async (req, res) => {
       form.append('images', fs.createReadStream(file.path));
     });
 
-    const response = await axios.post('http://localhost:5000/register', form, {
-      headers: form.getHeaders(),
-    });
+    const response = await axios.post('https://prehrankopython-production.up.railway.app/register', form, {
+  headers: form.getHeaders(),
+});
+
 
     files.forEach(f => fs.unlinkSync(f.path)); // očistimo slike
 
