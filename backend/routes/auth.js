@@ -63,6 +63,21 @@ router.post('/trigger2fa', async (req, res) => {
   }
 });
 
+router.get('/status', async (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ message: "Email je obvezen" });
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "Uporabnik ne obstaja" });
+
+    res.json({ pending2FA: user.pending2FA });
+  } catch (err) {
+    res.status(500).json({ message: "Napaka pri preverjanju statusa" });
+  }
+});
+
+
 
 
 
