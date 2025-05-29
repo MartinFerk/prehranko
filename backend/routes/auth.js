@@ -105,11 +105,28 @@ router.post('/register-face', upload.array('images'), async (req, res) => {
   }
 
   try {
-    // TODO: pokliči Python API, shrani značilke itd.
-    return res.json({ message: 'Značilke uspešno registrirane' });
+    const formData = new FormData();
+    formData.append('email', email);
+    files.forEach((file) => {
+      formData.append('images', fs.createReadStream(file.path));
+    });
+
+    const response = await axios.post('http://localhost:5000/register', formData, {
+      headers: formData.getHeaders(),
+    });
+
+    // Pobriši slike iz uploads/
+    files.forEach((file) => fs.unlinkSync(file.path));
+
+    if (response.data.success) {
+      return res.json({ message: 'Značilke uspešno registrirane' });
+    } else {
+      return res.status(400).json({ message: 'Registracija ni uspela' });
+    }
+
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Napaka pri registraciji obraznih značilk' });
+    console.error('❌ Napaka pri pošiljanju v Python strežnik:', err.message);
+    return res.status(500).json({ message: 'Napaka pri komunikaciji s prepoznavo obraza' });
   }
 });
 
