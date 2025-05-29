@@ -11,6 +11,8 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const User = require('./models/User');
+const apiRoutes = require('./routes/api');
+app.use('/api', apiRoutes);
 
 const app = express();
 

@@ -1,6 +1,7 @@
 import { API_BASE_URL } from './api';
 import { CAMERA_API_URL } from './api';
 import * as FileSystem from 'expo-file-system';
+import axios from 'axios';
 
 export const loginUser = async (email, password) => {
   try {
@@ -154,6 +155,19 @@ export const uploadFaceImagesForRegistration = async (images, email) => {
 };
 
 
+export const saveFeaturesToBackend = async (email, features) => {
+  try {
+    const res = await axios.post(`${API_BASE_URL}/api/store-features`, {
+      email,
+      features,
+    });
+    console.log("✅ Značilke shranjene:", res.data);
+    return res.data;
+  } catch (err) {
+    console.error("❌ Napaka pri shranjevanju značilk:", err);
+    throw err;
+  }
+};
 
 
 
