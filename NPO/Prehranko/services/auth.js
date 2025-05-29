@@ -91,37 +91,37 @@ export const preprocessImage = async (photoUri) => {
 
 
 
-export const uploadFaceImage = async (uri, email) => {
-  const formData = new FormData();
-  formData.append('image', {
-    uri,
-    name: 'photo.jpg',
-    type: 'image/jpeg',
-  });
-  formData.append('email', email);
+router.post('/upload-face-image', upload.array('images', 5), async (req, res) => {
+  const { email } = req.body;
+  const files = req.files;
 
-  const res = await fetch('https://prehranko-production.up.railway.app/api/upload-face-image', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-    body: formData,
-  });
-
-  // 👉 najprej preverimo, če je sploh JSON
-  const text = await res.text();
-
-  if (!res.ok) {
-    console.error('❌ Server returned HTML or error text:', text.slice(0, 100));
-    throw new Error('Strežnik vrnil napako: ' + text.slice(0, 100));
+  if (!email || !files || files.length < 3) {
+    return res.status(400).json({ message: 'Potrebne so vsaj 3 slike in email' });
   }
+
+  const form = new FormData();
+  form.append('email', email);
+  files.forEach((file) => {
+    form.append('images', fs.createReadStream(file.path));
+  });
 
   try {
-    return JSON.parse(text);
+    const response = await axios.post('https://prehranko-production.up.railway.app/api/register-face', form, {
+      headers: form.getHeaders(),
+    });
+
+    files.forEach((f) => fs.unlinkSync(f.path));
+
+    if (response.data.success) {
+      return res.json({ message: 'Uspeh', result: response.data });
+    } else {
+      return res.status(400).json({ message: response.data.message || 'Napaka v prepoznavi obraza' });
+    }
   } catch (err) {
-    throw new Error('❌ Strežnik ni vrnil veljavnega JSON. Dobil sem:\n' + text.slice(0, 100));
+    console.error('❌ Napaka pri povezavi na Python strežnik:', err.message);
+    return res.status(500).json({ message: 'Napaka pri komunikaciji s prepoznavo obraza' });
   }
-};
+});
 export const uploadFaceImagesForRegistration = async (images, email) => {
   const formData = new FormData();
 

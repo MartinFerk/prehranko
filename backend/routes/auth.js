@@ -164,6 +164,38 @@ router.post('/verify-face', upload.single('image'), async (req, res) => {
   }
 });
 
+router.post('/upload-face-image', upload.array('images', 5), async (req, res) => {
+  const { email } = req.body;
+  const files = req.files;
+
+  if (!email || !files || files.length < 3) {
+    return res.status(400).json({ message: 'Potrebne so vsaj 3 slike in email' });
+  }
+
+  const form = new FormData();
+  form.append('email', email);
+  files.forEach((file) => {
+    form.append('images', fs.createReadStream(file.path));
+  });
+
+  try {
+    const response = await axios.post('https://prehranko-production.up.railway.app/api/register-face', form, {
+      headers: form.getHeaders(),
+    });
+
+    files.forEach((f) => fs.unlinkSync(f.path));
+
+    if (response.data.success) {
+      return res.json({ message: 'Uspeh', result: response.data });
+    } else {
+      return res.status(400).json({ message: response.data.message || 'Napaka v prepoznavi obraza' });
+    }
+  } catch (err) {
+    console.error('❌ Napaka pri povezavi na Python strežnik:', err.message);
+    return res.status(500).json({ message: 'Napaka pri komunikaciji s prepoznavo obraza' });
+  }
+});
+
 
 
 
