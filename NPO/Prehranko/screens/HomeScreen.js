@@ -13,6 +13,7 @@ const DATA = [
 export default function HomeScreen({ navigation, route }) {
   const { email } = route.params || { email: 'Uporabnik' };
   const [pending2FA, setPending2FA] = useState(false);
+  const [caloricGoal, setCaloricGoal] = useState(null);
 
   useEffect(() => {
     if (!email) return;
@@ -40,7 +41,24 @@ export default function HomeScreen({ navigation, route }) {
       }
     };
 
+    const fetchCaloricGoal = async () => {
+      try {
+        const res = await fetch(
+          `https://prehranko-production.up.railway.app/api/goals/get?email=${email}`
+        );
+        const data = await res.json();
+        if (res.ok) {
+          setCaloricGoal(data.caloricGoal);
+        } else {
+          setCaloricGoal(null); // Ni cilja
+        }
+      } catch (err) {
+        console.error('Napaka pri pridobivanju kaloričnega cilja:', err.message);
+      }
+    };
+
     check2FA();
+    fetchCaloricGoal();
   }, [email]);
 
   const handleSettingsPress = () => {
@@ -49,6 +67,10 @@ export default function HomeScreen({ navigation, route }) {
 
   const handleCaptureFace = () => {
     navigation.navigate('CameraScreen', { email });
+  };
+
+  const handleSetGoal = () => {
+    navigation.navigate('GoalScreen', { email });
   };
 
   const handleFutureFeature = (feature) => {
@@ -75,6 +97,15 @@ export default function HomeScreen({ navigation, route }) {
         <View style={homeStyles.statisticsCard}>
           <Text style={homeStyles.cardTitle}>{DATA[0].title}</Text>
           <Text style={homeStyles.cardDescription}>{DATA[0].description}</Text>
+          {caloricGoal !== null ? (
+            <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.primary }}>
+              Trajni cilj: {caloricGoal} kalorij
+            </Text>
+          ) : (
+            <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.text }}>
+              Ni nastavljenega kaloričnega cilja.
+            </Text>
+          )}
         </View>
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -103,9 +134,9 @@ export default function HomeScreen({ navigation, route }) {
           color={theme.colors.secondary}
         />
         <IconButton
-          iconName="book"
-          title="Funkcija 2"
-          onPress={() => handleFutureFeature('Funkcija 2')}
+          iconName="target"
+          title="Nastavi cilj"
+          onPress={handleSetGoal}
           color={theme.colors.secondary}
         />
       </View>
