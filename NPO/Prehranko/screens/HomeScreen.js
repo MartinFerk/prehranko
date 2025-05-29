@@ -62,7 +62,7 @@ export default function HomeScreen({ navigation, route }) {
   }, [email]);
 
   const handleSettingsPress = () => {
-    navigation.navigate('SettingsScreen');
+    navigation.navigate('SettingsScreen', { email }); // Posreduj email
   };
 
   const handleCaptureFace = () => {
