@@ -12,6 +12,8 @@ const fs = require('fs');
 const multer = require('multer');
 const User = require('./models/User');
 
+app.use('/auth', authRoutes);
+
 
 const app = express();
 
