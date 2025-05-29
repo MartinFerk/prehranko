@@ -195,28 +195,26 @@ router.post('/upload-face-image', upload.array('images', 5), async (req, res) =>
   }
 });
 
-router.post('/store-features', async (req, res) => {
+// Shrani značilke uporabnika
+router.post('/save-features', async (req, res) => {
+  const { email, features } = req.body;
+  if (!email || !features || !Array.isArray(features)) {
+    return res.status(400).json({ message: 'Manjka email ali značilke' });
+  }
+
   try {
-    const { email, features } = req.body;
-
-    if (!email || !features || !Array.isArray(features)) {
-      return res.status(400).json({ message: 'Email in features so obvezni.' });
-    }
-
-    const updatedUser = await User.findOneAndUpdate(
+    const result = await User.findOneAndUpdate(
       { email },
-      { features, pending2FA: false },
+      { features },
       { new: true }
     );
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'Uporabnik ni najden.' });
+    if (!result) {
+      return res.status(404).json({ message: 'Uporabnik ni bil najden' });
     }
-
-    res.json({ message: 'Značilke uspešno shranjene.', user: updatedUser });
+    res.json({ success: true, updated: true });
   } catch (err) {
-    console.error('Napaka pri shranjevanju značilk:', err);
-    res.status(500).json({ message: 'Napaka na strežniku.' });
+    console.error('❌ Napaka pri shranjevanju značilk:', err);
+    res.status(500).json({ message: 'Napaka pri shranjevanju značilk' });
   }
 });
 

@@ -2,8 +2,8 @@ import React, { useRef, useState } from 'react';
 import { View, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import AuthButton from '../components/AuthButton';
+import { uploadFaceImagesForRegistration, saveFeaturesToBackend } from '../services/auth';
 import { theme } from '../styles/theme';
-import { uploadFaceImagesForRegistration } from '../services/auth';
 
 export default function CameraScreen({ navigation, route }) {
   const { email, onPhotoTaken } = route.params || {};
@@ -21,46 +21,21 @@ export default function CameraScreen({ navigation, route }) {
   }
 
   const takeFivePhotos = async () => {
-    if (!cameraRef.current) {
-      console.warn('⚠️ Kamera ni inicializirana.');
-      return;
-    }
-
+    if (!cameraRef.current) return;
     setLoading(true);
-
     try {
-      const photoUris = [];
-
+      const uris = [];
       for (let i = 0; i < 3; i++) {
-        console.log(`📸 Zajem slike ${i + 1} ...`);
         const photo = await cameraRef.current.takePictureAsync();
-        console.log(`✅ Slika ${i + 1} zajeta:`, photo.uri);
-        photoUris.push(photo.uri);
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 sekunda pavze
+        uris.push(photo.uri);
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
-
-      console.log('📤 Pošiljam slike na strežnik ...');
-const result = await uploadFaceImagesForRegistration(photoUris, email);
-console.log('✅ Odgovor strežnika:', result);
-
-// ⚠️ Preverimo, če Python strežnik res vrne features
-if (!result.features || !Array.isArray(result.features)) {
-  throw new Error("Manjkajo značilke (features) v odgovoru.");
-}
-
-// 🔐 Pošlji značilke Express backendu za shranjevanje v MongoDB
-await saveFeaturesToBackend(email, result.features);
-console.log('✅ Značilke shranjene v Express backend.');
-
-Alert.alert('Uspeh', 'Značilke uspešno shranjene.');
-
-      if (onPhotoTaken && typeof onPhotoTaken === 'function') {
-        onPhotoTaken(); // Preusmeritev ali drugo dejanje
-      }
-
+      const result = await uploadFaceImagesForRegistration(uris, email);
+      await saveFeaturesToBackend(email, result.features);
+      Alert.alert('Uspeh', 'Značilke uspešno shranjene.');
+      if (onPhotoTaken) onPhotoTaken();
     } catch (err) {
-      Alert.alert('Napaka', err.message || 'Napaka pri pošiljanju slik.');
-      console.error('❌ Napaka:', err);
+      Alert.alert('Napaka', err.message || 'Napaka pri registraciji.');
     } finally {
       setLoading(false);
     }
@@ -70,10 +45,8 @@ Alert.alert('Uspeh', 'Značilke uspešno shranjene.');
     <View style={styles.container}>
       <CameraView style={StyleSheet.absoluteFill} facing="front" ref={cameraRef} />
       <View style={styles.buttonContainer}>
-        {loading ? (
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        ) : (
-          <AuthButton title="Zajemi 5 slik" onPress={takeFivePhotos} />
+        {loading ? <ActivityIndicator size="large" color={theme.colors.primary} /> : (
+          <AuthButton title="Zajemi 3 slike" onPress={takeFivePhotos} />
         )}
       </View>
     </View>
@@ -81,13 +54,6 @@ Alert.alert('Uspeh', 'Značilke uspešno shranjene.');
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  buttonContainer: {
-    position: 'absolute',
-    bottom: theme.spacing.large,
-    alignSelf: 'center',
-  },
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  buttonContainer: { position: 'absolute', bottom: theme.spacing.large, alignSelf: 'center' },
 });

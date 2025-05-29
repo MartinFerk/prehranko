@@ -125,49 +125,58 @@ export const uploadFaceImage = async (uri, email) => {
 };
 
 
-export const uploadFaceImagesForRegistration = async (images, email) => {
-  const formData = new FormData();
-  formData.append("email", email);
-
-  images.forEach((uri, index) => {
-    formData.append("images", {
-      uri,
-      name: `face${index + 1}.jpg`,
-      type: "image/jpeg",
-    });
-  });
-
-  const res = await fetch('https://prehrankopython-production.up.railway.app/register', {
-    method: 'POST',
-    body: formData,
-  });
-
-  const text = await res.text();
-  if (!res.ok) {
-    throw new Error("Napaka pri registraciji obraznih značilk: " + text.slice(0, 100));
-  }
-
+export const uploadFaceImagesForRegistration = async (photoUris, email) => {
   try {
-    return JSON.parse(text);
-  } catch (err) {
-    throw new Error("Strežnik ni vrnil veljavnega JSON odgovora. Prejeto: " + text.slice(0, 100));
-  }
-};
-
-
-export const saveFeaturesToBackend = async (email, features) => {
-  try {
-    const res = await axios.post(`${API_BASE_URL}/store-features`, {
-      email,
-      features,
+    const formData = new FormData();
+    photoUris.forEach((uri, i) => {
+      formData.append('images', {
+        uri,
+        name: `photo${i + 1}.jpg`,
+        type: 'image/jpeg'
+      });
     });
-    console.log("✅ Značilke shranjene:", res.data);
-    return res.data;
+    formData.append('email', email);
+
+    const res = await fetch(`${CAMERA_API_URL}/register`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Napaka pri registraciji obraznih značilk');
+    }
+    return data; // pričakujemo { features: [...] }
   } catch (err) {
-    console.error("❌ Napaka pri shranjevanju značilk:", err);
+    console.error('❌ Napaka pri nalaganju značilk:', err);
     throw err;
   }
 };
+
+export const saveFeaturesToBackend = async (email, features) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/save-features`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, features })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Napaka pri shranjevanju značilk');
+    }
+    return data;
+  } catch (err) {
+    console.error('❌ Napaka pri shranjevanju značilk:', err);
+    throw err;
+  }
+};
+
 
 
 
