@@ -48,6 +48,7 @@ def home():
 
 @app.route("/register", methods=["POST"])
 def register():
+    print("🚀 POST /register prejet")
     email = request.form.get("email")
     files = request.files.getlist("images")
     if not email or len(files) < 5:
@@ -64,6 +65,7 @@ def register():
         except Exception as e:
             print(f"❌ Napaka pri zaznavi obraza na sliki {i+1}: {e}")
             continue
+    print("✅ Register končan")
 
     if len(features) < 3:
         return jsonify({"error": "Premalo uspešnih zaznav obraza"}), 400
@@ -75,7 +77,7 @@ def register():
         upsert=True
     )
 
-    return jsonify({"registered": True})
+    return jsonify({"ok": True})
 
 
 
