@@ -30,6 +30,11 @@ export default function CameraScreen({ navigation, route }) {
       setImage(photo.uri);
 
       await uploadFaceImage(photo.uri, email); // ⬅️ tvoja funkcija v /services/auth
+         await fetch('https://prehranko-production.up.railway.app/api/auth/complete2fa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
       Alert.alert('✅ Obraz poslan v preverjanje');
 
       if (onPhotoTaken) onPhotoTaken(); // če imaš klic nazaj
@@ -40,6 +45,8 @@ export default function CameraScreen({ navigation, route }) {
       setLoading(false);
     }
   };
+
+  
 
   return (
     <View style={styles.container}>
