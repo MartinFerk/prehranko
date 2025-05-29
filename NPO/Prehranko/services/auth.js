@@ -122,5 +122,34 @@ export const uploadFaceImage = async (uri, email) => {
     throw new Error('❌ Strežnik ni vrnil veljavnega JSON. Dobil sem:\n' + text.slice(0, 100));
   }
 };
+export const uploadFaceImagesForRegistration = async (images, email) => {
+  const formData = new FormData();
+
+  formData.append("email", email);
+  images.forEach((uri, index) => {
+    formData.append("images", {
+      uri,
+      name: `face${index + 1}.jpg`,
+      type: "image/jpeg",
+    });
+  });
+
+  const res = await fetch('https://prehranko-production.up.railway.app/register-face', {
+    method: 'POST',
+    body: formData,
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error("Napaka pri registraciji obraznih značilk: " + text.slice(0, 100));
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error("Strežnik ni vrnil veljavnega JSON odgovora. Prejeto: " + text.slice(0, 100));
+  }
+};
+
 
 

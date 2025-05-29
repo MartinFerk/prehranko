@@ -1,6 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
 
 const router = express.Router();
 
@@ -91,6 +93,23 @@ router.post('/complete2fa', async (req, res) => {
     res.json({ message: "2FA uspešno potrjen" });
   } catch (err) {
     res.status(500).json({ message: "Napaka pri potrditvi 2FA" });
+  }
+});
+
+router.post('/register-face', upload.array('images'), async (req, res) => {
+  const { email } = req.body;
+  const files = req.files;
+
+  if (!email || !files || files.length === 0) {
+    return res.status(400).json({ message: 'Manjkajo podatki ali slike' });
+  }
+
+  try {
+    // TODO: pokliči Python API, shrani značilke itd.
+    return res.json({ message: 'Značilke uspešno registrirane' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Napaka pri registraciji obraznih značilk' });
   }
 });
 
