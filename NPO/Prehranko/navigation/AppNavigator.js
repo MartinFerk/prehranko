@@ -8,6 +8,7 @@ import HomeScreen from '../screens/HomeScreen';
 import CameraScreen from '../screens/CameraScreen.js';
 import SettingsScreen from '../screens/SettingsScreen';
 import ActivityScreen from '../screens/ActivityScreen';
+import FaceVerificationScreen from '../screens/FaceVerificationScreen.js';
 
 
 
@@ -20,6 +21,7 @@ const AppNavigator = () => (
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="CameraScreen" component={CameraScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="FaceVerification" component={FaceVerificationScreen} />
       <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="SettingsScreen" component={SettingsScreen} options={{ headerShown: false }} />
     </Stack.Navigator>

@@ -1,9 +1,7 @@
-// screens/CameraScreen.js
 import React, { useRef, useState } from 'react';
 import { View, Image, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import AuthButton from '../components/AuthButton';
-import { preprocessImage } from '../services/auth';
 import { theme } from '../styles/theme';
 import { uploadFaceImage } from '../services/auth';
 
@@ -11,7 +9,7 @@ export default function CameraScreen({ navigation, route }) {
   const { email, onPhotoTaken } = route.params || {};
   const cameraRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
-  const [image, setImage] = useState([]);
+  const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
 
   if (!permission) return <View />;
@@ -24,30 +22,24 @@ export default function CameraScreen({ navigation, route }) {
   }
 
   const takePhoto = async () => {
-  if (!cameraRef.current) return;
+    if (!cameraRef.current) return;
 
-  setLoading(true);
-  try {
-    const photo = await cameraRef.current.takePictureAsync({ base64: true });
+    setLoading(true);
+    try {
+      const photo = await cameraRef.current.takePictureAsync({ base64: false }); // base64 ni potreben tu
+      setImage(photo.uri);
 
-    const newImages = [...images, photo.uri];
-    setImages(newImages);
+      await uploadFaceImage(photo.uri, email); // ⬅️ tvoja funkcija v /services/auth
+      Alert.alert('✅ Obraz poslan v preverjanje');
 
-    if (newImages.length === 5) {
-      const result = await uploadFaceImages(newImages, email);
-      Alert.alert('✅ Obrazne značilke shranjene');
-      if (onPhotoTaken) onPhotoTaken();
-    } else {
-      Alert.alert('✅ Zajeta slika', `Zajeta ${newImages.length}/5`);
+      if (onPhotoTaken) onPhotoTaken(); // če imaš klic nazaj
+    } catch (err) {
+      console.error(err);
+      Alert.alert('❌ Napaka', 'Ni uspelo zajeti ali poslati slike');
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error(err);
-    Alert.alert('Napaka', 'Ni uspelo zajeti slike');
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   return (
     <View style={styles.container}>
