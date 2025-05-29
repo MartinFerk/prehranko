@@ -134,7 +134,7 @@ export const uploadFaceImagesForRegistration = async (images, email) => {
     });
   });
 
-  const res = await fetch('https://prehranko-production.up.railway.app/api/auth/register-face', {
+  const res = await fetch('https://prehranko-production.up.railway.app/register-face', {
     method: 'POST',
     body: formData,
   });
