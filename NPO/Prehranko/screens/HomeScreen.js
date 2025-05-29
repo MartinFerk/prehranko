@@ -1,5 +1,4 @@
-// screens/HomeScreen.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import IconButton from '../components/IconButton';
 import { homeStyles } from '../styles/homeStyles';
@@ -13,6 +12,36 @@ const DATA = [
 
 export default function HomeScreen({ navigation, route }) {
   const { email } = route.params || { email: 'Uporabnik' };
+  const [pending2FA, setPending2FA] = useState(false);
+
+  useEffect(() => {
+    if (!email) return;
+
+    const check2FA = async () => {
+      try {
+        const res = await fetch(`https://prehranko-production.up.railway.app/api/auth/status?email=${email}`);
+        const data = await res.json();
+        if (data.pending2FA) {
+          setPending2FA(true);
+          Alert.alert(
+            '🔐 Potrebna je 2FA verifikacija',
+            'Za prijavo v spletno aplikacijo moraš preveriti obraz.',
+            [
+              {
+                text: 'Začni zdaj',
+                onPress: () => navigation.navigate('FaceVerification', { email }),
+              },
+              { text: 'Prekliči', style: 'cancel' },
+            ]
+          );
+        }
+      } catch (err) {
+        console.error('Napaka pri preverjanju 2FA:', err.message);
+      }
+    };
+
+    check2FA();
+  }, [email]);
 
   const handleSettingsPress = () => {
     navigation.navigate('SettingsScreen');
@@ -28,7 +57,6 @@ export default function HomeScreen({ navigation, route }) {
 
   return (
     <View style={homeStyles.container}>
-      {/* Zgornji del: Ime aplikacije, gumb za nastavitve, ime uporabnika */}
       <View style={homeStyles.header}>
         <Text style={homeStyles.appName}>Prehranko</Text>
         <TouchableOpacity style={homeStyles.settingsButton} onPress={handleSettingsPress}>
@@ -37,15 +65,18 @@ export default function HomeScreen({ navigation, route }) {
       </View>
       <Text style={homeStyles.userName}>Pozdravljen, {email}!</Text>
 
-      {/* Sredinski del: Kartice */}
+      {pending2FA && (
+        <Text style={{ color: 'red', marginTop: 10 }}>
+          ⚠️ Zahteva za 2FA je aktivna (preveri obraz).
+        </Text>
+      )}
+
       <View style={homeStyles.cardsContainer}>
-        {/* Statistika (večja kartica) */}
         <View style={homeStyles.statisticsCard}>
           <Text style={homeStyles.cardTitle}>{DATA[0].title}</Text>
           <Text style={homeStyles.cardDescription}>{DATA[0].description}</Text>
         </View>
 
-        {/* Zajemi obrok in Recepti (manjše kartice) */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <View style={[homeStyles.card, { width: '48%' }]}>
             <Text style={homeStyles.cardTitle}>{DATA[1].title}</Text>
@@ -58,7 +89,6 @@ export default function HomeScreen({ navigation, route }) {
         </View>
       </View>
 
-      {/* Spodnji del: Gumbi z ikonami */}
       <View style={homeStyles.buttonRow}>
         <IconButton
           iconName="camera"
@@ -67,10 +97,10 @@ export default function HomeScreen({ navigation, route }) {
           color={theme.colors.primary}
         />
         <IconButton
-            iconName="bar-chart"
-            title="Sledenje"
-            onPress={() => navigation.navigate('ActivityScreen', { email })}
-            color={theme.colors.secondary}
+          iconName="bar-chart"
+          title="Sledenje"
+          onPress={() => navigation.navigate('ActivityScreen', { email })}
+          color={theme.colors.secondary}
         />
         <IconButton
           iconName="book"
