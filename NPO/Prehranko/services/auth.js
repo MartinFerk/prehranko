@@ -157,7 +157,7 @@ export const uploadFaceImagesForRegistration = async (images, email) => {
 
 export const saveFeaturesToBackend = async (email, features) => {
   try {
-    const res = await axios.post(`${API_BASE_URL}/api/store-features`, {
+    const res = await axios.post(`${API_BASE_URL}/store-features`, {
       email,
       features,
     });
