@@ -6,6 +6,7 @@ import AuthButton from '../components/AuthButton';
 import { preprocessImage } from '../services/auth';
 import { theme } from '../styles/theme';
 import { uploadFaceImage } from '../services/auth';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 import * as FileSystem from 'expo-file-system';
 
@@ -25,11 +26,19 @@ export default function CameraScreen({ navigation, route }) {
     );
   }
 
-  const takeMultiplePhotos = async () => {
-  if (!cameraRef.current) {
-    console.warn('⚠️ Kamera ni inicializirana.');
-    return;
-  }
+ 
+
+const compressPhoto = async (photo) => {
+  const result = await ImageManipulator.manipulateAsync(
+    photo.uri,
+    [{ resize: { width: 400 } }],
+    { compress: 0.6, format: ImageManipulator.SaveFormat.JPEG }
+  );
+  return result;
+};
+
+const takeMultiplePhotos = async () => {
+  if (!cameraRef.current) return;
 
   setLoading(true);
 
@@ -37,13 +46,12 @@ export default function CameraScreen({ navigation, route }) {
     const photos = [];
 
     for (let i = 0; i < 5; i++) {
-      console.log(`📸 Zajem slike ${i + 1}/5 ...`);
       const photo = await cameraRef.current.takePictureAsync({ base64: false });
-      photos.push(photo);
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const compressed = await compressPhoto(photo);
+      photos.push(compressed);
+      await new Promise(res => setTimeout(res, 800));
     }
 
-    // 🔁 Pošlji vse slike Python strežniku
     const formData = new FormData();
     photos.forEach((photo, index) => {
       formData.append('images', {
@@ -53,48 +61,48 @@ export default function CameraScreen({ navigation, route }) {
       });
     });
 
-    const res = await fetch('http://<YOUR_PYTHON_SERVER_IP>:5000/extract-embeddings', {
+    const res = await fetch('https://prehrankopython-production.up.railway.app/extract-embeddings', {
       method: 'POST',
       body: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
     });
 
-    const data = await res.json();
+    const text = await res.text();
+    console.log('🔍 Strežnik vrnil:', text);
 
-    if (!res.ok || !data.embeddings) {
-      throw new Error('Napaka pri ekstrakciji značilk');
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      throw new Error('Strežnik ni vrnil veljavnega JSON');
+    }
+
+    if (!data.embeddings) {
+      throw new Error('JSON nima polja "embeddings"');
     }
 
     console.log('✅ Značilke pridobljene:', data.embeddings);
 
-    // (Neobvezno) ➕ Pošlji slike in značilke v svoj Node strežnik
-    const uploadResult = await fetch('http://<YOUR_NODE_SERVER>/api/save-embeddings', {
+    // Pošlji na Node backend
+    const upload = await fetch('https://prehranko-production.up.railway.app/api/save-embeddings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        embeddings: data.embeddings,
-      }),
+      body: JSON.stringify({ email, embeddings: data.embeddings }),
     });
 
-    const uploadResponse = await uploadResult.json();
-    console.log('💾 Shramba na backend:', uploadResponse);
+    const uploadResult = await upload.json();
+    console.log('💾 Rezultat shranjevanja:', uploadResult);
 
     Alert.alert('Uspeh', 'Značilke uspešno pridobljene in shranjene.');
-
-    if (onPhotoTaken && typeof onPhotoTaken === 'function') {
-      onPhotoTaken();
-    }
+    if (onPhotoTaken) onPhotoTaken();
 
   } catch (err) {
-    Alert.alert('Napaka', err.message || 'Napaka pri procesiranju slik');
     console.error('❌ Napaka:', err);
+    Alert.alert('Napaka', err.message || 'Napaka pri pridobivanju značilk');
   } finally {
     setLoading(false);
   }
 };
+
 
 
   return (
