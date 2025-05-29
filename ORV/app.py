@@ -24,7 +24,7 @@ def extract_face_features(image_pil):
     mask = detect_skin_hsv(image_pil)
     box = find_face_box(mask)
     if not box:
-        raise Exception("Ni bilo mogoče zaznati obraza.")
+        raise Exception("Ni bilo mogoce zaznati obraza.")
     x, y, w, h = box
     gray = image_pil.convert("L").crop((x, y, x+w, y+h)).resize((100, 100))
     return lbp_descriptor(np.array(gray))
@@ -41,17 +41,19 @@ def register():
     if not email or len(files) < 5:
         return jsonify({"error": "Email and 5 images required"}), 400
 
-    features = []
-    for file in files:
-        image = Image.open(file.stream).convert("RGB")
-        try:
-            feat = extract_face_features(image)
-            features.append(feat.tolist())
-        except Exception as e:
-            return jsonify({"error": str(e)}), 400
+   features = []
+for file in files:
+    image = Image.open(file.stream).convert("RGB")
+    try:
+        feat = extract_face_features(image)
+        features.append(feat.tolist())
+    except Exception as e:
+        print(f"⚠️ Obraz ni zaznan v eni izmed slik: {e}")
+        continue
 
-    users.replace_one({"email": email}, {"email": email, "features": features}, upsert=True)
-    return jsonify({"registered": True})
+if len(features) < 3:
+    return jsonify({"error": "Premalo uspešnih zaznav obraza"}), 400
+
 
 @app.route("/verify", methods=["POST"])
 def verify():
