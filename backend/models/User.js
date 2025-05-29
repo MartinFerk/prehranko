@@ -5,10 +5,11 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   faceImages: { type: [String], default: [] },
   faceEmbeddings: {
-  type: [[Number]], // 2D array, npr. [[0.1, 0.2, ...], [0.3, 0.5, ...]]
-  default: [],
-  caloricGoal: { type: Number, default: null }, // Dodano polje za kaloricen cilj
-},
+    type: [[Number]], // 2D array, npr. [[0.1, 0.2, ...], [0.3, 0.5, ...]]
+    default: [],
+  },
+  caloricGoal: { type: Number, default: null }, // Polje za trajni kalorični cilj - PT
+
 });
 
 module.exports = mongoose.model('User', userSchema);

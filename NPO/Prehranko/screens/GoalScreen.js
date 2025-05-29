@@ -15,6 +15,7 @@ export default function GoalScreen({ navigation, route }) {
     }
 
     try {
+      console.log('📩 Posiljam zahtevo za /api/goals/set:', { email, caloricGoal }); // Dodaj beleženje
       const response = await fetch('https://prehranko-production.up.railway.app/api/goals/set', {
         method: 'POST',
         headers: {
@@ -27,6 +28,8 @@ export default function GoalScreen({ navigation, route }) {
       });
 
       const data = await response.json();
+      console.log('🌐 Odgovor od /api/goals/set:', { status: response.status, data }); // Dodaj beleženje
+
       if (response.ok) {
         Alert.alert('Uspeh', 'Kalorični cilj je bil shranjen!');
         navigation.navigate('Home', { email });

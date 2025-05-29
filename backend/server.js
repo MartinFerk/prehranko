@@ -130,10 +130,14 @@ app.post('/api/save-embeddings', async (req, res) => {
 
 
 // POST IN GET ZA SHRANJEVANJE IN PRIDOBIVANJE KALORIČNEGA CILJA
+// POST: Shrani ali posodobi kalorični cilj
 app.post('/api/goals/set', async (req, res) => {
   const { email, caloricGoal } = req.body;
 
+  console.log('📥 Prejeta zahteva za /api/goals/set:', { email, caloricGoal }); // Dodaj beleženje
+
   if (!email || !caloricGoal || isNaN(caloricGoal) || caloricGoal <= 0) {
+    console.log('🚫 Neveljavni podatki:', { email, caloricGoal }); // Dodaj beleženje
     return res.status(400).json({ message: 'Manjka email ali veljaven kalorični cilj' });
   }
 
@@ -144,7 +148,10 @@ app.post('/api/goals/set', async (req, res) => {
       { new: true, upsert: false }
     );
 
+    console.log('🔄 Posodobljen uporabnik:', user); // Dodaj beleženje
+
     if (!user) {
+      console.log('🚫 Uporabnik ni najden:', email); // Dodaj beleženje
       return res.status(404).json({ message: 'Uporabnik ni najden' });
     }
 
@@ -158,14 +165,19 @@ app.post('/api/goals/set', async (req, res) => {
 app.get('/api/goals/get', async (req, res) => {
   const { email } = req.query;
 
+  console.log('📥 Prejeta zahteva za /api/goals/get z email:', email); // Dodaj beleženje
+
   if (!email) {
+    console.log('🚫 Manjka email'); // Dodaj beleženje
     return res.status(400).json({ message: 'Manjka email' });
   }
 
   try {
-    const user = await User.findOne({ email }, 'caloricGoal'); // Pridobi samo caloricGoal
+    const user = await User.findOne({ email }, 'caloricGoal');
+    console.log('🔍 Najden uporabnik:', user); // Dodaj beleženje
 
     if (!user) {
+      console.log('🚫 Uporabnik ni najden:', email); // Dodaj beleženje
       return res.status(404).json({ message: 'Uporabnik ni najden' });
     }
 

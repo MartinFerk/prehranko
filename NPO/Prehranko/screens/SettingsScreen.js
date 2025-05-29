@@ -1,83 +1,38 @@
-// screens/RegisterScreen.js
-import React, { useState } from 'react';
-import { View, Text, Alert, StyleSheet, ActivityIndicator } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient'; // Uvoz LinearGradient
-import AuthInput from '../components/TextInput';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import AuthButton from '../components/AuthButton';
-import { registerUser } from '../services/auth';
 import { theme } from '../styles/theme';
 
-export default function RegisterScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+export default function SettingsScreen({ navigation, route }) {
+  const { email } = route.params || { email: 'Uporabnik' }; // Privzeta vrednost, če email ni posredovan
 
-  const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
-      Alert.alert('Napaka', 'Prosimo, izpolnite vsa polja.');
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      Alert.alert('Napaka', 'Vnesite veljaven email naslov.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      Alert.alert('Napaka', 'Gesli se ne ujemata.');
-      return;
-    }
-    setLoading(true);
-    try {
-      console.log('➡️ Poskušam se registrirati z:', email, password);
-      await registerUser(email, password);
-      Alert.alert('Uspeh', 'Registracija uspešna! Prijava je na voljo.');
-      navigation.navigate('Login');
-    } catch (err) {
-      Alert.alert('Napaka', err.message || 'Napaka pri povezavi s strežnikom');
-      console.error('❌ Napaka:', err);
-    } finally {
-      setLoading(false);
-    }
+  const handleLogout = () => {
+    // Preusmeri na LoginScreen
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  };
+
+  const handleGoBack = () => {
+    // Vrni se na HomeScreen in posreduj email
+    navigation.navigate('Home', { email });
   };
 
   return (
-    <LinearGradient
-      colors={[theme.colors.background, theme.colors.secondary]} // Enak gradient kot pri LoginScreen
-      style={styles.container}
-    >
-      <Text style={styles.title}>Registracija v Prehranko</Text>
-      <View style={styles.inputContainer}>
-        <AuthInput
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-        />
-        <AuthInput
-          placeholder="Geslo"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        <AuthInput
-          placeholder="Potrdi geslo"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-        />
-        {loading ? (
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        ) : (
-          <AuthButton title="Registriraj se" onPress={handleRegister} />
-        )}
+    <View style={styles.container}>
+      <Text style={styles.title}>Nastavitve</Text>
+      <View style={styles.buttonContainer}>
+        <Text style={styles.emailText}>Prijavljen: {email}</Text>
+        <AuthButton title="Odjava" onPress={handleLogout} color={theme.colors.primary} />
         <View style={styles.buttonSpacing} />
         <AuthButton
-          title="Nazaj na prijavo"
-          onPress={() => navigation.navigate('Login')}
+          title="Nazaj"
+          onPress={handleGoBack}
           color={theme.colors.secondary}
         />
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -86,6 +41,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: theme.spacing.large,
+    backgroundColor: theme.colors.background, // Enobarvno ozadje
   },
   title: {
     fontSize: 28,
@@ -94,11 +50,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: theme.spacing.large,
   },
-  inputContainer: {
+  buttonContainer: {
     width: '65%',
     alignSelf: 'center',
   },
+  emailText: {
+    fontSize: 16,
+    color: theme.colors.text,
+    textAlign: 'center',
+    marginBottom: theme.spacing.medium,
+  },
   buttonSpacing: {
-    marginTop: theme.spacing.medium,
+    marginTop: theme.spacing.medium, // Razmik med gumboma
   },
 });
