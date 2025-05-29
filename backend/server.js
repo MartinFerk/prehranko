@@ -79,6 +79,32 @@ app.post('/api/upload-face-image', upload.single('image'), async (req, res) => {
   }
 });
 
+app.post('/api/save-embeddings', async (req, res) => {
+  const { email, embeddings } = req.body;
+
+  if (!email || !Array.isArray(embeddings) || embeddings.length === 0) {
+    return res.status(400).json({ message: 'Manjka email ali embeddings' });
+  }
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { email },
+      { $push: { faceEmbeddings: { $each: embeddings } } },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'Uporabnik ni najden' });
+    }
+
+    res.json({ message: 'Značilke uspešno shranjene', count: embeddings.length });
+  } catch (err) {
+    console.error('❌ Napaka pri shranjevanju značilk:', err);
+    res.status(500).json({ message: 'Napaka pri shranjevanju značilk' });
+  }
+});
+
+
 
 
 // Zagon strežnika

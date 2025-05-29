@@ -1,10 +1,14 @@
 from flask import Flask, request, jsonify
 from PIL import Image
 import numpy as np
+<<<<<<< HEAD
+import io
+=======
 import cv2
 from pymongo import MongoClient
 import os
 from dotenv import load_dotenv
+>>>>>>> a8712e69610882c9d183af12c60aaddf9d3f3b34
 
 # UVOZIM funkcije iz drugih datotek
 from features import lbp_descriptor, cosine_similarity
@@ -100,6 +104,7 @@ def verify():
     file = request.files.get("image")
     if not email or not file:
         return jsonify({"error": "Email and image required"}), 400
+>>>>>>> a8712e69610882c9d183af12c60aaddf9d3f3b34
 
     user = users.find_one({"email": email})
     if not user:
@@ -107,6 +112,27 @@ def verify():
 
     image = Image.open(file.stream).convert("RGB")
     try:
+<<<<<<< HEAD
+        for file in images:
+            img = Image.open(file.stream).convert("RGB")
+            preprocessed = preprocess_image(img)
+            embedding = extract_face_embedding(preprocessed)
+            embeddings.append(embedding)
+
+        return jsonify({
+            "embeddings": embeddings,
+            "count": len(embeddings)
+        })
+
+    except Exception as e:
+        print("❌ Napaka pri obdelavi slik:", str(e))
+        return jsonify({
+            "error": "Napaka pri obdelavi slik",
+            "details": str(e)
+        }), 500
+
+
+=======
         feat = extract_face_features(image)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
@@ -126,5 +152,6 @@ def verify():
 
 
 # === Railway Start ===
+>>>>>>> a8712e69610882c9d183af12c60aaddf9d3f3b34
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

@@ -5,6 +5,8 @@ import AuthButton from '../components/AuthButton';
 import { uploadFaceImagesForRegistration, saveFeaturesToBackend } from '../services/auth';
 import { theme } from '../styles/theme';
 
+import * as FileSystem from 'expo-file-system';
+
 export default function CameraScreen({ navigation, route }) {
   const { email, onPhotoTaken } = route.params || {};
   const cameraRef = useRef(null);
@@ -19,6 +21,7 @@ export default function CameraScreen({ navigation, route }) {
       </View>
     );
   }
+
 
   const takeFivePhotos = async () => {
     if (!cameraRef.current) return;
@@ -41,10 +44,13 @@ export default function CameraScreen({ navigation, route }) {
     }
   };
 
+
+
   return (
     <View style={styles.container}>
       <CameraView style={StyleSheet.absoluteFill} facing="front" ref={cameraRef} />
       <View style={styles.buttonContainer}>
+
         {loading ? <ActivityIndicator size="large" color={theme.colors.primary} /> : (
           <AuthButton title="Zajemi 3 slike" onPress={takeFivePhotos} />
         )}
