@@ -31,7 +31,7 @@ export default function CameraScreen({ navigation, route }) {
     try {
       const photoUris = [];
 
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 3; i++) {
         console.log(`📸 Zajem slike ${i + 1} ...`);
         const photo = await cameraRef.current.takePictureAsync();
         console.log(`✅ Slika ${i + 1} zajeta:`, photo.uri);
@@ -52,7 +52,7 @@ if (!result.features || !Array.isArray(result.features)) {
 await saveFeaturesToBackend(email, result.features);
 console.log('✅ Značilke shranjene v Express backend.');
 
-Alert.alert('Uspeh', 'Značilke uspešno shranjene.');;
+Alert.alert('Uspeh', 'Značilke uspešno shranjene.');
 
       if (onPhotoTaken && typeof onPhotoTaken === 'function') {
         onPhotoTaken(); // Preusmeritev ali drugo dejanje
