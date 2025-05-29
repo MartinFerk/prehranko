@@ -146,7 +146,7 @@ router.post('/verify-face', upload.single('image'), async (req, res) => {
     form.append('email', email);
     form.append('image', fs.createReadStream(file.path));
 
-    const response = await axios.post('http://localhost:5000/verify', form, {
+    const response = await axios.post('https://prehranko-production.up.railway.app/api/auth/verify', form, {
       headers: form.getHeaders(),
     });
 
