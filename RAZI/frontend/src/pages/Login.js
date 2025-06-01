@@ -63,8 +63,8 @@ const Login = () => {
 
         {/* ⬇️ Dodan gumb za registracijo */}
         <button
-          className="login-button"
-          style={{ marginTop: '1rem', backgroundColor: '#555' }}
+          className="secondary-button"
+          style={{ marginTop: '1rem' }} /* Samo margin, barva je definirana v CSS */
           onClick={() => navigate('/register')}
         >
           Ustvari račun
