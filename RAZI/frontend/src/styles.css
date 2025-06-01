@@ -5,20 +5,61 @@
   --secondary: #FF9800; /* Svetlo oranžna */
   --accent: #F44336; /* Temno oranžna */
   --card-background: #F5F0E7; /* Bela za kartice */
-  --text: #4A4A4A; /* Temno siva za besedilo */
 }
 
 * {
   box-sizing: border-box;
 }
 
-body {
+html, body {
   background-color: var(--background);
   color: var(--text);
   font-family: 'Arial', sans-serif;
   margin: 0;
   padding: 0;
   line-height: 1.6;
+}
+
+/* Navigacijski vrstica */
+.navbar {
+  background-color: var(--primary); /* Rumena ozadje, kot gumbi na mobilni aplikaciji */
+  width: fit-content;
+  margin: 10px auto;
+  padding: 10px 80px;
+  position: fixed; /* Fiksirano na vrhu */
+  border-radius: 5px;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.navbar-item {
+  display: inline-block;
+}
+
+.navbar-link {
+  color: var(--text); /* Temno sivo besedilo */
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 8px 16px;
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+.navbar-link:hover {
+  color: var(--secondary); /* Svetlo oranžna pri hover efektu */
+  background-color: rgba(255, 152, 0, 0.1); /* Rahlo prozorno ozadje pri hover efektu */
 }
 
 /* Container za vse strani */
@@ -31,6 +72,7 @@ body {
   justify-content: center;
   min-height: 100vh;
   padding: 20px;
+  padding-top: 60px; /* Dodan prostor za navigacijski vrstico */
 }
 
 /* Kartice za login, register in profile */
@@ -51,7 +93,7 @@ body {
   font-weight: bold;
   text-align: center;
   margin-bottom: 16px;
-  color: var(--text);
+  color: var(--primary); /* Spremenjeno v rumeno, kot na mobilni aplikaciji */
 }
 
 /* Form elementi */
@@ -92,7 +134,7 @@ body {
   border: none;
   border-radius: 4px;
   background-color: var(--primary);
-  color: var(--text);
+  color: #FFFFFF; /* Belo besedilo */
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -107,6 +149,24 @@ body {
 .login-button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
+}
+
+/* Sekundarni gumbi (npr. "Nazaj na prijavo") */
+.secondary-button {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--secondary); /* Svetlo oranžna, kot na mobilni aplikaciji */
+  color: #FFFFFF; /* Belo besedilo */
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.secondary-button:hover {
+  background-color: var(--accent); /* Temno oranžna pri hover efektu */
 }
 
 /* Besedilo v profilu */

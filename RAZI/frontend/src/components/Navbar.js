@@ -4,23 +4,22 @@ import '../styles.css';
 
 const Navbar = () => {
   return (
-    <nav className="nav">
-      <ul className="nav-list">
-        <li>
-          <Link to="/" className="nav-link">Statistika</Link>
+    <nav className="navbar">
+      <ul className="navbar-list">
+        <li className="navbar-item">
+          <Link to="/" className="navbar-link">Domov</Link>
         </li>
-        <li>
-          <Link to="/profile" className="nav-link">Profil</Link>
+        <li className="navbar-item">
+          <Link to="/profile" className="navbar-link">Profil</Link>
         </li>
-        <li>
-          <Link to="/login" className="nav-link">Login</Link>
+        <li className="navbar-item">
+          <Link to="/login" className="navbar-link">Prijava</Link>
         </li>
-         <li>
-          <Link to="/register" className="nav-link">Register</Link>
+        <li className="navbar-item">
+          <Link to="/register" className="navbar-link">Registracija</Link>
         </li>
       </ul>
     </nav>
   );
 };
-
 export default Navbar;
