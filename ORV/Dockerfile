@@ -14,6 +14,7 @@ COPY . .
 
 # Install Python dependencies
 RUN pip install --upgrade pip
+RUN pip install opencv.python
 RUN pip install -r requirements.txt
 
 # Expose port

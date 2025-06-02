@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from PIL import Image, ImageFilter
 import numpy as np
 import io
+import cv2
 
 
 app = Flask(__name__)
