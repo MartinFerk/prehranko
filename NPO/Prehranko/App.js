@@ -1,9 +1,13 @@
 // App.js
 import 'react-native-get-random-values';
 import React, { useEffect } from 'react';
+import { Alert } from 'react-native';
+import MQTT from 'react-native-mqtt'; // Predpostavimo, da je nameščena
 import AppNavigator from './navigation/AppNavigator';
 
 const POLL_INTERVAL = 5000;
+const API_BASE_URL = 'https://prehranko-production.up.railway.app'; // Prilagojeno
+const MQTT_URL = 'mqtt://prehrankomosquitto.railway.internal:1883';
 
 export default function App() {
   useEffect(() => {
