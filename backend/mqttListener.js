@@ -11,10 +11,11 @@ console.log('🚀 Starting MQTT Listener...');
 console.log('📡 Connecting to internal broker at:', MQTT_URL);
 
 const client = mqtt.connect(MQTT_URL, {
-  connectTimeout: 5000,
+  connectTimeout: 30000, // Povečamo na 30 sekund
   clientId: `backend_${Math.random().toString(16).slice(2, 8)}`,
   clean: true,
-  reconnectPeriod: 1000,
+  reconnectPeriod: 5000, // Poskus ponovne povezave vsakih 5 sekund
+  keepalive: 60, // Keepalive interval
 });
 
 client.on('connect', async () => {
@@ -29,8 +30,9 @@ client.on('connect', async () => {
     }
   });
 
-  // Periodični izpis števila aktivnih naprav (vsakih 30 sekund)
+  // Periodični izpis števila aktivnih naprav
   setInterval(async () => {
+    console.log('🔍 Checking MQTT connection status:', client.connected);
     try {
       const activeDevices = await User.aggregate([
         { $unwind: '$devices' },
@@ -45,32 +47,12 @@ client.on('connect', async () => {
   }, 30000);
 });
 
-// 📩 Handle incoming MQTT messages (ohranjamo obstoječo logiko)
-client.on('message', async (topic, message) => {
-  console.log(`📩 Received message on topic ${topic}`);
-  console.log('📦 Raw payload:', message.toString());
-
-  try {
-    const payload = JSON.parse(message.toString());
-    const { activityId, userEmail, stats } = payload;
-    if (!activityId || !userEmail || !Array.isArray(stats)) {
-      console.warn('⚠️ Invalid payload structure:', payload);
-      return;
-    }
-
-    console.log('📝 Valid activity received, saving to DB...');
-    const newActivity = new Activity(payload);
-    await newActivity.save();
-    console.log('✅ Activity saved to MongoDB:', activityId);
-  } catch (err) {
-    console.error('❌ Error handling message:', err.message);
-  }
+client.on('reconnect', () => {
+  console.log('🔁 Attempting to reconnect to MQTT broker...');
 });
 
-// 🔁 Handle client disconnections
 client.on('close', async () => {
   console.log('🔌 MQTT connection closed');
-  // Posodobi status vseh naprav na nepovezane
   try {
     await User.updateMany(
       { 'devices.isConnected': true },
@@ -84,4 +66,16 @@ client.on('close', async () => {
 
 client.on('error', (err) => {
   console.error('❌ MQTT connection error:', err.message);
+});
+
+client.on('offline', () => {
+  console.log('⚠️ MQTT client went offline');
+});
+
+// Testna povezava z MongoDB ob zagonu
+mongoose.connection.on('connected', () => {
+  console.log('✅ Connected to MongoDB');
+});
+mongoose.connection.on('error', (err) => {
+  console.error('❌ MongoDB connection error:', err.message);
 });
