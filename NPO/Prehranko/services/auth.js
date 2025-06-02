@@ -3,12 +3,13 @@ import { CAMERA_API_URL } from './api';
 import * as FileSystem from 'expo-file-system';
 
 
-export const loginUser = async (email, password) => {
+// Posodobljena funkcija loginUser
+export const loginUser = async (email, password, deviceId, deviceName, clientId) => {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, from: "app" }),
+      body: JSON.stringify({ email, password, from: 'app', deviceId, deviceName, clientId }),
     });
 
     const data = await res.json();
@@ -17,7 +18,7 @@ export const loginUser = async (email, password) => {
     if (!res.ok) {
       throw new Error(data.message || 'Prijava ni uspela');
     }
-    return data;
+    return data; // Vsebuje { message: 'Prijava uspešna', userId: '...' }
   } catch (err) {
     console.error('❌ Napaka pri prijavi:', err.message);
     throw err;
