@@ -85,6 +85,45 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Nov endpoint za odjavo
+router.post('/logout', async (req, res) => {
+  const { email, deviceId } = req.body;
+
+  if (!email || !deviceId) {
+    return res.status(400).json({ message: 'Email in deviceId sta obvezna' });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'Uporabnik ne obstaja' });
+    }
+
+    // Preverjanje, ali naprava obstaja
+    const deviceExists = user.devices.find((d) => d.deviceId === deviceId);
+    if (!deviceExists) {
+      return res.status(404).json({ message: 'Naprava ni najdena' });
+    }
+
+    // Posodobitev statusa naprave
+    await User.updateOne(
+      { _id: user._id, 'devices.deviceId': deviceId },
+      {
+        $set: {
+          'devices.$.isConnected': false,
+          'devices.$.lastConnected': new Date(),
+        },
+      }
+    );
+
+    console.log(`✅ Device ${deviceId} disconnected for user ${email}`);
+    res.status(200).json({ message: 'Odjava uspešna' });
+  } catch (err) {
+    console.error('❌ Error during logout:', err.message);
+    res.status(500).json({ message: 'Napaka na strežniku' });
+  }
+});
+
 // Ostali endpointi ostanejo nespremenjeni
 router.post('/trigger2fa', async (req, res) => {
   const { email } = req.body;
