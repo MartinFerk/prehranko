@@ -25,6 +25,28 @@ export const loginUser = async (email, password, deviceId, deviceName, clientId)
   }
 };
 
+// Nova funkcija za odjavo
+export const logoutUser = async (email, deviceId) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, deviceId }),
+    });
+
+    const data = await res.json();
+    console.log('⬅️ Odgovor odjave:', data);
+
+    if (!res.ok) {
+      throw new Error(data.message || 'Odjava ni uspela');
+    }
+    return data;
+  } catch (err) {
+    console.error('❌ Napaka pri odjavi:', err.message);
+    throw err;
+  }
+};
+
 export const registerUser = async (email, password) => {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
