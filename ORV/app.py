@@ -6,7 +6,12 @@ import cv2
 import requests
 import logging
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s [%(levelname)s] %(message)s'
+)
+
+
 
 
 app = Flask(__name__)
@@ -158,48 +163,56 @@ def extract_embeddings():
 @app.route("/api/auth/verify", methods=["POST"])
 def verify_face():
     if "image" not in request.files or "email" not in request.form:
+        logging.warning("Zahteva brez slike ali e-maila")
         return jsonify({"error": "Manjka email ali slika"}), 400
 
     email = request.form["email"]
     file = request.files["image"]
+    logging.debug(f"📨 Preverjam e-mail: {email}")
 
     try:
         img = Image.open(file.stream).convert("RGB")
         preprocessed = preprocess_image(img)
+        logging.debug("🖼️ Slika uspešno prebrana in predobdelana")
 
         try:
             test_embedding = extract_face_embedding(preprocessed)
+            logging.debug(f"✅ Ekstrakcija značilk uspela, dolžina: {len(test_embedding)}")
         except Exception as e:
-            print("❌ Napaka med extract_face_embedding:", str(e))
+            logging.warning(f"❌ Obraz ni bil zaznan: {e}")
             return jsonify({"error": "Obraz ni bil zaznan"}), 400
 
         # 🔄 Pridobi shranjene značilke
         response = requests.get(f"https://prehranko-production.up.railway.app/api/auth/embeddings?email={email}")
         if response.status_code != 200:
+            logging.error(f"❌ Napaka pri pridobivanju značilk: {response.status_code}")
             return jsonify({"error": "Napaka pri pridobivanju značilk"}), 500
 
         data = response.json()
         saved_embeddings = data.get("faceEmbeddings", [])
 
         if not saved_embeddings:
+            logging.warning("⚠️ Ni shranjenih embeddingov za uporabnika")
             return jsonify({"error": "Ni shranjenih značilk"}), 404
+
+        logging.debug(f"📦 Pridobljenih {len(saved_embeddings)} shranjenih embeddingov")
 
         # 🔍 Primerjaj s povprečjem shranjenih
         avg_embedding = np.mean(np.array(saved_embeddings), axis=0)
         sim = cosine_similarity(test_embedding, avg_embedding)
 
-        logging.info(f"▶️ Število shranjenih embeddingov: {len(saved_embeddings)}")
-        logging.info(f"▶️ Cosine similarity: {sim}")
-
-        print(f"🔍 Cosine similarity: {sim}")
+        logging.info(f"▶️ Cosine similarity: {sim:.4f}")
         success = sim > 0.35  # prag lahko prilagodiš
 
-        return jsonify({ "success": success, "similarity": float(sim) })
+        return jsonify({
+            "success": success,
+            "similarity": float(sim),
+            "message": "Obraz ustreza" if success else "Obraz se ne ujema"
+        })
 
     except Exception as e:
-        print("❌ Napaka pri preverjanju:", str(e))
+        logging.exception("❌ Nepričakovana napaka pri preverjanju")
         return jsonify({ "error": str(e) }), 500
-
 
 
 if __name__ == "__main__":
