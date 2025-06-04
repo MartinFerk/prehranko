@@ -21,12 +21,13 @@ def detect_face(image_pil):
         image_np = np.array(image_pil.convert("RGB"))
         gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
-        print("Zaznani obrazi:", faces)
 
+        print("Zaznani obrazi:", faces)
         if len(faces) == 0:
             raise ValueError("Obraz ni bil zaznan.")
 
-        x, y, w, h = faces[0]
+        # Izberi največji zaznani obraz
+        x, y, w, h = sorted(faces, key=lambda f: f[2] * f[3], reverse=True)[0]
         face_region = image_np[y:y+h, x:x+w]
         face_resized = cv2.resize(face_region, (64, 64))
         return face_resized
@@ -35,12 +36,13 @@ def detect_face(image_pil):
         print("Napaka pri zaznavi obraza:", str(e))
         raise
 
+
 def extract_basic_features(face_img):
     gray = cv2.cvtColor(face_img, cv2.COLOR_RGB2GRAY)
-    gray = cv2.GaussianBlur(gray, (3, 3), 0)
 
-    # Histogram sivinskih vrednosti
-    hist = cv2.calcHist([gray], [0], None, [16], [0, 256])
+    # Histogram sivinskih vrednosti – več binov
+    blurred_hist = cv2.GaussianBlur(gray, (3, 3), 0)
+    hist = cv2.calcHist([blurred_hist], [0], None, [32], [0, 256])
     hist = cv2.normalize(hist, hist).flatten()
 
     # Sobel robne značilke
@@ -49,23 +51,35 @@ def extract_basic_features(face_img):
     edge_mag = np.sqrt(sobelx**2 + sobely**2)
     edge_features = np.mean(edge_mag), np.std(edge_mag)
 
-    # HOG značilke
+    # HOG značilke – brez zamegljevanja
     hog = cv2.HOGDescriptor(_winSize=(64, 64),
                             _blockSize=(16, 16),
                             _blockStride=(8, 8),
                             _cellSize=(8, 8),
                             _nbins=9)
     hog_features = hog.compute(gray).flatten()
-    hog_features = hog_features[:64]  # zmanjšaj na osnovne
+    hog_features = hog_features[:64]  # osnovna skrajšana verzija
 
     # LBP značilke
-    lbp = local_binary_pattern(gray)
+    lbp = local_binary_pattern(blurred_hist)
     lbp_hist = cv2.calcHist([lbp.astype(np.uint8)], [0], None, [16], [0, 256])
     lbp_hist = cv2.normalize(lbp_hist, lbp_hist).flatten()
+    lbp_mean = np.mean(lbp)
+    lbp_std = np.std(lbp)
 
-    # Združi vse
-    features = np.concatenate([hist, edge_features, hog_features, lbp_hist], axis=0)
+    # Združi vse značilke
+    features = np.concatenate([
+        hist,
+        edge_features,
+        hog_features,
+        lbp_hist,
+        [lbp_mean, lbp_std]
+    ], axis=0)
+
+    # Z-score normalizacija
+    features = (features - np.mean(features)) / (np.std(features) + 1e-8)
     return features.tolist()
+
 
 def local_binary_pattern(gray_img):
     lbp = np.zeros_like(gray_img)
