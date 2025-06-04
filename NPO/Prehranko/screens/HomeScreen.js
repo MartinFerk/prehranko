@@ -17,6 +17,7 @@ export default function HomeScreen({ navigation, route }) {
   const [userEmail, setUserEmail] = useState(route.params?.email || null);
   const [pending2FA, setPending2FA] = useState(false);
   const [caloricGoal, setCaloricGoal] = useState(null);
+  const [proteinGoal, setProteinGoal] = useState(null);
 
   const fetchEmail = async () => {
     try {
@@ -94,20 +95,38 @@ export default function HomeScreen({ navigation, route }) {
     }    
   };
 
-  const fetchCaloricGoal = async () => {
+  const fetchGoals = async () => {
+    if (!userEmail) return;
+
     try {
       const res = await fetch(
         `https://prehranko-production.up.railway.app/api/goals/get?email=${encodeURIComponent(userEmail)}`
       );
+      const contentType = res.headers.get('content-type');
+
+      if (!res.ok) {
+        throw new Error(`Napaka pri pridobivanju ciljev: ${res.status}`);
+      }
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text();
+        console.warn('❌ Backend vrnil HTML:', text);
+        throw new Error('Odziv ni bil JSON');
+      }
+
       const data = await res.json();
+      console.log('🌐 Odgovor od /api/goals/get:', { status: res.status, data });
+
       if (res.ok) {
         setCaloricGoal(data.caloricGoal);
+        setProteinGoal(data.proteinGoal);
       } else {
         setCaloricGoal(null);
+        setProteinGoal(null);
       }
     } catch (err) {
-      console.error('Napaka pri pridobivanju kaloričnega cilja:', err.message);
+      console.error('Napaka pri pridobivanju ciljev:', err.message);
       setCaloricGoal(null);
+      setProteinGoal(null);
     }
   };
 
@@ -120,7 +139,7 @@ export default function HomeScreen({ navigation, route }) {
     if (userEmail) {
       const stopPolling = pollFor2FA(); // Express
       check2FA(); // Railway
-      fetchCaloricGoal();
+      fetchGoals();
       return stopPolling;
     }
   }, [userEmail]);
@@ -168,6 +187,15 @@ export default function HomeScreen({ navigation, route }) {
           ) : (
             <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.text }}>
               Ni nastavljenega kaloričnega cilja.
+            </Text>
+          )}
+          {proteinGoal !== null ? (
+            <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.primary }}>
+              Trajni cilj: {proteinGoal} g beljakovin
+            </Text>
+          ) : (
+            <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.text }}>
+              Ni nastavljenega beljakovinskega cilja.
             </Text>
           )}
         </View>
