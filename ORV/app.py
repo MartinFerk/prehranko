@@ -23,7 +23,12 @@ def detect_face(image_pil):
     try:
         image_np = np.array(image_pil.convert("RGB"))
         gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+        faces = face_cascade.detectMultiScale(
+            gray,
+            scaleFactor=1.05,  # bolj občutljivo skaliranje
+            minNeighbors=3,    # dovoli več "false positives"
+            minSize=(30, 30)   # ignoriraj premajhne detekcije
+        )
 
         logging.debug(f"Zaznani obrazi: {faces}")
 
