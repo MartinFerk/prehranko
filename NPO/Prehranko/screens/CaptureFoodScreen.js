@@ -3,6 +3,7 @@ import { View, Text, Button, Image, ActivityIndicator, Alert } from 'react-nativ
 import * as ImagePicker from 'expo-image-picker';
 import uuid from 'react-native-uuid';
 import { API_BASE_URL } from '../services/api';
+import * as FileSystem from 'expo-file-system';
 // Namesto: process.env.IMGUR_CLIENT_ID
 import { IMGUR_CLIENT_ID } from '../services/api';
 
@@ -29,36 +30,35 @@ export default function CaptureFoodScreen({ navigation, route }) {
     }
   };
 
-const uploadToImgur = async (uri) => {
-  try {
-    // Preberi datoteko kot base64 (expo ima FileSystem modul)
-    const response = await fetch(uri);
-    const blob = await response.blob();
+  const uploadToImgur = async (uri) => {
+    try {
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
 
-    const formData = new FormData();
-    formData.append('image', blob);
+      const body = `image=${encodeURIComponent(base64)}`;
 
-    const res = await fetch('https://api.imgur.com/3/image', {
-      method: 'POST',
-      headers: {
-        Authorization: `Client-ID ${IMGUR_CLIENT_ID}`,  // mora biti tvoj Client ID
-        // 'Content-Type': 'multipart/form-data',  // fetch sam nastavi
-      },
-      body: formData,
-    });
+      const res = await fetch('https://api.imgur.com/3/image', {
+        method: 'POST',
+        headers: {
+          Authorization: `Client-ID ${IMGUR_CLIENT_ID}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: body,
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      throw new Error(data?.data?.error || 'Upload na Imgur ni uspel');
+      if (!res.ok) {
+        throw new Error(data?.data?.error || 'Upload na Imgur ni uspel');
+      }
+
+      return data.data.link;
+    } catch (error) {
+      console.error('Napaka pri uploadu na Imgur:', error);
+      throw error;
     }
-
-    return data.data.link; // URL slike na imgur
-  } catch (error) {
-    console.error('Napaka pri uploadu na Imgur:', error);
-    throw error;
-  }
-};
+  };
 
 
 
