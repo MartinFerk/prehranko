@@ -31,6 +31,8 @@ const Login = () => {
       setLoading(false);
     }
     localStorage.setItem('loggedIn', 'true');
+    localStorage.setItem('userEmail', email);
+    localStorage.setItem('userName', data.name || 'Uporabnik');
   };
 
   return (

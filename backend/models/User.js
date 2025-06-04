@@ -17,6 +17,10 @@ const userSchema = new mongoose.Schema({
       lastConnected: { type: Date, default: null }, // Zadnja povezava
       isConnected: { type: Boolean, default: false }, // Status povezave
     }],
+  is2faVerified: {
+  type: Boolean,
+  default: false,
+},
 });
 
 module.exports = mongoose.model('User', userSchema);
