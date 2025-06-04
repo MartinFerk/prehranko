@@ -289,11 +289,11 @@ router.get('/embeddings', async (req, res) => {
   if (!email) return res.status(400).json({ message: 'Email je potreben' });
 
   const user = await User.findOne({ email });
-  if (!user || !user.features) {
+  if (!user || !user.faceEmbeddings) {
     return res.status(404).json({ message: 'Ni značilk za tega uporabnika' });
   }
 
-  res.json({ embeddings: user.features });
+  res.json({ embeddings: user.faceEmbeddings });
 });
 
 module.exports = router;
