@@ -4,6 +4,9 @@ import numpy as np
 import io
 import cv2
 import requests
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
 app = Flask(__name__)
@@ -170,6 +173,9 @@ def verify_face():
         # 🔍 Primerjaj s povprečjem shranjenih
         avg_embedding = np.mean(np.array(saved_embeddings), axis=0)
         sim = cosine_similarity(test_embedding, avg_embedding)
+
+        logging.info(f"▶️ Število shranjenih embeddingov: {len(saved_embeddings)}")
+        logging.info(f"▶️ Cosine similarity: {sim}")
 
         print(f"🔍 Cosine similarity: {sim}")
         success = sim > 0.35  # prag lahko prilagodiš
