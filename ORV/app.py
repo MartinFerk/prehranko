@@ -160,8 +160,12 @@ def extract_embeddings():
 
 
 
-@app.route("/api/auth/verify", methods=["POST"])
+@app.route("/api/auth/verify", methods=["GET", "POST"])
 def verify_face():
+    if request.method == "GET":
+        return "<h3>✅ Endpoint deluje. Pošlji POST z email + image za preverjanje.</h3>"
+
+    # ↓ Tukaj naprej ostane obstoječa POST logika
     if "image" not in request.files or "email" not in request.form:
         logging.warning("Zahteva brez slike ali e-maila")
         return jsonify({"error": "Manjka email ali slika"}), 400
@@ -202,7 +206,7 @@ def verify_face():
         sim = cosine_similarity(test_embedding, avg_embedding)
 
         logging.info(f"▶️ Cosine similarity: {sim:.4f}")
-        success = sim > 0.35  # prag lahko prilagodiš
+        success = sim > 0.35
 
         return jsonify({
             "success": success,
