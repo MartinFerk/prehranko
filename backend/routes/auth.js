@@ -9,6 +9,8 @@ const fs = require('fs');
 
 const router = express.Router();
 
+const pending2FA = new Map();
+
 // Registracija (ohranjamo nespremenjeno)
 router.post('/register', async (req, res) => {
   const { email, password } = req.body;
@@ -124,22 +126,13 @@ router.post('/logout', async (req, res) => {
   }
 });
 
-// Ostali endpointi ostanejo nespremenjeni
-router.post('/trigger2fa', async (req, res) => {
+router.post('/trigger2fa', (req, res) => {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ message: 'Email je obvezen' });
+  if (!email) return res.status(400).json({ message: 'Email je zahtevan' });
 
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'Uporabnik ne obstaja' });
-
-    user.pending2FA = true;
-    await user.save();
-
-    res.json({ message: '2FA sprožen' });
-  } catch (err) {
-    res.status(500).json({ message: 'Napaka pri sprožitvi 2FA' });
-  }
+  pending2FA.set(email, true);
+  console.log(`🔐 2FA triggered for ${email}`);
+  res.json({ message: '2FA sprožen' });
 });
 
 router.get('/status', async (req, res) => {
@@ -156,21 +149,14 @@ router.get('/status', async (req, res) => {
   }
 });
 
-router.post('/complete2fa', async (req, res) => {
+// POST /auth/complete-2fa
+router.post('/complete-2fa', (req, res) => {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ message: 'Email je obvezen' });
+  if (!email) return res.status(400).json({ message: 'Email je zahtevan' });
 
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'Uporabnik ne obstaja' });
-
-    user.pending2FA = false;
-    await user.save();
-
-    res.json({ message: '2FA uspešno potrjen' });
-  } catch (err) {
-    res.status(500).json({ message: 'Napaka pri potrditvi 2FA' });
-  }
+  pending2FA.set(email, false);
+  console.log(`✅ 2FA completed for ${email}`);
+  res.json({ message: '2FA zaključeno' });
 });
 
 router.post('/register-face', upload.array('images'), async (req, res) => {
@@ -287,6 +273,15 @@ router.post('/save-features', async (req, res) => {
     console.error('❌ Napaka pri shranjevanju značilk:', err);
     res.status(500).json({ message: 'Napaka pri shranjevanju značilk' });
   }
+});
+
+// Na PRAVI LOKACIJI (zgoraj, pred exportom)
+router.get('/check-2fa', (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ message: 'Email je zahtevan' });
+
+  const trigger = pending2FA.get(email) || false;
+  res.json({ trigger });
 });
 
 module.exports = router;
