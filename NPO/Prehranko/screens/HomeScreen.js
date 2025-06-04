@@ -156,9 +156,9 @@ export default function HomeScreen({ navigation, route }) {
     navigation.navigate('GoalScreen', { email: userEmail });
   };
 
-  const handleFutureFeature = (feature) => {
-    Alert.alert('Funkcionalnost še ni implementirana', `To bo ${feature} v prihodnosti.`);
-  };
+    const handleCaptureFood = () => {
+      navigation.navigate('CaptureFoodScreen', { email: userEmail });
+    };
 
   return (
     <View style={homeStyles.container}>
@@ -182,7 +182,7 @@ export default function HomeScreen({ navigation, route }) {
           <Text style={homeStyles.cardDescription}>{DATA[0].description}</Text>
           {caloricGoal !== null ? (
             <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.primary }}>
-              Trajni cilj: {caloricGoal} kalorij
+              Cilj: {caloricGoal} kalorij
             </Text>
           ) : (
             <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.text }}>
@@ -191,7 +191,7 @@ export default function HomeScreen({ navigation, route }) {
           )}
           {proteinGoal !== null ? (
             <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.primary }}>
-              Trajni cilj: {proteinGoal} g beljakovin
+              Cilj: {proteinGoal} g beljakovin
             </Text>
           ) : (
             <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.text }}>
@@ -221,8 +221,8 @@ export default function HomeScreen({ navigation, route }) {
         />
         <IconButton
           iconName="bar-chart"
-          title="Sledenje"
-          onPress={() => navigation.navigate('ActivityScreen', { email: userEmail })}
+          title="Zajemi hrano"
+          onPress={() => navigation.navigate('CaptureFoodScreen', { email: userEmail })}
           color={theme.colors.secondary}
         />
         <IconButton
