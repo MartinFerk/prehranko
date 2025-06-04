@@ -21,6 +21,26 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/obroki/all - Fetch all meals for a user
+router.get('/all', async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Manjkajoč email parameter' });
+  }
+
+  try {
+    const obroki = await Obrok.find({ userEmail: email }).sort({ createdAt: -1 });
+    if (!obroki.length) {
+      return res.status(404).json({ error: 'Ni najdenih obrokov' });
+    }
+    res.json(obroki);
+  } catch (err) {
+    console.error('Napaka pri pridobivanju vseh obrokov:', err.message);
+    res.status(500).json({ error: 'Napaka pri pridobivanju vseh obrokov' });
+  }
+});
+
 // 🎯 API endpoint: Analiziraj hrano iz slike
 router.post('/analyze-food', async (req, res) => {
   const { obrokId, imageUrl } = req.body;

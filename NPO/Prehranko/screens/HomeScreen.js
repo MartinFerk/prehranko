@@ -18,7 +18,7 @@ export default function HomeScreen({ navigation, route }) {
   const [pending2FA, setPending2FA] = useState(false);
   const [caloricGoal, setCaloricGoal] = useState(null);
   const [proteinGoal, setProteinGoal] = useState(null);
-  const [zadnjiObrok, setZadnjiObrok] = useState(null);
+  const [vsiObroki, setVsiObroki] = useState([]); // Changed from zadnjiObrok to vsiObroki
 
   const fetchEmail = async () => {
     try {
@@ -131,18 +131,20 @@ export default function HomeScreen({ navigation, route }) {
     }
   };
 
-    const fetchZadnjiObrok = async () => {
+const fetchVsiObroki = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/obroki/last?email=${encodeURIComponent(userEmail)}`);
-      const data = await res.json();
+      const res = await fetch(`${API_BASE_URL}/obroki/all?email=${encodeURIComponent(userEmail)}`);
+      const text = await res.text();
+      console.log('Raw response from /obroki/all:', text);
+
+      const data = JSON.parse(text);
       if (res.ok && data) {
-        setZadnjiObrok(data);
+        setVsiObroki(data);
       }
     } catch (err) {
-      console.warn('Napaka pri pridobivanju zadnjega obroka:', err.message);
+      console.warn('Napaka pri pridobivanju vseh obrokov:', err.message);
     }
   };
-
 
   // Ob zagonu
   useEffect(() => {
@@ -154,7 +156,7 @@ export default function HomeScreen({ navigation, route }) {
       const stopPolling = pollFor2FA(); // Express
       check2FA(); // Railway
       fetchGoals();
-      fetchZadnjiObrok();
+      fetchVsiObroki();
       return stopPolling;
     }
   }, [userEmail]);
@@ -175,6 +177,14 @@ export default function HomeScreen({ navigation, route }) {
       navigation.navigate('CaptureFoodScreen', { email: userEmail });
     };
 
+    const renderObrokItem = ({ item }) => (
+    <View style={{ marginTop: 10 }}>
+      <Text style={{ fontWeight: 'bold' }}>Obrok: {item.name}</Text>
+      <Text>Kalorije: {item.calories}</Text>
+      <Text>Beljakovine: {item.protein} g</Text>
+    </View>
+  );
+
   return (
   <View style={homeStyles.container}>
     <View style={homeStyles.header}>
@@ -191,21 +201,22 @@ export default function HomeScreen({ navigation, route }) {
       </Text>
     )}
 
-    {/* Statistika card - full width at the top */}
-    <View style={homeStyles.statisticsCard}>
-      <Text style={homeStyles.cardTitle}>{DATA[0].title}</Text>
-      <Text style={homeStyles.cardDescription}>{DATA[0].description}</Text>
+{/* Statistika card - full width at the top, showing all meals */}
+      <View style={homeStyles.statisticsCard}>
+        <Text style={homeStyles.cardTitle}>{DATA[0].title}</Text>
+        <Text style={homeStyles.cardDescription}>{DATA[0].description}</Text>
 
-      {zadnjiObrok ? (
-        <View style={{ marginTop: 10 }}>
-          <Text style={{ fontWeight: 'bold' }}>Zadnji obrok: {zadnjiObrok.name}</Text>
-          <Text>Kalorije: {zadnjiObrok.calories}</Text>
-          <Text>Beljakovine: {zadnjiObrok.protein} g</Text>
-        </View>
-      ) : (
-        <Text style={{ marginTop: 10 }}>Ni podatkov o zadnjem obroku.</Text>
-      )}
-    </View>
+        {vsiObroki.length > 0 ? (
+          <FlatList
+            data={vsiObroki}
+            renderItem={renderObrokItem}
+            keyExtractor={(item) => item.obrokId}
+            style={{ marginTop: 10 }}
+          />
+        ) : (
+          <Text style={{ marginTop: 10 }}>Ni podatkov o obrokih.</Text>
+        )}
+      </View>
 
     {/* Row for Zajemi obrok and Tvoji cilji cards */}
     <View style={homeStyles.cardsRow}>
