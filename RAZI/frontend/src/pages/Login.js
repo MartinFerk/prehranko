@@ -25,14 +25,15 @@ const Login = () => {
 
       await trigger2FA(email);
       alert('✅ Prijava uspešna. Počakaj na preverjanje obraza na telefonu.');
+      localStorage.setItem('loggedIn', 'true');
+    localStorage.setItem('userEmail', email);
+    localStorage.setItem('userName', data.name || 'Uporabnik');
     } catch (err) {
       alert('❌ ' + err.message);
     } finally {
       setLoading(false);
     }
-    localStorage.setItem('loggedIn', 'true');
-    localStorage.setItem('userEmail', email);
-    localStorage.setItem('userName', data.name || 'Uporabnik');
+    
   };
 
   return (

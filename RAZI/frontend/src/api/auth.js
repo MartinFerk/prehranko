@@ -38,41 +38,6 @@ export const trigger2FA = async (email) => {
   return res.json();
 };
 
-const handleLogin = async () => {
-  setLoading(true);
-  try {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, from: "web" }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Napaka pri prijavi');
-
-    await trigger2FA(email);
-    alert('✅ Prijava uspešna. Počakaj na preverjanje obraza na telefonu.');
-
-    // 🔁 Začni polling preverjanja 2FA statusa
-    const checkInterval = setInterval(async () => {
-      const statusRes = await fetch(`${API_BASE_URL}/auth/check-2fa?email=${email}`);
-      const statusData = await statusRes.json();
-
-      if (statusData.is2faVerified) {
-        clearInterval(checkInterval);
-        localStorage.setItem('loggedIn', 'true');
-        navigate('/dashboard'); // 🔁 preusmeri na glavno stran
-      }
-    }, 3000); // vsakih 3 sekunde
-
-  } catch (err) {
-    alert('❌ ' + err.message);
-  } finally {
-    setLoading(false);
-  }
-};
-
-
 export const registerUser = async (email, password) => {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
