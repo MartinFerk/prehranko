@@ -1,127 +1,124 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet, ScrollView } from 'react-native';
-import * as FileSystem from 'expo-file-system';
-import { sendActivity } from '../services/auth';
+import React, { useState } from 'react';
+import { View, Text, Button, Image, ActivityIndicator, Alert } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import uuid from 'react-native-uuid';
+import { API_BASE_URL } from '../services/api';
+// Namesto: process.env.IMGUR_CLIENT_ID
+import { IMGUR_CLIENT_ID } from '../services/api';
 
-export default function ActivityScreen({ route }) {
-    const { email } = route.params || {};
-    const [data, setData] = useState([]);
-    const [isRecording, setIsRecording] = useState(false);
 
-    useEffect(() => {
-        console.log('✅ ActivityScreen loaded');
-        console.log('📧 Prejet email:', email);
-    }, []);
 
-    const startRecording = () => {
-        console.log('▶️ Začetek snemanja MOCK aktivnosti...');
-        setIsRecording(true);
+export default function CaptureFoodScreen({ navigation, route }) {
+  const userEmail = route.params?.email;
+  const [imageUri, setImageUri] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+    console.log(IMGUR_CLIENT_ID); // ✅ Deluje
 
-        const collected = [];
-        const activityId = simpleId();
+  const pickImage = async () => {
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.7,
+    });
 
-        function generateMockLocation() {
-            const offsetLat = (Math.random() - 0.5) * 0.0018;
-            const offsetLon = (Math.random() - 0.5) * 0.0018;
-            return {
-                latitude: 46.5387 + offsetLat,
-                longitude: 15.5127 + offsetLon,
-            };
-        }
+    if (!result.cancelled) {
+      setImageUri(result.uri);
+      analyzeFoodImage(result.uri);
+    }
+  };
 
-        function generateMockAccel() {
-            return {
-                x: (Math.random() * 0.5).toFixed(3),
-                y: (Math.random() * 0.5).toFixed(3),
-                z: (Math.random() * 0.5).toFixed(3),
-            };
-        }
+const uploadToImgur = async (uri) => {
+  try {
+    // Preberi datoteko kot base64 (expo ima FileSystem modul)
+    const response = await fetch(uri);
+    const blob = await response.blob();
 
-        for (let i = 0; i < 5; i++) {
-            const mockCoords = generateMockLocation();
-            const mockAccel = generateMockAccel();
+    const formData = new FormData();
+    formData.append('image', blob);
 
-            const entry = {
-                activityId,
-                email,
-                timestamp: new Date().toISOString(),
-                stats: {
-                    coords: mockCoords,
-                    accel: mockAccel,
-                },
-            };
+    const res = await fetch('https://api.imgur.com/3/image', {
+      method: 'POST',
+      headers: {
+        Authorization: `Client-ID ${IMGUR_CLIENT_ID}`,  // mora biti tvoj Client ID
+        // 'Content-Type': 'multipart/form-data',  // fetch sam nastavi
+      },
+      body: formData,
+    });
 
-            console.log(`🧪 MOCK točka ${i + 1}:`, JSON.stringify(entry));
-            collected.push(entry);
-        }
+    const data = await res.json();
 
-        const path = FileSystem.documentDirectory + 'data.json';
-        const jsonString = JSON.stringify(collected, null, 2);
-
-        FileSystem.writeAsStringAsync(path, jsonString)
-            .then(() => {
-                console.log('✔️ Podatki shranjeni v:', path);
-                setData(collected);
-                setIsRecording(false);
-                console.log('⏹️ Snemanje končano');
-
-                // Pošlji na backend (ta bo MQTT naprej)
-                sendActivity({
-                    activityId,
-                    userEmail: email,
-                    stats: collected.map(entry => ({
-                        coords: entry.stats.coords,
-                        accel: entry.stats.accel,
-                        timestamp: entry.timestamp,
-                    }))
-                })
-                    .then(() => console.log('📤 Aktivnost poslana na strežnik'))
-                    .catch(err => console.error('❌ Pošiljanje spodletelo:', err.message));
-            })
-            .catch(err => {
-                console.error('❌ Napaka pri shranjevanju:', err.message);
-                setIsRecording(false);
-            });
-    };
-
-    function simpleId() {
-        return 'xxxxxxxxyxxx'.replace(/[xy]/g, c => {
-            const r = Math.random() * 16 | 0;
-            return r.toString(16);
-        });
+    if (!res.ok) {
+      throw new Error(data?.data?.error || 'Upload na Imgur ni uspel');
     }
 
-    return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.title}>Sledenje aktivnosti</Text>
+    return data.data.link; // URL slike na imgur
+  } catch (error) {
+    console.error('Napaka pri uploadu na Imgur:', error);
+    throw error;
+  }
+};
 
-            <Button
-                title={isRecording ? "Beleženje..." : "Začni beleženje"}
-                onPress={startRecording}
-                disabled={isRecording}
-            />
 
-            <Text style={styles.subtitle}>Zabeleženih točk: {data.length}</Text>
 
-            {data.map((item, index) => (
-                <View key={index} style={styles.entry}>
-                    <Text>{index + 1}. 🕒 {item.timestamp}</Text>
-                    <Text>📍 Lokacija: {item.stats.coords.latitude}, {item.stats.coords.longitude}</Text>
-                    <Text>📈 Pospešek: x={item.stats.accel.x}, y={item.stats.accel.y}, z={item.stats.accel.z}</Text>
-                </View>
-            ))}
-        </ScrollView>
-    );
+  const analyzeFoodImage = async (localUri) => {
+    setLoading(true);
+    setResult(null);
+
+    try {
+      const imgUrl = await uploadToImgur(localUri);
+      const obrokId = uuid.v4();
+
+      // 1️⃣ Ustvari obrok
+      const createRes = await fetch(`${API_BASE_URL}/obroki/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ obrokId, userEmail, imgLink: imgUrl }),
+      });
+
+      if (!createRes.ok) throw new Error('Napaka pri ustvarjanju obroka');
+
+      // 2️⃣ Pokliči analizo
+      const analyzeRes = await fetch(`${API_BASE_URL}/obroki/analyze-food`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ obrokId, imageUrl: imgUrl }),
+      });
+
+      const analyzeData = await analyzeRes.json();
+
+      if (!analyzeRes.ok) {
+        Alert.alert('Napaka pri analizi', analyzeData.error || 'Nepoznata napaka');
+        return;
+      }
+
+      setResult(analyzeData.obrok);
+    } catch (err) {
+      console.error('Napaka:', err.message);
+      Alert.alert('Napaka', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <View style={{ flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' }}>
+      <Button title="Zajemi obrok" onPress={pickImage} />
+
+      {imageUri && (
+        <Image source={{ uri: imageUri }} style={{ width: 300, height: 300, marginTop: 20 }} />
+      )}
+
+      {loading && <ActivityIndicator size="large" color="orange" style={{ marginTop: 20 }} />}
+
+      {result && (
+        <View style={{ marginTop: 30, alignItems: 'center' }}>
+          <Text style={{ fontSize: 20, fontWeight: 'bold' }}>{result.name}</Text>
+          <Text style={{ fontSize: 16 }}>Kalorije: {result.calories}</Text>
+          <Text style={{ fontSize: 16 }}>Beljakovine: {result.protein} g</Text>
+        </View>
+      )}
+    </View>
+  );
 }
-
-const styles = StyleSheet.create({
-    container: { padding: 20 },
-    title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-    subtitle: { marginTop: 20, fontSize: 16 },
-    entry: {
-        marginVertical: 10,
-        padding: 10,
-        backgroundColor: '#f0f0f0',
-        borderRadius: 8,
-    },
-});
