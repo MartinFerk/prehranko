@@ -18,6 +18,7 @@ export default function HomeScreen({ navigation, route }) {
   const [pending2FA, setPending2FA] = useState(false);
   const [caloricGoal, setCaloricGoal] = useState(null);
   const [proteinGoal, setProteinGoal] = useState(null);
+  const [zadnjiObrok, setZadnjiObrok] = useState(null);
 
   const fetchEmail = async () => {
     try {
@@ -130,6 +131,19 @@ export default function HomeScreen({ navigation, route }) {
     }
   };
 
+    const fetchZadnjiObrok = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/obroki/last?email=${encodeURIComponent(userEmail)}`);
+      const data = await res.json();
+      if (res.ok && data) {
+        setZadnjiObrok(data);
+      }
+    } catch (err) {
+      console.warn('Napaka pri pridobivanju zadnjega obroka:', err.message);
+    }
+  };
+
+
   // Ob zagonu
   useEffect(() => {
     fetchEmail();
@@ -140,6 +154,7 @@ export default function HomeScreen({ navigation, route }) {
       const stopPolling = pollFor2FA(); // Express
       check2FA(); // Railway
       fetchGoals();
+      fetchZadnjiObrok();
       return stopPolling;
     }
   }, [userEmail]);
@@ -177,9 +192,26 @@ export default function HomeScreen({ navigation, route }) {
       )}
 
       <View style={homeStyles.cardsContainer}>
+      {/* Statistika kartica - vsebuje zadnji obrok */}
+      <View style={homeStyles.statisticsCard}>
+        <Text style={homeStyles.cardTitle}>{DATA[0].title}</Text>
+        <Text style={homeStyles.cardDescription}>{DATA[0].description}</Text>
+
+        {zadnjiObrok ? (
+          <View style={{ marginTop: 10 }}>
+            <Text style={{ fontWeight: 'bold' }}>Zadnji obrok: {zadnjiObrok.name}</Text>
+            <Text>Kalorije: {zadnjiObrok.calories}</Text>
+            <Text>Beljakovine: {zadnjiObrok.protein} g</Text>
+          </View>
+        ) : (
+          <Text style={{ marginTop: 10 }}>Ni podatkov o zadnjem obroku.</Text>
+        )}
+      </View>
+
+      <View style={homeStyles.cardsContainer}>
         <View style={homeStyles.statisticsCard}>
-          <Text style={homeStyles.cardTitle}>{DATA[0].title}</Text>
-          <Text style={homeStyles.cardDescription}>{DATA[0].description}</Text>
+          <Text style={homeStyles.cardTitle}>{DATA[1].title}</Text>
+          <Text style={homeStyles.cardDescription}>{DATA[1].description}</Text>
           {caloricGoal !== null ? (
             <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.primary }}>
               Cilj: {caloricGoal} kalorij
@@ -199,12 +231,7 @@ export default function HomeScreen({ navigation, route }) {
             </Text>
           )}
         </View>
-
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <View style={[homeStyles.card, { width: '48%' }]}>
-            <Text style={homeStyles.cardTitle}>{DATA[1].title}</Text>
-            <Text style={homeStyles.cardDescription}>{DATA[1].description}</Text>
-          </View>
+        
           <View style={[homeStyles.card, { width: '48%' }]}>
             <Text style={homeStyles.cardTitle}>{DATA[2].title}</Text>
             <Text style={homeStyles.cardDescription}>{DATA[2].description}</Text>
