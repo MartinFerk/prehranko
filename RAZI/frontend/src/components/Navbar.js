@@ -21,9 +21,6 @@ const Navbar = () => {
           <li className="navbar-item">
             <Link to="/login" className="navbar-link">Prijava</Link>
           </li>
-          <li className="navbar-item">
-            <Link to="/register" className="navbar-link">Registracija</Link>
-          </li>
         </ul>
       </nav>
   );

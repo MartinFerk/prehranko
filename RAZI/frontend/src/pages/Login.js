@@ -62,15 +62,6 @@ const Login = () => {
         <button className="login-button" onClick={handleLogin} disabled={loading}>
           {loading ? 'Prijavljam...' : 'Prijavi se'}
         </button>
-
-        {/* ⬇️ Dodan gumb za registracijo */}
-        <button
-          className="secondary-button"
-          style={{ marginTop: '1rem' }} /* Samo margin, barva je definirana v CSS */
-          onClick={() => navigate('/register')}
-        >
-          Ustvari račun
-        </button>
       </div>
     </div>
   );

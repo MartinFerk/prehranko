@@ -28,8 +28,7 @@ const Home = () => {
 
     return (
         <div className="container">
-            <h1 className="title">Statistika</h1>
-            <p>Tukaj bo prikaz statistike, ko bo implementirana.</p>
+            <h1 className="title">Zemljevid</h1>
 
             <div className="map-wrapper">
                 <div className="map-container">
