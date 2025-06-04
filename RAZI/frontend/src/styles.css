@@ -82,13 +82,18 @@ html, body {
   padding: 20px;
   padding-top: 60px; /* Dodan prostor za navigacijski vrstico */
 }
-/* vsebnik za zemljevid */
+.map-wrapper {
+  width: 100%;
+  max-width: 800px;     /* ali 600px, kot želiš */
+}
+
 .map-container {
-  margin-top: 1rem;
+  height: 400px;
+  width: 100%;
   border: 2px solid #ccc;
   border-radius: 10px;
   overflow: hidden;
-  height: 400px; /* 👈 Add this line */
+  margin-top: 1rem;
 }
 
 
