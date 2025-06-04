@@ -46,6 +46,8 @@ export default function CaptureFoodScreen({ navigation, route }) {
         },
         body: body,
       });
+            console.log('🔼 Pošiljam sliko na Imgur... ', base64.slice(0, 100));
+
 
       const data = await res.json();
 
