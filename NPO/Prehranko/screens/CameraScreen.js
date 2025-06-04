@@ -6,6 +6,7 @@ import AuthButton from '../components/AuthButton';
 import { theme } from '../styles/theme';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { API_BASE_URL } from '../services/api'; 
+import { CAMERA_API_URL } from '../services/api';
 
 export default function CameraScreen({ navigation, route }) {
   const { email, mode = 'register' } = route.params || {};
@@ -93,38 +94,47 @@ export default function CameraScreen({ navigation, route }) {
   const takeSingleVerificationPhoto = async () => {
     if (!cameraRef.current) return;
     setLoading(true);
-
+  
     try {
       const photo = await cameraRef.current.takePictureAsync({ base64: false });
       const compressed = await compressPhoto(photo);
-
+  
       const formData = new FormData();
       formData.append('image', {
         uri: compressed.uri,
         name: 'verify.jpg',
         type: 'image/jpeg',
       });
-
-      const res = await fetch('https://prehrankopython-production.up.railway.app/verify-face', {
+      formData.append('email', email); // ⬅️ To je OBVEZNO! Python backend zahteva email
+  
+      const res = await fetch(`${CAMERA_API_URL}/verify-face`, {
         method: 'POST',
         body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
-
+  
       const text = await res.text();
-      const data = JSON.parse(text);
-
-      if (data.success) {
-        Alert.alert('✅ Preverjanje uspešno!');
-        // Označi 2FA kot opravljeno
-        await fetch(`${API_BASE_URL}/auth/complete-2fa`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-        });
-      } else {
-        Alert.alert('❌ Obraz se ne ujema.');
+  
+      try {
+        const data = JSON.parse(text);
+  
+        if (data.success) {
+          Alert.alert('✅ Preverjanje uspešno!');
+          await fetch(`${API_BASE_URL}/auth/complete-2fa`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+          });
+        } else {
+          Alert.alert('❌ Obraz se ne ujema.');
+        }
+      } catch (parseErr) {
+        console.warn('❌ Backend je vrnil HTML ali neveljaven JSON:', text);
+        Alert.alert('Napaka', 'Neveljaven odziv strežnika');
       }
-
+  
       navigation.goBack();
     } catch (err) {
       console.error('❌ Napaka:', err);
@@ -133,6 +143,7 @@ export default function CameraScreen({ navigation, route }) {
       setLoading(false);
     }
   };
+  
 
   return (
     <View style={styles.container}>

@@ -284,4 +284,16 @@ router.get('/check-2fa', (req, res) => {
   res.json({ trigger });
 });
 
+router.get('/embeddings', async (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ message: 'Email je potreben' });
+
+  const user = await User.findOne({ email });
+  if (!user || !user.features) {
+    return res.status(404).json({ message: 'Ni značilk za tega uporabnika' });
+  }
+
+  res.json({ embeddings: user.features });
+});
+
 module.exports = router;

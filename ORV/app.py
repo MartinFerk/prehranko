@@ -3,6 +3,7 @@ from PIL import Image, ImageFilter
 import numpy as np
 import io
 import cv2
+import requests
 
 
 app = Flask(__name__)
@@ -79,6 +80,11 @@ def extract_face_embedding(image_pil):
     features = extract_basic_features(face)
     return features
 
+def cosine_similarity(a, b):
+    a = np.array(a)
+    b = np.array(b)
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
 
 @app.route("/", methods=["GET"])
 def index():
@@ -116,6 +122,44 @@ def extract_embeddings():
             "error": "Napaka pri obdelavi slik",
             "details": str(e)
         }), 500
+
+
+@app.route("/api/auth/verify", methods=["POST"])
+def verify_face():
+    if "image" not in request.files or "email" not in request.form:
+        return jsonify({"error": "Manjka email ali slika"}), 400
+
+    email = request.form["email"]
+    file = request.files["image"]
+
+    try:
+        img = Image.open(file.stream).convert("RGB")
+        preprocessed = preprocess_image(img)
+        test_embedding = extract_face_embedding(preprocessed)
+
+        # 🔄 Pridobi shranjene značilke
+        response = requests.get(f"https://prehranko-production.up.railway.app/api/auth/embeddings?email={email}")
+        if response.status_code != 200:
+            return jsonify({"error": "Napaka pri pridobivanju značilk"}), 500
+
+        data = response.json()
+        saved_embeddings = data.get("embeddings", [])
+
+        if not saved_embeddings:
+            return jsonify({"error": "Ni shranjenih značilk"}), 404
+
+        # 🔍 Primerjaj s povprečjem shranjenih
+        avg_embedding = np.mean(np.array(saved_embeddings), axis=0)
+        sim = cosine_similarity(test_embedding, avg_embedding)
+
+        print(f"🔍 Cosine similarity: {sim}")
+        success = sim > 0.92  # prag lahko nastaviš
+
+        return jsonify({ "success": success, "similarity": float(sim) })
+
+    except Exception as e:
+        print("❌ Napaka pri preverjanju:", str(e))
+        return jsonify({ "error": str(e) }), 500
 
 
 if __name__ == "__main__":
