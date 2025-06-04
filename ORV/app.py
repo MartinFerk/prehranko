@@ -27,19 +27,21 @@ def detect_face(image_pil):
         gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
 
-        print("Zaznani obrazi:", faces)
+        logging.debug(f"Zaznani obrazi: {faces}")
+
         if len(faces) == 0:
             raise ValueError("Obraz ni bil zaznan.")
 
-        # Izberi največji zaznani obraz
-        x, y, w, h = sorted(faces, key=lambda f: f[2] * f[3], reverse=True)[0]
+        # Izberi največjega
+        x, y, w, h = sorted(faces, key=lambda f: f[2]*f[3], reverse=True)[0]
         face_region = image_np[y:y+h, x:x+w]
         face_resized = cv2.resize(face_region, (64, 64))
         return face_resized
 
     except Exception as e:
-        print("Napaka pri zaznavi obraza:", str(e))
+        logging.warning("Napaka pri zaznavi obraza: %s", str(e))
         raise
+
 
 
 def extract_basic_features(face_img):
