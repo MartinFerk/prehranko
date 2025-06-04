@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Obrok = require('../models/obrok');
+const Obrok = require('../models/Obrok');
 const { Configuration, OpenAIApi } = require('openai');
 require('dotenv').config();
 
