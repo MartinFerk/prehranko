@@ -1,15 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const Obrok = require('../models/Obrok');
-const { Configuration, OpenAIApi } = require('openai');
 require('dotenv').config();
 
-// Konfiguracija OpenAI
+// ✅ Novi način uvoza za openai v4
 const OpenAI = require('openai');
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
 
 // 🎯 API endpoint: Analiziraj hrano iz slike
 router.post('/analyze-food', async (req, res) => {
@@ -20,22 +18,20 @@ router.post('/analyze-food', async (req, res) => {
   }
 
   try {
-    // Pošlji prompt GPT-ju
     const prompt = `Na sliki (${imageUrl}) je obrok. Opiši hrano in oceni približno:
 - Koliko kalorij vsebuje?
 - Koliko gramov beljakovin?
-
 Vrnjen format naj bo JSON kot:
 { "calories": ..., "protein": ..., "foodName": "..." }`;
 
-    const completion = await openai.createChatCompletion({
-      model: 'gpt-4-1106-preview', // ali "gpt-4o" če imaš dostop
+    // ✅ Klic z novim clientom in gpt-4o-mini
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const responseText = completion.data.choices[0].message.content.trim();
+    const responseText = completion.choices[0].message.content.trim();
 
-    // Parsanje odgovora kot JSON
     let foodData;
     try {
       foodData = JSON.parse(responseText);
@@ -43,7 +39,6 @@ Vrnjen format naj bo JSON kot:
       return res.status(500).json({ error: 'Odgovor OpenAI ni veljaven JSON', raw: responseText });
     }
 
-    // Shrani podatke v obstoječi obrok
     const updated = await Obrok.findOneAndUpdate(
       { obrokId },
       {
