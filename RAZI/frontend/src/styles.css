@@ -57,6 +57,14 @@ html, body {
   transition: color 0.3s ease, background-color 0.3s ease;
 }
 
+.disabled-link {
+  color: gray;
+  pointer-events: none;
+  cursor: default;
+  opacity: 0.6;
+}
+
+
 .navbar-link:hover {
   color: var(--secondary); /* Svetlo oranžna pri hover efektu */
   background-color: rgba(255, 152, 0, 0.1); /* Rahlo prozorno ozadje pri hover efektu */
