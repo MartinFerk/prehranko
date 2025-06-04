@@ -31,6 +31,10 @@ const obrokSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
+    protein: {
+        type: Number,
+        default: 0,
+    },
     name: {
         type: String,
         default: 'Nov obrok',
