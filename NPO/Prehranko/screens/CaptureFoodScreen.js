@@ -24,10 +24,12 @@ export default function CaptureFoodScreen({ navigation, route }) {
       quality: 0.7,
     });
 
-    if (!result.cancelled) {
-      setImageUri(result.uri);
-      analyzeFoodImage(result.uri);
+    if (!result.canceled && result.assets?.length > 0) {
+      const pickedUri = result.assets[0].uri;
+      setImageUri(pickedUri);
+      analyzeFoodImage(pickedUri);
     }
+
   };
 
   const uploadToImgur = async (uri) => {
