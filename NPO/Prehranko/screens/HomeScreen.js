@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import IconButton from '../components/IconButton';
 import { homeStyles } from '../styles/homeStyles';
 import { theme } from '../styles/theme';
+import { useNavigation } from '@react-navigation/native';
+import { API_BASE_URL } from '../services/api'; // ⬅️ poskrbi da to ustreza tvojemu Express backendu
 
 const DATA = [
   { id: '1', title: 'Statistika', description: 'Preglej statistiko tvojih obrokov.' },
@@ -11,26 +14,47 @@ const DATA = [
 ];
 
 export default function HomeScreen({ navigation, route }) {
-  const { email } = route.params || { email: 'Uporabnik' };
+  const [userEmail, setUserEmail] = useState(route.params?.email || null);
   const [pending2FA, setPending2FA] = useState(false);
   const [caloricGoal, setCaloricGoal] = useState(null);
 
-  useEffect(() => {
-    if (!email) return;
+  const fetchEmail = async () => {
+    try {
+      const emailFromStorage = await AsyncStorage.getItem('userEmail');
+      if (emailFromStorage) setUserEmail(emailFromStorage);
+    } catch (err) {
+      console.error('Napaka pri branju e-pošte iz AsyncStorage:', err.message);
+    }
+  };
 
-    const check2FA = async () => {
+  const pollFor2FA = () => {
+    const interval = setInterval(async () => {
       try {
-        const res = await fetch(`https://prehranko-production.up.railway.app/api/auth/status?email=${email}`);
-        const data = await res.json();
-        if (data.pending2FA) {
-          setPending2FA(true);
+        if (!userEmail) return;
+  
+        const res = await fetch(`${API_BASE_URL}/auth/check-2fa?email=${encodeURIComponent(userEmail)}`);
+        const text = await res.text();
+  
+        // Debug izpis
+        console.log('📡 /check-2fa odgovor:', text);
+  
+        // Če dobimo HTML, ne nadaljujemo
+        if (text.trim().startsWith('<')) {
+          console.warn('❌ Backend vrnil HTML – preveri URL in backend');
+          return;
+        }
+  
+        const data = JSON.parse(text);
+  
+        if (data.trigger) {
+          clearInterval(interval);
           Alert.alert(
-            '🔐 Potrebna je 2FA verifikacija',
-            'Za prijavo v spletno aplikacijo moraš preveriti obraz.',
+            '🔐 2FA preverjanje',
+            'Odpri kamero in preveri obraz.',
             [
               {
-                text: 'Začni zdaj',
-                onPress: () => navigation.navigate('FaceVerification', { email }),
+                text: 'Začni',
+                onPress: () => navigation.navigate('CameraScreen', { mode: 'verify', email: userEmail }),
               },
               { text: 'Prekliči', style: 'cancel' },
             ]
@@ -39,42 +63,77 @@ export default function HomeScreen({ navigation, route }) {
       } catch (err) {
         console.error('Napaka pri preverjanju 2FA:', err.message);
       }
-    };
+    }, 5000);
+  
+    return () => clearInterval(interval);
+  };
+  
 
-    const fetchCaloricGoal = async () => {
-      console.log('📩 Pošiljam zahtevo za /api/goals/get:', { email }); // Dodaj beleženje
-      try {
-        const res = await fetch(
-          `https://prehranko-production.up.railway.app/api/goals/get?email=${encodeURIComponent(email)}`
+  // Preveri 2FA status (Railway backend) — opcijsko
+  const check2FA = async () => {
+    try {
+      const res = await fetch(`https://prehranko-production.up.railway.app/api/auth/status?email=${userEmail}`);
+      const data = await res.json();
+      if (data.pending2FA) {
+        setPending2FA(true);
+        Alert.alert(
+          '🔐 Potrebna je 2FA verifikacija',
+          'Za prijavo v spletno aplikacijo moraš preveriti obraz.',
+          [
+            {
+              text: 'Začni zdaj',
+              onPress: () => navigation.navigate('CameraScreen', { mode: 'verify', email: userEmail }),
+            },
+            { text: 'Prekliči', style: 'cancel' },
+          ]
         );
-        const data = await res.json();
-        console.log('🌐 Odgovor od /api/goals/get:', { status: res.status, data }); // Dodaj beleženje
+      }
+    } catch (err) {
+      console.error('Napaka pri preverjanju 2FA (Railway):', err.message);
+    }
+  };
 
-        if (res.ok) {
-          setCaloricGoal(data.caloricGoal);
-        } else {
-          setCaloricGoal(null);
-        }
-      } catch (err) {
-        console.error('Napaka pri pridobivanju kaloričnega cilja:', err.message);
+  const fetchCaloricGoal = async () => {
+    try {
+      const res = await fetch(
+        `https://prehranko-production.up.railway.app/api/goals/get?email=${encodeURIComponent(userEmail)}`
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setCaloricGoal(data.caloricGoal);
+      } else {
         setCaloricGoal(null);
       }
-    };
+    } catch (err) {
+      console.error('Napaka pri pridobivanju kaloričnega cilja:', err.message);
+      setCaloricGoal(null);
+    }
+  };
 
-    check2FA();
-    fetchCaloricGoal();
-  }, [email]);
+  // Ob zagonu
+  useEffect(() => {
+    fetchEmail();
+  }, []);
+
+  useEffect(() => {
+    if (userEmail) {
+      const stopPolling = pollFor2FA(); // Express
+      check2FA(); // Railway
+      fetchCaloricGoal();
+      return stopPolling;
+    }
+  }, [userEmail]);
 
   const handleSettingsPress = () => {
-    navigation.navigate('SettingsScreen', { email }); // Posreduj email
+    navigation.navigate('SettingsScreen', { email: userEmail });
   };
 
   const handleCaptureFace = () => {
-    navigation.navigate('CameraScreen', { email });
+    navigation.navigate('CameraScreen', { mode: 'register', email: userEmail });
   };
 
   const handleSetGoal = () => {
-    navigation.navigate('GoalScreen', { email });
+    navigation.navigate('GoalScreen', { email: userEmail });
   };
 
   const handleFutureFeature = (feature) => {
@@ -89,7 +148,7 @@ export default function HomeScreen({ navigation, route }) {
           <Text style={homeStyles.settingsIcon}>⚙️</Text>
         </TouchableOpacity>
       </View>
-      <Text style={homeStyles.userName}>Pozdravljen, {email}!</Text>
+      <Text style={homeStyles.userName}>Pozdravljen, {userEmail || 'Uporabnik'}!</Text>
 
       {pending2FA && (
         <Text style={{ color: 'red', marginTop: 10 }}>
@@ -134,7 +193,7 @@ export default function HomeScreen({ navigation, route }) {
         <IconButton
           iconName="bar-chart"
           title="Sledenje"
-          onPress={() => navigation.navigate('ActivityScreen', { email })}
+          onPress={() => navigation.navigate('ActivityScreen', { email: userEmail })}
           color={theme.colors.secondary}
         />
         <IconButton
