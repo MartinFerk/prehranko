@@ -4,15 +4,14 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility';
 import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
 import '../styles.css';
-import { API_BASE_URL } from '../api/api';
+import { getAllObroki } from '../api/obroki';
 
 const Home = () => {
     const [obroki, setObroki] = useState([]);
 
     useEffect(() => {
-        fetch(`${API_BASE_URL}/api/obroki`)
-            .then((res) => res.json())
-            .then((data) => setObroki(data))
+        getAllObroki()
+            .then(setObroki)
             .catch((err) => console.error('Napaka pri pridobivanju obrokov:', err));
     }, []);
 
@@ -35,7 +34,10 @@ const Home = () => {
                         />
 
                         {obroki.map((obrok) => (
-                            <Marker key={obrok.obrokId} position={[obrok.locY, obrok.locX]}>
+                            <Marker
+                                key={obrok.obrokId}
+                                position={[obrok.locY, obrok.locX]}
+                            >
                                 <Popup>
                                     <div className="popup-card">
                                         <img
