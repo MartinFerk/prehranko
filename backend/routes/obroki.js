@@ -30,11 +30,13 @@ router.post('/analyze-food', async (req, res) => {
   }
 
   try {
-    const prompt = `Na sliki (${imageUrl}) je obrok. Opiši hrano in oceni približno:
-- Koliko kalorij vsebuje?
-- Koliko gramov beljakovin?
-Vrnjen format naj bo JSON kot:
-{ "calories": ..., "protein": ..., "foodName": "..." }`;
+ const prompt = `Na sliki (${imageUrl}) je obrok. Opiši hrano in oceni približno:
+    - Koliko kalorij vsebuje?
+    - Koliko gramov beljakovin?
+    Vrni izključno JSON objekt brez dodatnega besedila, brez razlage, brez oznak \`\`\`.
+    Primer:
+    { "calories": 500, "protein": 30, "foodName": "Piščanec z rižem" }`;
+
 
     // ✅ Klic z novim clientom in gpt-4o-mini
     const completion = await openai.chat.completions.create({
@@ -43,13 +45,17 @@ Vrnjen format naj bo JSON kot:
     });
 
     const responseText = completion.choices[0].message.content.trim();
+    console.log('🔍 OpenAI odgovor:', responseText);
 
     let foodData;
     try {
-      foodData = JSON.parse(responseText);
+    // Odstrani ```json ... ``` okoli, če obstaja
+    const cleaned = responseText.replace(/```json|```/g, '').trim();
+    foodData = JSON.parse(cleaned);
     } catch (e) {
-      return res.status(500).json({ error: 'Odgovor OpenAI ni veljaven JSON', raw: responseText });
+    return res.status(500).json({ error: 'Odgovor OpenAI ni veljaven JSON', raw: responseText });
     }
+
 
     const updated = await Obrok.findOneAndUpdate(
       { obrokId },
