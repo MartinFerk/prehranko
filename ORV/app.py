@@ -161,7 +161,7 @@ def verify_face():
         sim = cosine_similarity(test_embedding, avg_embedding)
 
         print(f"🔍 Cosine similarity: {sim}")
-        success = sim > 0.92  # prag lahko nastaviš
+        success = sim > 0.7  # prag lahko nastaviš
 
         return jsonify({ "success": success, "similarity": float(sim) })
 
