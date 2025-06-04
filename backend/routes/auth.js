@@ -293,7 +293,7 @@ router.get('/embeddings', async (req, res) => {
     return res.status(404).json({ message: 'Ni značilk za tega uporabnika' });
   }
 
-  res.json({ embeddings: user.faceEmbeddings });
+  res.json({ faceEmbeddings: user.faceEmbeddings });
 });
 
 module.exports = router;
