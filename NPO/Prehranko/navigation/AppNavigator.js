@@ -7,7 +7,7 @@ import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
 import CameraScreen from '../screens/CameraScreen.js';
 import SettingsScreen from '../screens/SettingsScreen';
-import ActivityScreen from '../screens/ActivityScreen';
+import CaptureFoodScreen from '../screens/CaptureFoodScreen.js';
 import FaceVerificationScreen from '../screens/FaceVerificationScreen.js';
 import GoalScreen from '../screens/GoalScreen.js'; // Preveri, ali je pot pravilna
 
@@ -18,7 +18,7 @@ const Stack = createStackNavigator();
 const AppNavigator = () => (
   <NavigationContainer>
     <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen name="ActivityScreen" component={ActivityScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name="CaptureFoodScreen" component={CaptureFoodScreen} options={{ headerShown: false }}/>
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen name="CameraScreen" component={CameraScreen} options={{ headerShown: false }} />
