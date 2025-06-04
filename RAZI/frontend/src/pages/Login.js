@@ -11,30 +11,48 @@ const Login = () => {
   const navigate = useNavigate(); // ⬅️ Hook za navigacijo
 
   const handleLogin = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, from: "web" }),
-      });
+  setLoading(true);
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, from: "web" }),
+    });
 
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Napaka pri prijavi');
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Napaka pri prijavi');
-
-      await trigger2FA(email);
-      alert('✅ Prijava uspešna. Počakaj na preverjanje obraza na telefonu.');
-      localStorage.setItem('loggedIn', 'true');
+    await trigger2FA(email);
+    alert('✅ Prijava uspešna. Počakaj na preverjanje obraza na telefonu.');
+    localStorage.setItem('loggedIn', 'true');
     localStorage.setItem('userEmail', email);
     localStorage.setItem('userName', data.name || 'Uporabnik');
-    } catch (err) {
-      alert('❌ ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-    
-  };
+
+    // 🔁 ZAČNI POLLING
+    const checkInterval = setInterval(async () => {
+      try {
+        const statusRes = await fetch(`${API_BASE_URL}/auth/check-2fa?email=${email}`);
+        const statusData = await statusRes.json();
+
+        console.log("📡 /check-2fa odgovor:", statusData);
+
+        if (statusData.is2faVerified) {
+          clearInterval(checkInterval);
+          navigate('/dashboard');
+        }
+      } catch (error) {
+        console.error("Napaka med preverjanjem 2FA:", error);
+        clearInterval(checkInterval);
+      }
+    }, 3000);
+
+  } catch (err) {
+    alert('❌ ' + err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="login-container">
