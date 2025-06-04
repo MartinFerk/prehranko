@@ -19,6 +19,7 @@ const Login = () => {
         body: JSON.stringify({ email, password, from: "web" }),
       });
 
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Napaka pri prijavi');
 
@@ -29,6 +30,7 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+    localStorage.setItem('loggedIn', 'true');
   };
 
   return (
