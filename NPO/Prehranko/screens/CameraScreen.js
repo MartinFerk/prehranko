@@ -97,7 +97,7 @@ if (!res.ok || !data.embeddings) {
     setLoading(true);
   
     try {
-      const photo = await cameraRef.current.takePictureAsync({ base64: false });
+      const photo = await cameraRef.current.takePictureAsync({ base64: false, skipProcessing: true,});
       const compressed = await compressPhoto(photo);
   
       const formData = new FormData();
