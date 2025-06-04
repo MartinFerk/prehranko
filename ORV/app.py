@@ -106,14 +106,17 @@ def extract_embeddings():
 
     try:
         for file in images:
-    try:
-        img = Image.open(file.stream).convert("RGB")
-        preprocessed = preprocess_image(img)
-        embedding = extract_face_embedding(preprocessed)
-        embeddings.append(embedding)
-    except Exception as e:
-        print("⚠️ Napaka pri sliki:", file.filename, str(e))
-        continue
+            try:
+                img = Image.open(file.stream).convert("RGB")
+                preprocessed = preprocess_image(img)
+                embedding = extract_face_embedding(preprocessed)
+                embeddings.append(embedding)
+            except Exception as e:
+                print("⚠️ Napaka pri sliki:", file.filename, str(e))
+                continue
+
+        if len(embeddings) == 0:
+            return jsonify({"error": "Ni bilo mogoče pridobiti značilk iz nobene slike"}), 400
 
         return jsonify({
             "embeddings": embeddings,
@@ -126,6 +129,7 @@ def extract_embeddings():
             "error": "Napaka pri obdelavi slik",
             "details": str(e)
         }), 500
+
 
 
 @app.route("/api/auth/verify", methods=["POST"])
