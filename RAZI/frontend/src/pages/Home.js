@@ -40,18 +40,22 @@ const Home = () => {
                             >
                                 <Popup>
                                     <div className="popup-card">
-                                        <img
-                                            src={obrok.imgLink}
-                                            alt={obrok.name}
-                                            className="popup-image"
-                                        />
+                                        <div className="popup-image-wrapper">
+                                            <img
+                                                src={obrok.imgLink}
+                                                alt={obrok.name}
+                                                className="popup-image"
+                                            />
+                                        </div>
                                         <div className="popup-info">
-                                            <h4>{obrok.name}</h4>
-                                            <p><strong>Čas:</strong> {new Date(obrok.timestamp).toLocaleString()}</p>
-                                            <p><strong>Uporabnik:</strong> {obrok.userEmail}</p>
+                                            <h4>🍽️ {obrok.name}</h4>
+                                            <p>🕒 <strong>{new Date(obrok.timestamp).toLocaleString()}</strong></p>
+                                            <p>📧 {obrok.userEmail}</p>
+                                            <p>🔥 {obrok.calories} kcal | 💪 {obrok.protein}g protein</p>
                                         </div>
                                     </div>
                                 </Popup>
+
                             </Marker>
                         ))}
                     </MapContainer>
