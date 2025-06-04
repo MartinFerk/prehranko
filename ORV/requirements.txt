@@ -6,4 +6,3 @@ flask-cors
 pymongo
 python-dotenv
 requests
-logging
