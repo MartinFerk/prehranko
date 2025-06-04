@@ -150,13 +150,23 @@ router.get('/status', async (req, res) => {
 });
 
 // POST /auth/complete-2fa
-router.post('/complete-2fa', (req, res) => {
+router.post('/complete-2fa', async (req, res) => {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ message: 'Email je zahtevan' });
+  if (!email) return res.status(400).json({ error: 'Email je obvezen' });
 
-  pending2FA.set(email, false);
-  console.log(`✅ 2FA completed for ${email}`);
-  res.json({ message: '2FA zaključeno' });
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: 'Uporabnik ni najden' });
+
+    // Tukaj recimo dodamo flag "is2faVerified"
+    user.is2faVerified = true;
+    await user.save();
+
+    return res.json({ message: '2FA uspešno dokončan' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Napaka strežnika' });
+  }
 });
 
 router.post('/register-face', upload.array('images'), async (req, res) => {
@@ -276,12 +286,14 @@ router.post('/save-features', async (req, res) => {
 });
 
 // Na PRAVI LOKACIJI (zgoraj, pred exportom)
-router.get('/check-2fa', (req, res) => {
+router.get('/check-2fa', async (req, res) => {
   const { email } = req.query;
-  if (!email) return res.status(400).json({ message: 'Email je zahtevan' });
+  if (!email) return res.status(400).json({ error: 'Email manjka' });
 
-  const trigger = pending2FA.get(email) || false;
-  res.json({ trigger });
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ error: 'Uporabnik ni najden' });
+
+  res.json({ is2faVerified: !!user.is2faVerified });
 });
 
 router.get('/embeddings', async (req, res) => {

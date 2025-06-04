@@ -23,26 +23,37 @@ export const verifyFaceImage = async (imageUri, email) => {
   return result;
 };
 
-export const trigger2FA = async (email) => {
+const handleLogin = async () => {
+  setLoading(true);
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/trigger2fa`, {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, password, from: "web" }),
     });
 
-    let data;
-try {
-  data = await res.json();
-} catch (err) {
-  throw new Error("❌ Strežnik ni vrnil JSON – verjetno Railway error stran ali napačen URL.");
-}
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Napaka pri prijavi');
 
-    if (!res.ok) throw new Error(data.message || '2FA zahteva ni uspela');
-    return data;
+    await trigger2FA(email);
+    alert('✅ Prijava uspešna. Počakaj na preverjanje obraza na telefonu.');
+
+    // 🔁 Začni polling preverjanja 2FA statusa
+    const checkInterval = setInterval(async () => {
+      const statusRes = await fetch(`${API_BASE_URL}/auth/check-2fa?email=${email}`);
+      const statusData = await statusRes.json();
+
+      if (statusData.is2faVerified) {
+        clearInterval(checkInterval);
+        localStorage.setItem('loggedIn', 'true');
+        navigate('/dashboard'); // 🔁 preusmeri na glavno stran
+      }
+    }, 3000); // vsakih 3 sekunde
+
   } catch (err) {
-    console.error('❌ Napaka pri trigger2FA:', err.message);
-    throw err;
+    alert('❌ ' + err.message);
+  } finally {
+    setLoading(false);
   }
 };
 

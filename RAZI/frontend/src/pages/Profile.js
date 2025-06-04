@@ -5,7 +5,13 @@ import '../styles.css';
 const Profile = () => {
   const navigate = useNavigate();
 
+  const userName = localStorage.getItem('userName') || 'Uporabnik';
+  const userEmail = localStorage.getItem('userEmail') || 'neznano@eposta.com';
+
   const handleLogout = () => {
+    localStorage.removeItem('loggedIn');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
     navigate('/login');
   };
 
@@ -13,12 +19,9 @@ const Profile = () => {
     <div className="profile-container">
       <h1 className="title">Profil</h1>
       <div className="profile-box">
-        <p className="profile-text"><strong>Ime:</strong> Uporabnik</p>
-        <p className="profile-text"><strong>E-pošta:</strong> uporabnik@primer.com</p>
-        <button
-          onClick={handleLogout}
-          className="logout-button"
-        >
+        <p className="profile-text"><strong>Ime:</strong> {userName}</p>
+        <p className="profile-text"><strong>E-pošta:</strong> {userEmail}</p>
+        <button onClick={handleLogout} className="logout-button">
           Odjavi se
         </button>
       </div>
