@@ -30,21 +30,24 @@ router.post('/analyze-food', async (req, res) => {
   }
 
   try {
-    // 🔍 1. Preveri, če je na sliki hrana
-    const checkPrompt = `Ali ta slika (${imageUrl}) prikazuje hrano? Odgovori samo z "DA" ali "NE".`;
-    const checkResponse = await openai.chat.completions.create({
+    // 1️⃣ Preveri, ali je na sliki hrana
+    const checkPrompt = `Ali je na tej sliki (${imageUrl}) prikazana hrana ali sestavine hrane (npr. surova jajca, sadje, sendvič, kosilo, embalaža z jedjo)? Odgovori izključno z "DA", "NE" ali "MOGOČE".`;
+
+    const check = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: checkPrompt }],
     });
 
-    const checkText = checkResponse.choices[0].message.content.trim().toUpperCase();
-    console.log('🤖 Preverjanje hrane:', checkText);
+    const checkText = check.choices[0].message.content.trim().toUpperCase();
+    console.log('🤖 [CHECK HRANA] Odgovor modela:', checkText);
 
-    if (!checkText.includes('DA')) {
-      return res.status(400).json({ error: 'Na sliki ni hrane ali ni jasno prepoznana.' });
+    if (checkText === 'NE') {
+      return res.status(400).json({ error: 'Na sliki ni hrane ali ni prepoznana kot užitna.' });
+    } else if (checkText === 'MOGOČE') {
+      return res.status(400).json({ error: 'Slika je nejasna, ni mogoče zanesljivo prepoznati hrane.' });
     }
 
-    // 🍽️ 2. Nadaljuj z analizo hrane
+    // 2️⃣ Če je hrana, nadaljuj z analizo
     const prompt = `Na sliki (${imageUrl}) je hrana. Opiši hrano in oceni približno:
     - Koliko kalorij vsebuje?
     - Koliko gramov beljakovin?
@@ -58,7 +61,7 @@ router.post('/analyze-food', async (req, res) => {
     });
 
     const responseText = completion.choices[0].message.content.trim();
-    console.log('🔍 OpenAI odgovor:', responseText);
+    console.log('🔍 [ANALIZA] OpenAI odgovor:', responseText);
 
     let foodData;
     try {
@@ -82,10 +85,11 @@ router.post('/analyze-food', async (req, res) => {
 
     res.json({ success: true, obrok: updated });
   } catch (err) {
-    console.error('Napaka pri analizi hrane:', err.message);
+    console.error('❌ Napaka pri analizi hrane:', err.message);
     res.status(500).json({ error: 'Napaka pri analizi hrane' });
   }
 });
+
 
 
 // 📌 POST /api/obroki/create - Ustvari obrok
