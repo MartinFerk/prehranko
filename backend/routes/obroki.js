@@ -9,6 +9,18 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+
+// ✅ Novi način uvoza za openai v4
+// GET /api/obroki
+router.get('/', async (req, res) => {
+  try {
+    const obroki = await Obrok.find();
+    res.json(obroki);
+  } catch (err) {
+    res.status(500).json({ message: 'Napaka pri pridobivanju obrokov' });
+  }
+});
+
 // 🎯 API endpoint: Analiziraj hrano iz slike
 router.post('/analyze-food', async (req, res) => {
   const { obrokId, imageUrl } = req.body;
