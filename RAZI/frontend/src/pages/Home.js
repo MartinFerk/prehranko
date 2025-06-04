@@ -7,12 +7,14 @@ const Home = () => {
     return (
         <div className="container">
             <h1 className="title">Statistika</h1>
+            <p>Tukaj bo prikaz statistike, ko bo implementirana.</p>
+
             <div className="map-container">
                 <MapContainer
                     center={[46.55472, 15.64667]} // Maribor
                     zoom={13}
                     scrollWheelZoom={false}
-                    style={{ height: '400px', width: '100%' }}
+                    style={{height: '100%', width: '100%'}} // fills .map-container
                 >
                     <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> prispevalci'
