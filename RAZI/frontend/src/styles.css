@@ -88,6 +88,7 @@ html, body {
   border: 2px solid #ccc;
   border-radius: 10px;
   overflow: hidden;
+  height: 400px; /* 👈 Add this line */
 }
 
 

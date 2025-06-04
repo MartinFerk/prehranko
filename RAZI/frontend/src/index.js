@@ -1,4 +1,5 @@
 import React from 'react';
+import 'leaflet/dist/leaflet.css';
 import { createRoot } from 'react-dom/client'; // Nova metoda za React 18+
 import App from './App';
 import './styles.css'; // Uvozi CSS za globalne stile
