@@ -14,17 +14,23 @@ def preprocess_image(image_pil):
     return image_pil.resize((400, 400))
 
 def detect_face(image_pil):
-    image_np = np.array(image_pil.convert("RGB"))
-    gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+    try:
+        image_np = np.array(image_pil.convert("RGB"))
+        gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+        print("Zaznani obrazi:", faces)
 
-    if len(faces) == 0:
-        raise ValueError("Obraz ni bil zaznan.")
+        if len(faces) == 0:
+            raise ValueError("Obraz ni bil zaznan.")
 
-    x, y, w, h = faces[0]
-    face_region = image_np[y:y+h, x:x+w]
-    face_resized = cv2.resize(face_region, (64, 64))
-    return face_resized
+        x, y, w, h = faces[0]
+        face_region = image_np[y:y+h, x:x+w]
+        face_resized = cv2.resize(face_region, (64, 64))
+        return face_resized
+
+    except Exception as e:
+        print("Napaka pri zaznavi obraza:", str(e))
+        raise
 
 def extract_basic_features(face_img):
     gray = cv2.cvtColor(face_img, cv2.COLOR_RGB2GRAY)
@@ -143,7 +149,12 @@ def verify_face():
     try:
         img = Image.open(file.stream).convert("RGB")
         preprocessed = preprocess_image(img)
-        test_embedding = extract_face_embedding(preprocessed)
+
+        try:
+            test_embedding = extract_face_embedding(preprocessed)
+        except Exception as e:
+            print("❌ Napaka med extract_face_embedding:", str(e))
+            return jsonify({"error": "Obraz ni bil zaznan"}), 400
 
         # 🔄 Pridobi shranjene značilke
         response = requests.get(f"https://prehranko-production.up.railway.app/api/auth/embeddings?email={email}")
@@ -161,13 +172,14 @@ def verify_face():
         sim = cosine_similarity(test_embedding, avg_embedding)
 
         print(f"🔍 Cosine similarity: {sim}")
-        success = sim > 0.35  # prag lahko nastaviš
+        success = sim > 0.35  # prag lahko prilagodiš
 
         return jsonify({ "success": success, "similarity": float(sim) })
 
     except Exception as e:
         print("❌ Napaka pri preverjanju:", str(e))
         return jsonify({ "error": str(e) }), 500
+
 
 
 if __name__ == "__main__":
