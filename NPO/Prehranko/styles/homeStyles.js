@@ -1,13 +1,12 @@
-// styles/homeStyles.js
 import { StyleSheet, Dimensions } from 'react-native';
 import { theme } from './theme';
 
-const { height } = Dimensions.get('window'); // Za dinamično izračunavanje višine
+const { width, height } = Dimensions.get('window');
 
 export const homeStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background, // Svetlo bež ozadje
+    backgroundColor: theme.colors.background,
     paddingHorizontal: theme.spacing.large,
   },
   header: {
@@ -19,22 +18,22 @@ export const homeStyles = StyleSheet.create({
   appName: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: theme.colors.primary, // Rumena za naslov aplikacije
+    color: theme.colors.primary,
   },
   settingsButton: {
     padding: theme.spacing.small,
   },
   settingsIcon: {
     fontSize: 24,
-    color: theme.colors.accent, // Temno oranžna za ikono nastavitev
+    color: theme.colors.accent,
   },
   userName: {
     fontSize: 18,
-    color: theme.colors.text, // Temno siva za ime uporabnika
+    color: theme.colors.text,
     marginVertical: theme.spacing.medium,
   },
   statisticsCard: {
-    backgroundColor: theme.colors.cardBackground, // Bela kartica
+    backgroundColor: theme.colors.cardBackground,
     borderRadius: 10,
     padding: theme.spacing.medium,
     marginBottom: theme.spacing.medium,
@@ -43,12 +42,13 @@ export const homeStyles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    height: height * 0.35, // 35% višine zaslona
+    height: height * 0.35,
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.secondary, // Svetlo oranžna za poudarek
+    borderLeftColor: theme.colors.secondary,
+    width: '100%', // Full width
   },
-  card: {
-    backgroundColor: theme.colors.cardBackground, // Bela kartica
+  halfCard: {
+    backgroundColor: theme.colors.cardBackground,
     borderRadius: 10,
     padding: theme.spacing.medium,
     marginBottom: theme.spacing.medium,
@@ -57,30 +57,38 @@ export const homeStyles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    height: height * 0.25, // Adjusted height for half cards
+    width: '48%', // Half of the screen width with some spacing
+    marginRight: theme.spacing.medium, // Space between cards
+  },
+  zajemiObrokCard: {
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.primary, // Rumena za poudarek
-    height: height * 0.15, // Manjše kartice (15% višine zaslona)
+    borderLeftColor: theme.colors.primary,
+  },
+  ciljiCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.primary,
+  },
+  cardsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.large,
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: theme.colors.text, // Temno siva za naslove
+    color: theme.colors.text,
     marginBottom: theme.spacing.small,
   },
   cardDescription: {
     fontSize: 14,
-    color: theme.colors.text, // Temno siva za opis
-  },
-  cardsContainer: {
-    flex: 1,
-    marginBottom: theme.spacing.large,
+    color: theme.colors.text,
   },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: theme.spacing.large,
   },
-  // Stili za IconButton
   iconButtonContainer: {
     alignItems: 'center',
     marginHorizontal: theme.spacing.medium,
@@ -93,11 +101,11 @@ export const homeStyles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.small,
     borderWidth: 2,
-    borderColor: theme.colors.accent, // Temno oranžna za rob gumbov
+    borderColor: theme.colors.accent,
   },
   iconButtonTitle: {
     fontSize: 12,
-    color: theme.colors.text, // Temno siva za tekst gumbov
+    color: theme.colors.text,
     textAlign: 'center',
   },
 });
