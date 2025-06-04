@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema({
     default: [],
   },
   caloricGoal: { type: Number, default: null }, // Polje za trajni kalorični cilj - PT
+  proteinGoal: { type: Number, default: null }, // Polje za trajni beljakovinski cilj - PT
+
   devices: [{
       deviceId: { type: String, required: true, unique: true }, // Edinstven ID naprave, npr. UUID
       deviceName: { type: String, default: '' }, // Ime naprave (npr. "iPhone 12")
