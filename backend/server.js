@@ -28,6 +28,9 @@ app.get('/', (req, res) => {
   res.send('🚀 Strežnik deluje!');
 });
 
+const obrokRoutes = require('./routes/obroki');
+app.use('/api/obroki', obrokRoutes);
+
 const activityRoutes = require('./routes/activities');
 app.use('/api/activities', activityRoutes);
 
