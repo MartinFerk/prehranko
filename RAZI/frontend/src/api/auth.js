@@ -23,6 +23,21 @@ export const verifyFaceImage = async (imageUri, email) => {
   return result;
 };
 
+export const trigger2FA = async (email) => {
+  const res = await fetch(`${API_BASE_URL}/auth/trigger2fa`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.message || 'Napaka pri sprožitvi 2FA');
+  }
+
+  return res.json();
+};
+
 const handleLogin = async () => {
   setLoading(true);
   try {
