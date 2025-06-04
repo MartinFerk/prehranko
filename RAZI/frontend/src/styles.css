@@ -82,6 +82,14 @@ html, body {
   padding: 20px;
   padding-top: 60px; /* Dodan prostor za navigacijski vrstico */
 }
+/* vsebnik za zemljevid */
+.map-container {
+  margin-top: 1rem;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
 
 /* Kartice za login, register in profile */
 .login-box,

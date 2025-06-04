@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Profile from './pages/Profile';
 import Register from './pages/Register';
 import './styles.css';
+import 'leaflet/dist/leaflet.css';
 import React from 'react';
 
 function App() {
