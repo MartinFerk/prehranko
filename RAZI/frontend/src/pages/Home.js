@@ -9,20 +9,23 @@ const Home = () => {
             <h1 className="title">Statistika</h1>
             <p>Tukaj bo prikaz statistike, ko bo implementirana.</p>
 
-            <div className="map-container">
-                <MapContainer
-                    center={[46.55472, 15.64667]} // Maribor
-                    zoom={13}
-                    scrollWheelZoom={false}
-                    style={{height: '100%', width: '100%'}} // fills .map-container
-                >
-                    <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> prispevalci'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                </MapContainer>
+            <div className="map-wrapper">
+                <div className="map-container">
+                    <MapContainer
+                        center={[46.55472, 15.64667]}
+                        zoom={13}
+                        scrollWheelZoom={true}
+                        style={{height: '100%', width: '100%'}}
+                    >
+                        <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> prispevalci'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                    </MapContainer>
+                </div>
             </div>
         </div>
+
     );
 };
 
