@@ -89,7 +89,7 @@ const uploadToImgur = async (uri) => {
       const analyzeData = await analyzeRes.json();
 
       if (!analyzeRes.ok) {
-        Alert.alert('Napaka pri analizi', analyzeData.error || 'Nepoznata napaka');
+        Alert.alert('Napaka pri analizi', analyzeData.error || 'Nepoznana napaka');
         return;
       }
 
