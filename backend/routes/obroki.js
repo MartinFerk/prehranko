@@ -5,10 +5,11 @@ const { Configuration, OpenAIApi } = require('openai');
 require('dotenv').config();
 
 // Konfiguracija OpenAI
-const configuration = new Configuration({
+const OpenAI = require('openai');
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
+
 
 // 🎯 API endpoint: Analiziraj hrano iz slike
 router.post('/analyze-food', async (req, res) => {
