@@ -30,38 +30,35 @@ router.post('/analyze-food', async (req, res) => {
   }
 
   try {
-    // 1️⃣ Preveri, ali je na sliki hrana
-    const checkPrompt = `Ali je na tej sliki (${imageUrl}) prikazana hrana ali sestavine hrane (npr. surova jajca, sadje, sendvič, kosilo, embalaža z jedjo)? Odgovori izključno z "DA", "NE" ali "MOGOČE".`;
-
-    const check = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: checkPrompt }],
-    });
-
-    const checkText = check.choices[0].message.content.trim().toUpperCase();
-    console.log('🤖 [CHECK HRANA] Odgovor modela:', checkText);
-
-    if (checkText === 'NE') {
-      return res.status(400).json({ error: 'Na sliki ni hrane ali ni prepoznana kot užitna.' });
-    } else if (checkText === 'MOGOČE') {
-      return res.status(400).json({ error: 'Slika je nejasna, ni mogoče zanesljivo prepoznati hrane.' });
-    }
-
-    // 2️⃣ Če je hrana, nadaljuj z analizo
-    const prompt = `Na sliki (${imageUrl}) je hrana. Opiši hrano in oceni približno:
-    - Koliko kalorij vsebuje?
-    - Koliko gramov beljakovin?
-    Vrni izključno JSON objekt brez dodatnega besedila, brez razlage, brez oznak \`\`\`.
-    Primer:
-    { "calories": 500, "protein": 30, "foodName": "ime hrane/jedi" }`;
+    const messages = [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: `Na sliki je morda hrana. Ali lahko:
+        - poveš, ali je na sliki hrana?
+        - če ja, koliko kalorij ima?
+        - koliko beljakovin?
+        - kakšno je ime hrane?
+        Vrni JSON kot:
+        { "isFood": true|false, "calories": št, "protein": št, "foodName": "ime hrane" }`,
+          },
+          {
+            type: 'image_url',
+            image_url: { url: imageUrl },
+          },
+        ],
+      },
+    ];
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
+      model: 'gpt-4o',
+      messages,
     });
 
     const responseText = completion.choices[0].message.content.trim();
-    console.log('🔍 [ANALIZA] OpenAI odgovor:', responseText);
+    console.log('🔍 OpenAI vizualni odgovor:', responseText);
 
     let foodData;
     try {
@@ -69,6 +66,10 @@ router.post('/analyze-food', async (req, res) => {
       foodData = JSON.parse(cleaned);
     } catch (e) {
       return res.status(500).json({ error: 'Odgovor OpenAI ni veljaven JSON', raw: responseText });
+    }
+
+    if (!foodData.isFood) {
+      return res.status(400).json({ error: 'Na sliki ni hrane ali ni prepoznavna.' });
     }
 
     const updated = await Obrok.findOneAndUpdate(
@@ -85,12 +86,10 @@ router.post('/analyze-food', async (req, res) => {
 
     res.json({ success: true, obrok: updated });
   } catch (err) {
-    console.error('❌ Napaka pri analizi hrane:', err.message);
+    console.error('Napaka pri analizi hrane:', err.message);
     res.status(500).json({ error: 'Napaka pri analizi hrane' });
   }
 });
-
-
 
 // 📌 POST /api/obroki/create - Ustvari obrok
 router.post('/create', async (req, res) => {
