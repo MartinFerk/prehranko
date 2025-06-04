@@ -1,7 +1,7 @@
 import React from 'react';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import '../../styles.css'; // adjust the path if needed
+import '../styles.css'; // adjust the path if needed
 
 const Home = () => {
     return (
