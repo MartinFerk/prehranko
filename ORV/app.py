@@ -106,10 +106,14 @@ def extract_embeddings():
 
     try:
         for file in images:
-            img = Image.open(file.stream).convert("RGB")
-            preprocessed = preprocess_image(img)
-            embedding = extract_face_embedding(preprocessed)
-            embeddings.append(embedding)
+    try:
+        img = Image.open(file.stream).convert("RGB")
+        preprocessed = preprocess_image(img)
+        embedding = extract_face_embedding(preprocessed)
+        embeddings.append(embedding)
+    except Exception as e:
+        print("⚠️ Napaka pri sliki:", file.filename, str(e))
+        continue
 
         return jsonify({
             "embeddings": embeddings,

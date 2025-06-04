@@ -62,16 +62,17 @@ export default function CameraScreen({ navigation, route }) {
       });
 
       const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (err) {
-        throw new Error('Strežnik ni vrnil veljavnega JSON');
-      }
+let data;
+try {
+  data = JSON.parse(text);
+} catch (err) {
+  throw new Error('Strežnik ni vrnil veljavnega JSON');
+}
 
-      if (!data.embeddings) {
-        throw new Error('JSON nima polja "embeddings"');
-      }
+if (!res.ok || !data.embeddings) {
+  const msg = data?.error || 'Napaka pri pridobivanju značilk';
+  throw new Error(msg);
+}
 
       const upload = await fetch('https://prehranko-production.up.railway.app/api/save-embeddings', {
         method: 'POST',
@@ -107,7 +108,7 @@ export default function CameraScreen({ navigation, route }) {
       });
       formData.append('email', email); // ⬅️ To je OBVEZNO! Python backend zahteva email
   
-      const res = await fetch(`${CAMERA_API_URL}/verify-face`, {
+      const res = await fetch(`${CAMERA_API_URL}/api/auth/verify`, {
         method: 'POST',
         body: formData,
         headers: {
