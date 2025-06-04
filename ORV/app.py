@@ -179,7 +179,7 @@ def verify_face():
             return jsonify({"error": "Napaka pri pridobivanju značilk"}), 500
 
         data = response.json()
-        saved_embeddings = data.get("embeddings", [])
+        saved_embeddings = data.get("faceEmbeddings", [])
 
         if not saved_embeddings:
             return jsonify({"error": "Ni shranjenih značilk"}), 404
