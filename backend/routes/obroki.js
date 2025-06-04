@@ -70,4 +70,29 @@ Vrnjen format naj bo JSON kot:
   }
 });
 
+// 📌 POST /api/obroki/create - Ustvari obrok
+router.post('/create', async (req, res) => {
+  const { obrokId, userEmail, imgLink } = req.body;
+
+  if (!obrokId || !userEmail || !imgLink) {
+    return res.status(400).json({ error: 'Manjkajo podatki (obrokId, userEmail, imgLink)' });
+  }
+
+  try {
+    const novObrok = new Obrok({
+      obrokId,
+      userEmail,
+      imgLink,
+    });
+
+    await novObrok.save();
+
+    res.status(201).json({ message: 'Obrok uspešno ustvarjen', obrok: novObrok });
+  } catch (err) {
+    console.error('Napaka pri ustvarjanju obroka:', err);
+    res.status(500).json({ error: 'Napaka pri ustvarjanju obroka' });
+  }
+});
+
+
 module.exports = router;
