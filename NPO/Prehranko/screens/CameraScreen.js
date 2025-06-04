@@ -123,6 +123,7 @@ if (!res.ok || !data.embeddings) {
   
         if (data.success) {
           Alert.alert('✅ Preverjanje uspešno!');
+          console.log('Similarity:', data.similarity);
           await fetch(`${API_BASE_URL}/auth/complete-2fa`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -130,6 +131,7 @@ if (!res.ok || !data.embeddings) {
           });
         } else {
           Alert.alert('❌ Obraz se ne ujema.');
+          console.log('Similarity:', data.similarity);
         }
       } catch (parseErr) {
         console.warn('❌ Backend je vrnil HTML ali neveljaven JSON:', text);
