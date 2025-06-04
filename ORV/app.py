@@ -206,7 +206,7 @@ def verify_face():
         sim = cosine_similarity(test_embedding, avg_embedding)
 
         logging.info(f"▶️ Cosine similarity: {sim:.4f}")
-        success = sim > 0.35
+        success = bool(sim > 0.35)
 
         return jsonify({
             "success": success,
