@@ -64,8 +64,6 @@ export default function CaptureFoodScreen({ navigation, route }) {
     }
   };
 
-
-
   const analyzeFoodImage = async (localUri) => {
     setLoading(true);
     setResult(null);
@@ -106,23 +104,54 @@ export default function CaptureFoodScreen({ navigation, route }) {
     }
   };
 
-  return (
+    const cancelObrok = async () => {
+    try {
+        const res = await fetch(`${API_BASE_URL}/obroki/delete/${result?.obrokId}`, {
+        method: 'DELETE',
+        });
+        const text = await res.text(); // Get raw response
+        console.log('Raw response from DELETE /obroki/delete:', text);
+
+        const data = JSON.parse(text); // Try to parse
+        if (res.ok) {
+        Alert.alert('Obrok izbrisan');
+        } else {
+        Alert.alert('Napaka pri brisanju:', data.error || 'Neznana napaka');
+        }
+        navigation.navigate('Home', { email: userEmail });
+    } catch (err) {
+        console.error('Napaka pri brisanju obroka:', err.message);
+        Alert.alert('Napaka pri brisanju obroka');
+    }
+    };
+
+
+    return (
     <View style={{ flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' }}>
-      <Button title="Zajemi obrok" onPress={pickImage} />
+        <Button title="Zajemi obrok" onPress={pickImage} />
 
-      {imageUri && (
+        {imageUri && (
         <Image source={{ uri: imageUri }} style={{ width: 300, height: 300, marginTop: 20 }} />
-      )}
+        )}
 
-      {loading && <ActivityIndicator size="large" color="orange" style={{ marginTop: 20 }} />}
+        {loading && <ActivityIndicator size="large" color="orange" style={{ marginTop: 20 }} />}
 
-      {result && (
+        {result && (
         <View style={{ marginTop: 30, alignItems: 'center' }}>
-          <Text style={{ fontSize: 20, fontWeight: 'bold' }}>{result.name}</Text>
-          <Text style={{ fontSize: 16 }}>Kalorije: {result.calories}</Text>
-          <Text style={{ fontSize: 16 }}>Beljakovine: {result.protein} g</Text>
+            <Text style={{ fontSize: 20, fontWeight: 'bold' }}>{result.name}</Text>
+            <Text style={{ fontSize: 16 }}>Kalorije: {result.calories}</Text>
+            <Text style={{ fontSize: 16 }}>Beljakovine: {result.protein} g</Text>
+
+            <View style={{ flexDirection: 'row', marginTop: 20 }}>
+            <Button
+                title="Shrani"
+                onPress={() => navigation.navigate('Home', { email: userEmail })}
+            />
+            <View style={{ width: 20 }} />
+            <Button title="Prekliči" color="red" onPress={cancelObrok} />
+            </View>
         </View>
-      )}
+        )}
     </View>
-  );
+    );
 }

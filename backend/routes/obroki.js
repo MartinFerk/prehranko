@@ -115,5 +115,23 @@ router.post('/create', async (req, res) => {
   }
 });
 
+// 🗑️ DELETE /api/obroki/delete/:obrokId - Briši obrok
+router.delete('/delete/:obrokId', async (req, res) => {
+  const { obrokId } = req.params;
+
+  try {
+    const deleted = await Obrok.findOneAndDelete({ obrokId });
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Obrok ni bil najden za brisanje' });
+    }
+
+    res.json({ message: 'Obrok uspešno izbrisan', obrok: deleted });
+  } catch (err) {
+    console.error('Napaka pri brisanju obroka:', err.message);
+    res.status(500).json({ error: 'Napaka pri brisanju obroka' });
+  }
+});
+
 
 module.exports = router;
