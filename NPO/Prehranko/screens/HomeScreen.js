@@ -72,25 +72,26 @@ export default function HomeScreen({ navigation, route }) {
   // Preveri 2FA status (Railway backend) — opcijsko
   const check2FA = async () => {
     try {
-      const res = await fetch(`https://prehranko-production.up.railway.app/api/auth/status?email=${userEmail}`);
+      const res = await fetch(`${API_BASE_URL}/auth/check-2fa?email=${userEmail}`);
+      const contentType = res.headers.get('content-type');
+    
+      if (!res.ok) throw new Error('Napaka pri preverjanju 2FA');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text();
+        console.warn('❌ Backend vrnil HTML – preveri URL in backend');
+        console.log('📡 /check-2fa odgovor:', text);
+        throw new Error('Odziv ni bil JSON');
+      }
+    
       const data = await res.json();
-      if (data.pending2FA) {
-        setPending2FA(true);
-        Alert.alert(
-          '🔐 Potrebna je 2FA verifikacija',
-          'Za prijavo v spletno aplikacijo moraš preveriti obraz.',
-          [
-            {
-              text: 'Začni zdaj',
-              onPress: () => navigation.navigate('CameraScreen', { mode: 'verify', email: userEmail }),
-            },
-            { text: 'Prekliči', style: 'cancel' },
-          ]
-        );
+    
+      if (data.trigger) {
+        clearInterval(interval);
+        navigation.navigate('CameraScreen', { mode: 'verify', email: userEmail });
       }
     } catch (err) {
-      console.error('Napaka pri preverjanju 2FA (Railway):', err.message);
-    }
+      console.log('Napaka pri preverjanju 2FA:', err.message);
+    }    
   };
 
   const fetchCaloricGoal = async () => {
