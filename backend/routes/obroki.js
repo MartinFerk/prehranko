@@ -30,15 +30,28 @@ router.post('/analyze-food', async (req, res) => {
   }
 
   try {
- const prompt = `Na sliki (${imageUrl}) je obrok. Opiši hrano in oceni približno:
+    // 🔍 1. Preveri, če je na sliki hrana
+    const checkPrompt = `Ali ta slika (${imageUrl}) prikazuje hrano? Odgovori samo z "DA" ali "NE".`;
+    const checkResponse = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: checkPrompt }],
+    });
+
+    const checkText = checkResponse.choices[0].message.content.trim().toUpperCase();
+    console.log('🤖 Preverjanje hrane:', checkText);
+
+    if (!checkText.includes('DA')) {
+      return res.status(400).json({ error: 'Na sliki ni hrane ali ni jasno prepoznana.' });
+    }
+
+    // 🍽️ 2. Nadaljuj z analizo hrane
+    const prompt = `Na sliki (${imageUrl}) je hrana. Opiši hrano in oceni približno:
     - Koliko kalorij vsebuje?
     - Koliko gramov beljakovin?
     Vrni izključno JSON objekt brez dodatnega besedila, brez razlage, brez oznak \`\`\`.
     Primer:
-    { "calories": 500, "protein": 30, "foodName": "Piščanec z rižem" }`;
+    { "calories": 500, "protein": 30, "foodName": "ime hrane/jedi" }`;
 
-
-    // ✅ Klic z novim clientom in gpt-4o-mini
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
@@ -49,13 +62,11 @@ router.post('/analyze-food', async (req, res) => {
 
     let foodData;
     try {
-    // Odstrani ```json ... ``` okoli, če obstaja
-    const cleaned = responseText.replace(/```json|```/g, '').trim();
-    foodData = JSON.parse(cleaned);
+      const cleaned = responseText.replace(/```json|```/g, '').trim();
+      foodData = JSON.parse(cleaned);
     } catch (e) {
-    return res.status(500).json({ error: 'Odgovor OpenAI ni veljaven JSON', raw: responseText });
+      return res.status(500).json({ error: 'Odgovor OpenAI ni veljaven JSON', raw: responseText });
     }
-
 
     const updated = await Obrok.findOneAndUpdate(
       { obrokId },
@@ -75,6 +86,7 @@ router.post('/analyze-food', async (req, res) => {
     res.status(500).json({ error: 'Napaka pri analizi hrane' });
   }
 });
+
 
 // 📌 POST /api/obroki/create - Ustvari obrok
 router.post('/create', async (req, res) => {
