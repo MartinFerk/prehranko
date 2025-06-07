@@ -1,0 +1,18 @@
+@echo off
+set EMAIL=x@c.com
+
+REM 1. Pošlje slike in dobi embeddinge
+curl -X POST http://localhost:5000/extract-embeddings ^
+  -F "email=%EMAIL%" ^
+  -F "images=@m1.jpg" ^
+  -F "images=@m2.jpg" ^
+  -F "images=@m3.jpg" ^
+  -F "images=@m4.jpg" ^
+  -F "images=@m5.jpg" > embeddings.json
+
+REM 2. Pošlje embeddinge v Express backend
+curl -X POST https://prehranko-production.up.railway.app/api/save-embeddings ^
+  -H "Content-Type: application/json" ^
+  -d @embeddings.json
+
+pause
