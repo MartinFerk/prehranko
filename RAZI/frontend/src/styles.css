@@ -209,23 +209,52 @@ html, body {
   margin-top: 30px;
 }
 
+.progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 500px;
+  margin-bottom: 16px;
+}
+
+
+.label-column {
+  width: 150px;
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.bar-column {
+  flex: 1;
+  margin-left: 16px;
+}
+
+
 .progress-wrapper {
   margin-bottom: 20px;
 }
 
 .progress-bar {
-  background-color: #e0e0e0;
-  border-radius: 20px;
-  height: 24px;
-  width: 100%;
+  background-color: #eee;
+  height: 26px;
+  border-radius: 13px;
   overflow: hidden;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+  position: relative;
 }
+
+.progress-percent {
+  font-size: 14px;
+}
+
 
 .progress-fill {
   height: 100%;
-  background-color: #ff9f43; /* oranžna za kalorije */
-  transition: width 0.4s ease-in-out;
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  font-weight: bold;
+  color: white;
+  border-radius: 13px;
 }
 
 .progress-fill.protein {

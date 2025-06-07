@@ -99,33 +99,38 @@ const MojPrehranko = () => {
             <div className="progress-section">
                 <h3>Dnevni pregled</h3>
 
-                <div className="progress-wrapper">
-                    <label>
+                <div className="progress-row">
+                    <div className="label-column">
                         Kalorije: {todayCalories} / {goals.calories} kcal
-                    </label>
-                    <div className="progress-bar">
-                        <div
-                            className={`progress-fill ${getColorClass(percent(todayCalories, goals.calories))}`}
-                            style={{width: `${percent(todayCalories, goals.calories)}%`}}
-                        >
-                            <span className="progress-percent">{percent(todayCalories, goals.calories)}%</span>
+                    </div>
+                    <div className="bar-column">
+                        <div className="progress-bar">
+                            <div
+                                className={`progress-fill ${getColorClass(percent(todayCalories, goals.calories))}`}
+                                style={{width: `${percent(todayCalories, goals.calories)}%`}}
+                            >
+                                <span className="progress-percent">{percent(todayCalories, goals.calories)}%</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="progress-wrapper">
-                    <label>
+                <div className="progress-row">
+                    <div className="label-column">
                         Beljakovine: {todayProtein}g / {goals.protein}g
-                    </label>
-                    <div className="progress-bar">
-                        <div
-                            className={`progress-fill ${getColorClass(percent(todayProtein, goals.protein))}`}
-                            style={{width: `${percent(todayProtein, goals.protein)}%`}}
-                        >
-                            <span className="progress-percent">{percent(todayProtein, goals.protein)}%</span>
+                    </div>
+                    <div className="bar-column">
+                        <div className="progress-bar">
+                            <div
+                                className={`progress-fill ${getColorClass(percent(todayProtein, goals.protein))}`}
+                                style={{width: `${percent(todayProtein, goals.protein)}%`}}
+                            >
+                                <span className="progress-percent">{percent(todayProtein, goals.protein)}%</span>
+                            </div>
                         </div>
                     </div>
                 </div>
+
             </div>
 
             <div style={{width: '600px', margin: '0 auto'}}>
