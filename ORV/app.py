@@ -38,9 +38,22 @@ face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_fronta
 resnet_model = models.resnet50(pretrained=False)
 resnet_model.fc = torch.nn.Linear(2048, 2)
 download_model_if_missing()
-resnet_model.load_state_dict(torch.load("resnet50_face_trained.pt", map_location=torch.device("cpu"), weights_only=False))
+
+try:
+    state_dict = torch.load(MODEL_PATH, map_location=torch.device("cpu"), weights_only=False)
+    if isinstance(state_dict, dict) and "fc.weight" in state_dict:
+        resnet_model.load_state_dict(state_dict)
+    else:
+        # Če ni state_dict ampak celoten model
+        resnet_model = state_dict
+        print("ℹ️ Naložen celoten model (namesto state_dict).")
+except Exception as e:
+    print("❌ Napaka pri nalaganju modela:", e)
+    raise e
+
 resnet_model.fc = torch.nn.Identity()
 resnet_model.eval()
+
 
 resnet_transform = transforms.Compose([
     transforms.Resize((224, 224)),
