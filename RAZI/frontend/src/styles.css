@@ -110,17 +110,18 @@ html, body {
 }
 
 /* Container za vse strani */
+/* Container za vse strani */
 .container,
 .login-container,
 .profile-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 100vh;
   padding: 20px;
-  padding-top: 60px; /* Dodan prostor za navigacijski vrstico */
+  padding-top: 80px; /* dovolj prostora za navbar */
+  gap: 1rem;
 }
+
 .map-wrapper {
   width: 100%;
   max-width: 800px;     /* ali 600px, kot želiš */
