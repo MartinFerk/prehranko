@@ -1,10 +1,9 @@
 flask
-opencv-python-headless==4.7.0.72
+opencv-python
 numpy
 pillow
 flask-cors
 pymongo
 python-dotenv
 requests
-torchvision==0.15.2+cpu
-torch==2.0.1+cpu
+torchvision
