@@ -24,6 +24,7 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  pending2FA: { type: Boolean, default: false }, // Novo polje za čakajoče 2FA zahteve
 });
 
 module.exports = mongoose.model("User", userSchema);

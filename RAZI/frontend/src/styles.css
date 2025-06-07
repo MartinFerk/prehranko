@@ -406,6 +406,10 @@ html, body {
   background-color: white;
 }
 
+.ol {
+  list-style: none;
+}
+
 .popup-image {
   width: 100%;
   height: 120px;

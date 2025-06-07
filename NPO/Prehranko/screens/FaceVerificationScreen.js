@@ -1,45 +1,81 @@
+// FaceVerificationScreen.js
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native'; // ⬅️ dodaj to
+import { useNavigation } from '@react-navigation/native';
+import { API_BASE_URL } from '../services/api';
 
 const FaceVerificationScreen = ({ route }) => {
   const { email } = route.params;
   const [pending, setPending] = useState(false);
-  const navigation = useNavigation(); // ⬅️ hook za navigacijo
+  const [loading, setLoading] = useState(true);
+  const navigation = useNavigation();
 
   useEffect(() => {
-    const interval = setInterval(async () => {
+    const check2FAStatus = async () => {
       try {
-        const res = await fetch(`https://prehranko-production.up.railway.app/api/auth/status?email=${email}`);
+        const res = await fetch(`${API_BASE_URL}/auth/status?email=${encodeURIComponent(email)}`);
         const data = await res.json();
 
         if (data.pending2FA) {
-          clearInterval(interval);
           setPending(true);
+        } else {
+          setPending(false);
+          console.log('ℹ️ Ni aktivne 2FA zahteve, vračam nazaj.');
+          navigation.goBack();
         }
       } catch (err) {
-        console.error('Napaka pri preverjanju 2FA:', err.message);
+        console.error('❌ Napaka pri preverjanju 2FA:', err.message);
+      } finally {
+        setLoading(false);
       }
-    }, 3000);
+    };
 
-    return () => clearInterval(interval);
-  }, []);
+    check2FAStatus();
+  }, [email]);
+
+  const complete2FA = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/complete-2fa`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Napaka pri dokončanju 2FA');
+      console.log('✅ 2FA uspešno dokončan');
+      return true;
+    } catch (err) {
+      console.error('❌ Napaka pri dokončanju 2FA:', err.message);
+      return false;
+    }
+  };
+
+  const handleVerificationComplete = async () => {
+    const success = await complete2FA();
+    if (success) {
+      navigation.goBack();
+    } else {
+      console.error('❌ Neuspešno dokončanje 2FA');
+    }
+  };
 
   return (
     <View style={{ padding: 20 }}>
-      {pending ? (
+      {loading ? (
+        <>
+          <Text>⌛ Preverjam 2FA status...</Text>
+          <ActivityIndicator size="large" color="#0000ff" />
+        </>
+      ) : pending ? (
         <>
           <Text style={{ fontSize: 18, marginBottom: 10 }}>🛡 Potrebna je 2FA verifikacija!</Text>
           <Button
             title="Začni preverjanje obraza"
-            onPress={() => navigation.navigate('CameraScreen', { email })}
+            onPress={() => navigation.navigate('CameraScreen', { email, mode: 'verify', onComplete: handleVerificationComplete })}
           />
         </>
       ) : (
-        <>
-          <Text>⌛ Čakam na 2FA zahtevo...</Text>
-          <ActivityIndicator size="large" color="#0000ff" />
-        </>
+        <Text>❌ Ni aktivne 2FA zahteve.</Text>
       )}
     </View>
   );
