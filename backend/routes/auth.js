@@ -405,14 +405,19 @@ router.get("/embeddings", async (req, res) => {
 
 // GET /auth/user?email=...
 router.get("/user", async (req, res) => {
+  console.log("📥 GET /auth/user klican z:", req.query);
+
   const { email } = req.query;
   if (!email) return res.status(400).json({ message: "Email je potreben" });
 
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "Uporabnik ni najden" });
+    if (!user) {
+      console.log("⚠️ Uporabnik ni najden za:", email);
+      return res.status(404).json({ message: "Uporabnik ni najden" });
+    }
 
-    res.setHeader("Cache-Control", "no-store"); // prepreči 304 response
+    res.setHeader("Cache-Control", "no-store");
 
     res.json({
       user: {
@@ -425,7 +430,7 @@ router.get("/user", async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("❌ Napaka pri pridobivanju uporabnika:", err);
+    console.error("❌ Napaka pri GET /auth/user:", err);
     res.status(500).json({ message: "Napaka strežnika" });
   }
 });
