@@ -387,7 +387,7 @@ html, body {
 
 .map-wrapper {
   width: 100%;
-  max-width: 800px;     /* ali 600px, kot želiš */
+  max-width: 1500px;     /* ali 600px, kot želiš */
 }
 
 .map-container {

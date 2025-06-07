@@ -18,6 +18,9 @@ const Navbar = () => {
                     <Link to="/" className="navbar-link">Domov</Link>
                 </li>
                 <li className="navbar-item">
+                    <Link to="/lestvica" className="navbar-link">Lestvica</Link>
+                </li>
+                <li className="navbar-item">
                     {isLoggedIn ? (
                         <Link to="/mojprehranko" className="navbar-link">Moj Prehranko</Link>
                     ) : (

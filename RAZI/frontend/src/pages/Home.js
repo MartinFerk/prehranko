@@ -63,9 +63,15 @@ const Home = () => {
         fetchObroki();
     }, []);
 
-    const filteredObroki = showMineOnly && userEmail
-        ? obroki.filter((o) => o.userEmail === userEmail)
-        : obroki;
+    const now = new Date();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(now.getDate() - 7);
+
+    const filteredObroki = obroki.filter((o) => {
+        const isMine = !showMineOnly || o.userEmail === userEmail;
+        const obrokDate = new Date(o.timestamp);
+        return isMine && obrokDate >= sevenDaysAgo && obrokDate <= now;
+    });
 
     return (
         <div className="container">
