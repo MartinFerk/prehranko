@@ -1,17 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import '../styles.css';
 import { getAllObroki } from '../api/obroki';
-import { updateGoals } from '../api/auth';
 
 const MojPrehranko = () => {
     const [todayCalories, setTodayCalories] = useState(0);
     const [todayProtein, setTodayProtein] = useState(0);
     const [goals, setGoals] = useState({ calories: 2000, protein: 100 });
-    const [newGoals, setNewGoals] = useState({ calories: '', protein: '' });
     const [weeklyStats, setWeeklyStats] = useState([]);
 
     const userEmail = localStorage.getItem('userEmail');
-    const userName = localStorage.getItem('userName');
 
     useEffect(() => {
         const fetchAndCalculate = async () => {
@@ -22,7 +19,7 @@ const MojPrehranko = () => {
 
                 const myObroki = allObroki.filter((o) => o.userEmail === userEmail);
 
-                // Today
+                // Današnji obroki
                 const myTodayObroki = myObroki.filter((o) => {
                     const date = new Date(o.timestamp);
                     date.setHours(0, 0, 0, 0);
@@ -35,19 +32,15 @@ const MojPrehranko = () => {
                 setTodayCalories(caloriesSum);
                 setTodayProtein(proteinSum);
 
-                // Goals
+                // Cilji iz localStorage
                 const caloricGoal = parseInt(localStorage.getItem('caloricGoal'));
                 const proteinGoal = parseInt(localStorage.getItem('proteinGoal'));
                 setGoals({
                     calories: isNaN(caloricGoal) ? 2000 : caloricGoal,
                     protein: isNaN(proteinGoal) ? 100 : proteinGoal,
                 });
-                setNewGoals({
-                    calories: isNaN(caloricGoal) ? '' : caloricGoal,
-                    protein: isNaN(proteinGoal) ? '' : proteinGoal,
-                });
 
-                // Weekly view (last 7 days)
+                // Zadnjih 7 dni
                 const todayDate = new Date();
                 const past7 = Array.from({ length: 7 }, (_, i) => {
                     const d = new Date(todayDate);
@@ -57,15 +50,17 @@ const MojPrehranko = () => {
                 });
 
                 const weeklyData = past7.map((dateObj) => {
-                    const count = myObroki.filter((o) => {
-                        const d = new Date(o.timestamp);
-                        d.setHours(0, 0, 0, 0);
-                        return d.getTime() === dateObj.getTime();
-                    }).length;
+                    const calories = myObroki
+                        .filter((o) => {
+                            const d = new Date(o.timestamp);
+                            d.setHours(0, 0, 0, 0);
+                            return d.getTime() === dateObj.getTime();
+                        })
+                        .reduce((sum, o) => sum + (o.calories || 0), 0);
 
                     return {
-                        date: dateObj.toLocaleDateString(),
-                        count,
+                        date: dateObj.toLocaleDateString('sl-SI', { weekday: 'short' }),
+                        calories,
                     };
                 }).reverse();
 
@@ -83,20 +78,6 @@ const MojPrehranko = () => {
         return Math.min(100, Math.round((val / goal) * 100));
     };
 
-    const handleGoalSubmit = async () => {
-        try {
-            const calories = parseInt(newGoals.calories);
-            const protein = parseInt(newGoals.protein);
-            if (!isNaN(calories)) localStorage.setItem('caloricGoal', calories);
-            if (!isNaN(protein)) localStorage.setItem('proteinGoal', protein);
-
-            await updateGoals(userEmail, calories, protein);
-            setGoals({ calories, protein });
-        } catch (e) {
-            console.error("Napaka pri posodabljanju ciljev:", e);
-        }
-    };
-
     return (
         <div className="container">
             <h1 className="title">Moj Prehranko</h1>
@@ -109,8 +90,10 @@ const MojPrehranko = () => {
                     <div className="progress-bar">
                         <div
                             className="progress-fill"
-                            style={{width: `${percent(todayCalories, goals.calories)}%`}}
-                        />
+                            style={{ width: `${percent(todayCalories, goals.calories)}%` }}
+                        >
+                            <span className="progress-percent">{percent(todayCalories, goals.calories)}%</span>
+                        </div>
                     </div>
                 </div>
 
@@ -119,47 +102,32 @@ const MojPrehranko = () => {
                     <div className="progress-bar">
                         <div
                             className="progress-fill protein"
-                            style={{width: `${percent(todayProtein, goals.protein)}%`}}
-                        />
-                    </div>
-                </div>
-
-                <div className="goal-section">
-                    <h4>Moj cilj:</h4>
-                    <div className="goal-input-group">
-                        <div>
-                            <label>Kalorije (kcal):</label>
-                            <input
-                                type="number"
-                                value={newGoals.calories}
-                                onChange={(e) => setNewGoals({...newGoals, calories: e.target.value})}
-                            />
+                            style={{ width: `${percent(todayProtein, goals.protein)}%` }}
+                        >
+                            <span className="progress-percent">{percent(todayProtein, goals.protein)}%</span>
                         </div>
-                        <div>
-                            <label>Beljakovine (g):</label>
-                            <input
-                                type="number"
-                                value={newGoals.protein}
-                                onChange={(e) => setNewGoals({...newGoals, protein: e.target.value})}
-                            />
-                        </div>
-                        <button className="goal-button" onClick={handleGoalSubmit}>Shrani cilje</button>
                     </div>
                 </div>
             </div>
 
             <div className="weekly-section">
-                <h3>Tedenski pregled</h3>
-                <ul>
-                    {weeklyStats.map((entry) => (
-                        <li key={entry.date}>
-                            {entry.date}: {entry.count} obrokov
-                        </li>
+                <h3>Tedenski pregled (kalorije)</h3>
+                <div className="weekly-bar-chart">
+                    {weeklyStats.map((entry, index) => (
+                        <div key={index} className="bar-container">
+                            <div
+                                className="bar"
+                                style={{
+                                    height: `${Math.min(entry.calories / goals.calories * 100, 100)}%`,
+                                }}
+                                title={`${entry.calories} kcal`}
+                            ></div>
+                            <div className="bar-label">{entry.date}</div>
+                        </div>
                     ))}
-                </ul>
+                </div>
             </div>
         </div>
-
     );
 };
 
