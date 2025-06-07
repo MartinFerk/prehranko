@@ -14,7 +14,6 @@ import gdown
 MODEL_PATH = "resnet50_face_trained.pt"
 MODEL_URL = "https://drive.google.com/uc?export=download&id=1ylu7N69oA5N5QhxsilIgtsCS6CUgjtK9"
 
-
 def download_model_if_missing():
     if not os.path.exists(MODEL_PATH):
         print("⬇️ Model ne obstaja – prenašam z Google Drive...")
@@ -43,13 +42,11 @@ try:
     loaded = torch.load(MODEL_PATH, map_location=torch.device("cpu"))
 
     if isinstance(loaded, dict):
-        # Če je naložen state_dict
         resnet_model = models.resnet50(weights=None)
-        resnet_model.fc = torch.nn.Identity()  # odstranimo klasifikator
+        resnet_model.fc = torch.nn.Identity()
         resnet_model.load_state_dict(loaded)
         print("✅ Naložen state_dict model.")
     else:
-        # Če je naložen celoten model
         resnet_model = loaded
         print("ℹ️ Naložen celoten model.")
 
@@ -63,12 +60,8 @@ except Exception as e:
 resnet_transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5]*3, std=[0.5]*3)
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
-
-# === Obrezovanje slike in zaznava obraza ===
-def preprocess_image(image_pil):
-    return image_pil.resize((400, 400))
 
 def detect_face(image_pil):
     try:
@@ -95,12 +88,12 @@ def detect_face(image_pil):
         logging.warning("Napaka pri zaznavi obraza: %s", str(e))
         raise
 
-# === Ekstrakcija značilk z naučenim ResNet-50 ===
 def extract_resnet_embedding(image_pil):
     face_img = detect_face(image_pil)
     input_tensor = resnet_transform(face_img).unsqueeze(0)
     with torch.no_grad():
         embedding = resnet_model(input_tensor).squeeze().numpy()
+    embedding = embedding / np.linalg.norm(embedding)
     return embedding.tolist()
 
 def cosine_similarity(a, b):
@@ -129,8 +122,7 @@ def extract_embeddings():
         for file in images:
             try:
                 img = Image.open(file.stream).convert("RGB")
-                preprocessed = preprocess_image(img)
-                embedding = extract_resnet_embedding(preprocessed)
+                embedding = extract_resnet_embedding(img)
                 embeddings.append(embedding)
             except Exception as e:
                 print("⚠️ Napaka pri sliki:", file.filename, str(e))
@@ -166,11 +158,10 @@ def verify_face():
 
     try:
         img = Image.open(file.stream).convert("RGB")
-        preprocessed = preprocess_image(img)
-        logging.debug("🖼️ Slika uspešno prebrana in predobdelana")
+        logging.debug("🖼️ Slika uspešno prebrana")
 
         try:
-            test_embedding = extract_resnet_embedding(preprocessed)
+            test_embedding = extract_resnet_embedding(img)
             logging.debug(f"✅ Ekstrakcija značilk uspela, dolžina: {len(test_embedding)}")
         except Exception as e:
             logging.warning(f"❌ Obraz ni bil zaznan: {e}")
@@ -191,8 +182,9 @@ def verify_face():
         logging.debug(f"📦 Pridobljenih {len(saved_embeddings)} shranjenih embeddingov")
 
         avg_embedding = np.mean(np.array(saved_embeddings), axis=0)
-        sim = cosine_similarity(test_embedding, avg_embedding)
+        avg_embedding = avg_embedding / np.linalg.norm(avg_embedding)
 
+        sim = cosine_similarity(test_embedding, avg_embedding)
         logging.info(f"▶️ Cosine similarity: {sim:.4f}")
         success = bool(sim > 0.4)
 
