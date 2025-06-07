@@ -297,13 +297,25 @@ router.post('/save-features', async (req, res) => {
 });
 
 // Na PRAVI LOKACIJI (zgoraj, pred exportom)
-router.get('/check-2fa', (req, res) => {
+router.get('/check-2fa', async (req, res) => {
   const { email } = req.query;
   if (!email) return res.status(400).json({ message: 'Email je zahtevan' });
 
-  const trigger = pending2FA.get(email) || false;
-  res.json({ trigger });
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) return res.status(404).json({ message: 'Uporabnik ne obstaja' });
+
+    const trigger = pending2FA.get(email) || false;
+    const is2faVerified = user.is2faVerified || false;
+
+    res.json({ trigger, is2faVerified });
+  } catch (err) {
+    console.error('❌ Napaka pri preverjanju 2FA:', err);
+    res.status(500).json({ message: 'Napaka pri preverjanju statusa' });
+  }
 });
+
 
 router.get('/embeddings', async (req, res) => {
   const { email } = req.query;
