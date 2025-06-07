@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
   proteinGoal: { type: Number, default: 200 }, // Polje za trajni kalorični cilj - PT
   devices: [
     {
-      deviceId: { type: String, required: true, unique: true }, // Edinstven ID naprave, npr. UUID
+      deviceId: { type: String, required: true}, // Edinstven ID naprave, npr. UUID
       deviceName: { type: String, default: "" }, // Ime naprave (npr. "iPhone 12")
       clientId: { type: String, default: "" }, // MQTT clientId za sledenje povezave
       lastConnected: { type: Date, default: null }, // Zadnja povezava
