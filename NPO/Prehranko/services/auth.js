@@ -47,12 +47,12 @@ export const logoutUser = async (email, deviceId) => {
   }
 };
 
-export const registerUser = async (email, password) => {
+export const registerUser = async (username,email, password) => {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ username, email, password }),
     });
 
     const data = await res.json();
