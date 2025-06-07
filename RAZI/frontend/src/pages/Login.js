@@ -50,13 +50,6 @@ const Login = () => {
             // 💾 Shrani podatke
             localStorage.setItem('loggedIn', 'true');
             localStorage.setItem('userEmail', userData.user.email);
-            localStorage.setItem('userName', userData.user.username || 'Uporabnik');
-            if (userData.user.caloricGoal != null) {
-              localStorage.setItem('caloricGoal', userData.user.caloricGoal);
-            }
-            if (userData.user.proteinGoal != null) {
-              localStorage.setItem('proteinGoal', userData.user.proteinGoal);
-            }
 
             // ✅ Navigacija po uspešni prijavi
             navigate('/home');
