@@ -9,7 +9,8 @@ import {
     Tooltip,
     ResponsiveContainer,
     ReferenceLine,
-    CartesianGrid
+    CartesianGrid,
+    Area
 } from 'recharts';
 
 const MojPrehranko = () => {
