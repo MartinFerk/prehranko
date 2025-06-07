@@ -57,17 +57,19 @@ const MojPrehranko = () => {
                 });
 
                 const weeklyData = past7.map((dateObj) => {
-                    const calories = myObroki
-                        .filter((o) => {
-                            const d = new Date(o.timestamp);
-                            d.setHours(0, 0, 0, 0);
-                            return d.getTime() === dateObj.getTime();
-                        })
-                        .reduce((sum, o) => sum + (o.calories || 0), 0);
+                    const entries = myObroki.filter((o) => {
+                        const d = new Date(o.timestamp);
+                        d.setHours(0, 0, 0, 0);
+                        return d.getTime() === dateObj.getTime();
+                    });
+
+                    const calories = entries.reduce((sum, o) => sum + (o.calories || 0), 0);
+                    const protein = entries.reduce((sum, o) => sum + (o.protein || 0), 0);
 
                     return {
                         date: dateObj.toLocaleDateString('sl-SI', { weekday: 'short' }),
                         calories,
+                        protein
                     };
                 }).reverse();
 
@@ -95,10 +97,8 @@ const MojPrehranko = () => {
     return (
         <div className="container">
             <h1 className="title">Moj Prehranko</h1>
-
             <div className="progress-section">
-                <h3>Dnevni pregled</h3>
-
+                <h2>Dnevni pregled</h2>
                 <div className="progress-row">
                     <div className="label-column">
                         Kalorije: {todayCalories} / {goals.calories} kcal
@@ -107,7 +107,7 @@ const MojPrehranko = () => {
                         <div className="progress-bar">
                             <div
                                 className={`progress-fill ${getColorClass(percent(todayCalories, goals.calories))}`}
-                                style={{width: `${percent(todayCalories, goals.calories)}%`}}
+                                style={{ width: `${percent(todayCalories, goals.calories)}%` }}
                             >
                                 <span className="progress-percent">{percent(todayCalories, goals.calories)}%</span>
                             </div>
@@ -123,24 +123,24 @@ const MojPrehranko = () => {
                         <div className="progress-bar">
                             <div
                                 className={`progress-fill ${getColorClass(percent(todayProtein, goals.protein))}`}
-                                style={{width: `${percent(todayProtein, goals.protein)}%`}}
+                                style={{ width: `${percent(todayProtein, goals.protein)}%` }}
                             >
                                 <span className="progress-percent">{percent(todayProtein, goals.protein)}%</span>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
 
-            <div style={{width: '600px', margin: '0 auto'}}>
+            <h2>Tedenski pregled (kalorije)</h2>
+            <div style={{ width: '900px', margin: '0 auto' }}>
                 <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={weeklyStats} margin={{top: 10, right: 30, left: 0, bottom: 0}}>
-                        <CartesianGrid strokeDasharray="3 3"/>
-                        <XAxis dataKey="date"/>
-                        <YAxis domain={[0, goals.calories * 1.1]}/>
-                        <Tooltip formatter={(value) => `${value} kcal`}/>
-                        <ReferenceLine y={goals.calories} stroke="gray" strokeDasharray="3 3"/>
+                    <LineChart data={weeklyStats} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis domain={[0, goals.calories * 1.1]} />
+                        <Tooltip formatter={(value) => `${value} kcal`} />
+                        <ReferenceLine y={goals.calories} stroke="gray" strokeDasharray="3 3" />
                         <Line
                             type="monotone"
                             dataKey="calories"
@@ -150,6 +150,30 @@ const MojPrehranko = () => {
                                 stroke: '#000',
                                 strokeWidth: 1,
                                 fill: (entry) => entry.calories >= goals.calories ? 'green' : 'red',
+                            }}
+                        />
+                    </LineChart>
+                </ResponsiveContainer>
+            </div>
+
+            <h2 style={{ marginTop: '40px' }}>Tedenski pregled (beljakovine)</h2>
+            <div style={{ width: '900px', margin: '0 auto' }}>
+                <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={weeklyStats} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis domain={[0, goals.protein * 1.1]} />
+                        <Tooltip formatter={(value) => `${value} g`} />
+                        <ReferenceLine y={goals.protein} stroke="gray" strokeDasharray="3 3" />
+                        <Line
+                            type="monotone"
+                            dataKey="protein"
+                            stroke="#82ca9d"
+                            strokeWidth={2}
+                            dot={{
+                                stroke: '#000',
+                                strokeWidth: 1,
+                                fill: (entry) => entry.protein >= goals.protein ? 'green' : 'red',
                             }}
                         />
                     </LineChart>
