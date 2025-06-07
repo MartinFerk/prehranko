@@ -9,6 +9,7 @@ import torch
 from torchvision import models, transforms
 import os
 import urllib.request
+import gdown
 
 MODEL_PATH = "resnet50_face_trained.pt"
 MODEL_URL = "https://drive.google.com/uc?export=download&id=1ylu7N69oA5N5QhxsilIgtsCS6CUgjtK9"
@@ -16,10 +17,9 @@ MODEL_URL = "https://drive.google.com/uc?export=download&id=1ylu7N69oA5N5QhxsilI
 
 def download_model_if_missing():
     if not os.path.exists(MODEL_PATH):
-        print("⬇️ Model ne obstaja – prenašam...")
-        response = requests.get(MODEL_URL)
-        with open(MODEL_PATH, "wb") as f:
-            f.write(response.content)
+        print("⬇️ Model ne obstaja – prenašam z Google Drive...")
+        url = "https://drive.google.com/uc?id=1ylu7N69oA5N5QhxsilIgtsCS6CUgjtK9"
+        gdown.download(url, output=MODEL_PATH, quiet=False)
         print("✅ Model uspešno prenesen.")
     else:
         print("📦 Model že obstaja – prenos ni potreben.")
