@@ -36,7 +36,7 @@ face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_fronta
 
 # === Naloži naučen ResNet-50 model ===
 resnet_model = models.resnet50(pretrained=False)
-resnet_model.fc = torch.nn.Linear(2048, 2)
+resnet_model.fc = torch.nn.Linear(2048, 3)
 download_model_if_missing()
 
 try:
