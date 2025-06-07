@@ -229,8 +229,10 @@ const fetchVsiObroki = async () => {
       <View style={[homeStyles.halfCard, homeStyles.ciljiCard]}>
         <Text style={homeStyles.cardTitle}>{DATA[2].title}</Text>
         {caloricGoal !== null ? (
-          <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.Text }}>
-            Cilj: {caloricGoal} kalorij
+          <Text style={{ marginTop: 10, fontSize: 14, color: theme.colors.text }}>
+            Kalorije: <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.primary }}>
+              {caloricGoal} kcal
+              </Text> 
           </Text>
         ) : (
           <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.text }}>
@@ -238,8 +240,10 @@ const fetchVsiObroki = async () => {
           </Text>
         )}
         {proteinGoal !== null ? (
-          <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.primary }}>
-            Cilj: {proteinGoal} g beljakovin
+          <Text style={{ marginTop: 10, fontSize: 14, color: theme.colors.text }}>
+            Beljakovine: <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.primary }}>
+            {proteinGoal} g
+            </Text> 
           </Text>
         ) : (
           <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.text }}>
