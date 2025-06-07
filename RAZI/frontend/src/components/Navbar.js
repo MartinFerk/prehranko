@@ -10,7 +10,7 @@ const Navbar = () => {
     useEffect(() => {
         setIsLoggedIn(localStorage.getItem('loggedIn') === 'true');
 
-        const email = localStorage.getItem('userEmail');s
+        const email = localStorage.getItem('userEmail');
         if (!email) return;
 
         const fetchUser = async () => {
