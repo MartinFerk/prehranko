@@ -9,8 +9,8 @@ import { API_BASE_URL } from '../services/api'; // ⬅️ poskrbi da to ustreza 
 
 const DATA = [
   { id: '1', title: 'Statistika', description: 'Preglej statistiko tvojih obrokov.' },
-  { id: '2', title: 'Zajemi obrok', description: 'Dodaj nov obrok z uporabo kamere.' },
-  { id: '3', title: 'Tvoji cilji', description: 'Dodaj ali spremeni tvoje cilje.' },
+  { id: '2', title: 'Dnevni dosežek'},
+  { id: '3', title: 'Vaši cilji'},
 ];
 
 export default function HomeScreen({ navigation, route }) {
@@ -223,15 +223,13 @@ const fetchVsiObroki = async () => {
       {/* Zajemi obrok card - empty for now */}
       <View style={[homeStyles.halfCard, homeStyles.zajemiObrokCard]}>
         <Text style={homeStyles.cardTitle}>{DATA[1].title}</Text>
-        <Text style={homeStyles.cardDescription}>{DATA[1].description}</Text>
       </View>
 
       {/* Tvoji cilji card */}
       <View style={[homeStyles.halfCard, homeStyles.ciljiCard]}>
         <Text style={homeStyles.cardTitle}>{DATA[2].title}</Text>
-        <Text style={homeStyles.cardDescription}>{DATA[2].description}</Text>
         {caloricGoal !== null ? (
-          <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.primary }}>
+          <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.Text }}>
             Cilj: {caloricGoal} kalorij
           </Text>
         ) : (
