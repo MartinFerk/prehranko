@@ -1,8 +1,8 @@
 // src/pages/Login.js
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles.css';
-import {trigger2FA, finishLogin, getUserByEmail} from '../api/auth';
+import { trigger2FA, finishLogin, getUserByEmail } from '../api/auth';
 import { API_BASE_URL } from '../api/api';
 
 const Login = () => {
@@ -12,6 +12,14 @@ const Login = () => {
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    // Cleanup interval when component unmounts
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -33,34 +41,43 @@ const Login = () => {
       await trigger2FA(email);
       setStatus('✅ Prijava uspešna. Čakam na preverjanje obraza na telefonu...');
 
-      // 3. Polling
-      const checkInterval = setInterval(async () => {
+      // 3. Začni polling z omejenim časom
+      const start = Date.now();
+      const maxWait = 60000; // 60 sekund
+
+      intervalRef.current = setInterval(async () => {
+        const now = Date.now();
+        if (now - start > maxWait) {
+          clearInterval(intervalRef.current);
+          setError("⏰ Čas za preverjanje 2FA je potekel.");
+          return;
+        }
+
         try {
           const statusRes = await fetch(`${API_BASE_URL}/auth/check-2fa?email=${email}`);
           const statusData = await statusRes.json();
-
           console.log('📡 /check-2fa odgovor:', statusData);
 
           if (statusData.is2faVerified) {
-            clearInterval(checkInterval);
+            clearInterval(intervalRef.current);
 
-            // 🔄 Pridobi uporabnika
+            // Pridobi uporabnika
             const userData = await getUserByEmail(email);
 
-            // 💾 Shrani podatke
+            // Shrani podatke v localStorage
             localStorage.setItem('loggedIn', 'true');
             localStorage.setItem('userEmail', userData.user.email);
 
-            // ✅ Navigacija po uspešni prijavi
+            // Navigiraj na /home
             navigate('/home');
           }
-
         } catch (err) {
+          clearInterval(intervalRef.current);
           console.error('❌ Napaka med preverjanjem 2FA:', err);
-          clearInterval(checkInterval);
           setError('Napaka pri preverjanju 2FA');
         }
       }, 3000);
+
     } catch (err) {
       setError('❌ ' + err.message);
     } finally {
