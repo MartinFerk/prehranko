@@ -193,7 +193,7 @@ const fetchVsiObroki = async () => {
     const renderObrokItem = ({ item }) => (
     <View style={{ marginTop: 10 }}>
       <Text style={{ fontWeight: 'bold' }}>{item.name}</Text>
-      <Text>Kalorije: {item.calories}</Text>
+      <Text>Kalorije: {item.calories} kcal </Text>
       <Text>Beljakovine: {item.protein} g</Text>
       <Text>Datum: {moment(item.timestamp).format('DD.MM.YYYY HH:mm')}</Text> {/* Dodan datum */}
     </View>
@@ -234,35 +234,42 @@ const fetchVsiObroki = async () => {
 
 {/* Row for Zajemi obrok and Tvoji cilji cards */}
       <View style={homeStyles.cardsRow}>
-        <View style={[homeStyles.halfCard, homeStyles.zajemiObrokCard]}>
-          <Text style={homeStyles.cardTitle}>{DATA[1].title}</Text>
-          <View style={{ marginTop: 10 }}>
-            <Text style={{ fontSize: 14, color: theme.colors.text }}>
-              Kalorije: {todayCalories}/{caloricGoal || 'N/A'}
-            </Text>
-            <Progress.Bar
-              progress={caloricGoal ? todayCalories / caloricGoal : 0}
-              width={null}
-              height={8}
-              color={theme.colors.primary}
-              unfilledColor={theme.colors.background}
-              borderWidth={0}
-              style={{ marginTop: 5 }}
-            />
-            <Text style={{ fontSize: 14, color: theme.colors.text, marginTop: 10 }}>
-              Beljakovine: {todayProtein}/{proteinGoal || 'N/A'}
-            </Text>
-            <Progress.Bar
-              progress={proteinGoal ? todayProtein / proteinGoal : 0}
-              width={null}
-              height={8}
-              color={theme.colors.secondary}
-              unfilledColor={theme.colors.background}
-              borderWidth={0}
-              style={{ marginTop: 5 }}
-            />
-          </View>
-        </View>
+<View style={[homeStyles.halfCard, homeStyles.zajemiObrokCard]}>
+  <Text style={homeStyles.cardTitle}>{DATA[1].title}</Text>
+  <View style={{ marginTop: 10 }}>
+    <Text style={{ fontSize: 14, color: theme.colors.text }}>
+      Kalorije: 
+      <Text style={{ color: theme.colors.primary }}> {todayCalories} </Text>
+      <Text style={{ color: theme.colors.text }}>/ </Text>
+      <Text style={{ color: theme.colors.secondary }}>{caloricGoal || 'N/A'}</Text>
+    </Text>
+
+    <Progress.Bar
+      progress={caloricGoal ? todayCalories / caloricGoal : 0}
+      width={null}
+      height={8}
+      color={theme.colors.primary}
+      unfilledColor={theme.colors.background}
+      borderWidth={0}
+      style={{ marginTop: 5, marginBottom: 10 }}/>
+
+    <Text style={{ fontSize: 14, color: theme.colors.text }}>
+      Beljakovine:
+      <Text style={{ color: theme.colors.primary }}> {todayProtein} </Text>
+      <Text style={{ color: theme.colors.text }}>/ </Text>
+      <Text style={{ color: theme.colors.secondary }}>{proteinGoal || 'N/A'}</Text>
+    </Text>
+
+    <Progress.Bar
+      progress={proteinGoal ? todayProtein / proteinGoal : 0}
+      width={null}
+      height={8}
+      color={theme.colors.secondary}
+      unfilledColor={theme.colors.background}
+      borderWidth={0}
+      style={{ marginTop: 5 }}/>
+  </View>
+</View>
 
       {/* Tvoji cilji card */}
       <View style={[homeStyles.halfCard, homeStyles.ciljiCard]}>
@@ -270,24 +277,21 @@ const fetchVsiObroki = async () => {
         {caloricGoal !== null ? (
           <Text style={{ marginTop: 10, fontSize: 14, color: theme.colors.text }}>
             Kalorije: <Text style={{ marginTop: 10, fontSize: 14, color: theme.colors.secondary }}>
-              {caloricGoal} kcal
-              </Text> 
+            {caloricGoal} kcal</Text> 
           </Text>
+
         ) : (
           <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.text }}>
-            Ni nastavljenega kaloričnega cilja.
-          </Text>
+            Ni nastavljenega kaloričnega cilja.</Text>
         )}
         {proteinGoal !== null ? (
           <Text style={{ marginTop: 10, fontSize: 14, color: theme.colors.text }}>
             Beljakovine: <Text style={{ marginTop: 10, fontSize: 14, color: theme.colors.secondary }}>
-            {proteinGoal} g
-            </Text> 
+            {proteinGoal} g</Text> 
           </Text>
         ) : (
           <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.text }}>
-            Ni nastavljenega beljakovinskega cilja.
-          </Text>
+            Ni nastavljenega beljakovinskega cilja.</Text>
         )}
       </View>
     </View>
@@ -295,22 +299,21 @@ const fetchVsiObroki = async () => {
     <View style={homeStyles.buttonRow}>
       <IconButton
         iconName="camera"
-        title="Zajemi obraz"
-        onPress={handleCaptureFace}
-        color={theme.colors.primary}
-      />
-      <IconButton
-        iconName="bar-chart"
-        title="Zajemi hrana"
+        title="Zajemi Obrok"
         onPress={() => navigation.navigate('CaptureFoodScreen', { email: userEmail })}
-        color={theme.colors.secondary}
-      />
+        color={theme.colors.secondary}/>
+
       <IconButton
         iconName="target"
-        title="Nastavi cilj"
+        title="Nastavi Cilj"
         onPress={handleSetGoal}
-        color={theme.colors.secondary}
-      />
+        color={theme.colors.secondary}/>
+
+      <IconButton
+        iconName="delete"
+        title="Izbriši Vnos"
+        onPress={handleCaptureFace}
+        color={theme.colors.secondary}/>
     </View>
   </View>
 );
