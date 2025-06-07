@@ -25,7 +25,7 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({ message: 'Registracija uspešna' });
   } catch (err) {
-    res.status(500).json({ message: 'Napaka na strežniku' });
+    res.status(500).json({ message: 'Napaka na strežniku' ,err });
   }
 });
 
