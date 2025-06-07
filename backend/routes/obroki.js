@@ -58,6 +58,7 @@ router.post('/analyze-food', async (req, res) => {
             type: 'text',
             text: `Na sliki je morda hrana. Ali lahko:
         - poveš, ali je na sliki hrana?
+        - Pri nadaljnih izračunih upoštevaj tudi količino hrane na sliki npr. 3 jajca, 2 rezini kruha...
         - če ja, koliko kalorij ima?
         - koliko beljakovin?
         - kakšno je ime hrane?
