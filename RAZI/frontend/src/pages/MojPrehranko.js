@@ -145,7 +145,7 @@ const MojPrehranko = () => {
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" />
-                        <YAxis domain={[0, goals.calories * 1.1]} />
+                        <YAxis domain={[0, goals.calories * 1.1]}  tickFormatter={(value) => Math.round(value)} />
                         <Tooltip formatter={(value) => `${value} kcal`} />
                         <ReferenceLine y={goals.calories} stroke="gray" strokeDasharray="3 3" />
                         <Area
@@ -181,9 +181,9 @@ const MojPrehranko = () => {
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" />
-                        <YAxis domain={[0, goals.calories * 1.1]} />
+                        <YAxis domain={[0, goals.protein * 1.1]}  tickFormatter={(value) => Math.round(value)} />
                         <Tooltip formatter={(value) => `${value} kcal`} />
-                        <ReferenceLine y={goals.calories} stroke="gray" strokeDasharray="3 3" />
+                        <ReferenceLine y={goals.protein} stroke="gray" strokeDasharray="3 3" />
                         <Area
                             type="monotone"
                             dataKey="calories"
@@ -198,7 +198,7 @@ const MojPrehranko = () => {
                             dot={{
                                 stroke: '#000',
                                 strokeWidth: 1,
-                                fill: (entry) => entry.calories >= goals.calories ? 'green' : 'red',
+                                fill: (entry) => entry.protein >= goals.protein ? 'green' : 'red',
                             }}
                         />
                     </LineChart>
