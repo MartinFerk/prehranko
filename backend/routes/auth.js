@@ -29,6 +29,39 @@ router.post('/register', async (req, res) => {
   }
 });
 
+router.post('/update-goals', async (req, res) => {
+  const { email, caloricGoal, proteinGoal } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email je obvezen' });
+  }
+
+  try {
+    const user = await User.findOneAndUpdate(
+        { email },
+        {
+          caloricGoal: caloricGoal ?? null,
+          proteinGoal: proteinGoal ?? null,
+        },
+        { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'Uporabnik ni najden' });
+    }
+
+    res.json({
+      message: 'Cilji uspešno posodobljeni',
+      caloricGoal: user.caloricGoal,
+      proteinGoal: user.proteinGoal,
+    });
+  } catch (err) {
+    console.error('❌ Napaka pri posodabljanju ciljev:', err);
+    res.status(500).json({ message: 'Napaka na strežniku' });
+  }
+});
+
+
 // Prijava
 router.post('/login', async (req, res) => {
   const { email, password, from, deviceId, deviceName, clientId } = req.body;

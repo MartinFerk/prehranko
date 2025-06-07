@@ -109,7 +109,7 @@ const MojPrehranko = () => {
                     <div className="progress-bar">
                         <div
                             className="progress-fill"
-                            style={{ width: `${percent(todayCalories, goals.calories)}%` }}
+                            style={{width: `${percent(todayCalories, goals.calories)}%`}}
                         />
                     </div>
                 </div>
@@ -119,26 +119,32 @@ const MojPrehranko = () => {
                     <div className="progress-bar">
                         <div
                             className="progress-fill protein"
-                            style={{ width: `${percent(todayProtein, goals.protein)}%` }}
+                            style={{width: `${percent(todayProtein, goals.protein)}%`}}
                         />
                     </div>
                 </div>
 
-                <h4>Moj cilj:</h4>
-                <div className="goal-form">
-                    <label>Kalorije: </label>
-                    <input
-                        type="number"
-                        value={newGoals.calories}
-                        onChange={(e) => setNewGoals({ ...newGoals, calories: e.target.value })}
-                    />
-                    <label>Beljakovine: </label>
-                    <input
-                        type="number"
-                        value={newGoals.protein}
-                        onChange={(e) => setNewGoals({ ...newGoals, protein: e.target.value })}
-                    />
-                    <button onClick={handleGoalSubmit}>Shrani</button>
+                <div className="goal-section">
+                    <h4>Moj cilj:</h4>
+                    <div className="goal-input-group">
+                        <div>
+                            <label>Kalorije (kcal):</label>
+                            <input
+                                type="number"
+                                value={newGoals.calories}
+                                onChange={(e) => setNewGoals({...newGoals, calories: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label>Beljakovine (g):</label>
+                            <input
+                                type="number"
+                                value={newGoals.protein}
+                                onChange={(e) => setNewGoals({...newGoals, protein: e.target.value})}
+                            />
+                        </div>
+                        <button className="goal-button" onClick={handleGoalSubmit}>Shrani cilje</button>
+                    </div>
                 </div>
             </div>
 
@@ -153,6 +159,7 @@ const MojPrehranko = () => {
                 </ul>
             </div>
         </div>
+
     );
 };
 

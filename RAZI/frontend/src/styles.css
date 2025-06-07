@@ -122,6 +122,100 @@ html, body {
   gap: 1rem;
 }
 
+/* Progress bar splošno */
+.progress-section {
+  margin-top: 30px;
+}
+
+.progress-wrapper {
+  margin-bottom: 20px;
+}
+
+.progress-bar {
+  background-color: #e0e0e0;
+  border-radius: 20px;
+  height: 24px;
+  width: 100%;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #ff9f43; /* oranžna za kalorije */
+  transition: width 0.4s ease-in-out;
+}
+
+.progress-fill.protein {
+  background-color: #1e90ff; /* modra za proteine */
+}
+
+/* Cilji uporabnika */
+.goal-section {
+  margin-top: 40px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.goal-section h4 {
+  margin-bottom: 15px;
+}
+
+.goal-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.goal-input-group label {
+  font-weight: bold;
+}
+
+.goal-input-group input {
+  padding: 8px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.goal-button {
+  margin-top: 15px;
+  padding: 10px 16px;
+  background-color: #28a745;
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.goal-button:hover {
+  background-color: #218838;
+}
+
+/* Tedenski pregled */
+.weekly-review {
+  margin-top: 40px;
+}
+
+.weekly-day {
+  margin-bottom: 12px;
+  padding: 10px;
+  background-color: #eef3f8;
+  border-left: 4px solid #007bff;
+  border-radius: 6px;
+}
+
+.weekly-day strong {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+
 .map-wrapper {
   width: 100%;
   max-width: 800px;     /* ali 600px, kot želiš */

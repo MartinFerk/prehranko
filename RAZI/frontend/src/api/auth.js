@@ -74,6 +74,19 @@ export const registerUser = async (email, password) => {
   }
 };
 
+
+
+export const updateGoals = async (email, caloricGoal, proteinGoal) => {
+  const res = await fetch(`${API_BASE_URL}/auth/update-goals`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, caloricGoal, proteinGoal }),
+  });
+  if (!res.ok) throw new Error("Napaka pri posodabljanju ciljev");
+  return res.json();
+};
+
+
 // ✅ Prijava uporabnika (prvi del, brez 2FA potrditve)
 export const loginUser = async (email, password) => {
   try {
