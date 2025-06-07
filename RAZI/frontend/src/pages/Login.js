@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles.css';
-import { trigger2FA, finishLogin, getUserByEmail } from '../api/auth';
+import { getUserByEmail } from '../api/auth';
 import { API_BASE_URL } from '../api/api';
 
 const Login = () => {
@@ -15,7 +15,6 @@ const Login = () => {
   const intervalRef = useRef(null);
 
   useEffect(() => {
-    // Cleanup interval when component unmounts
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
@@ -37,11 +36,9 @@ const Login = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Napaka pri prijavi');
 
-      // 2. Sproži 2FA
-      await trigger2FA(email);
       setStatus('✅ Prijava uspešna. Čakam na preverjanje obraza na telefonu...');
 
-      // 3. Začni polling z omejenim časom
+      // 2. Začni polling z omejenim časom
       const start = Date.now();
       const maxWait = 60000; // 60 sekund
 
@@ -49,26 +46,20 @@ const Login = () => {
         const now = Date.now();
         if (now - start > maxWait) {
           clearInterval(intervalRef.current);
-          setError("⏰ Čas za preverjanje 2FA je potekel.");
+          setError('⏰ Čas za preverjanje 2FA je potekel.');
           return;
         }
 
         try {
-          const statusRes = await fetch(`${API_BASE_URL}/auth/check-2fa?email=${email}`);
+          const statusRes = await fetch(`${API_BASE_URL}/auth/check-2fa?email=${encodeURIComponent(email)}`);
           const statusData = await statusRes.json();
           console.log('📡 /check-2fa odgovor:', statusData);
 
           if (statusData.is2faVerified) {
             clearInterval(intervalRef.current);
-
-            // Pridobi uporabnika
             const userData = await getUserByEmail(email);
-
-            // Shrani podatke v localStorage
             localStorage.setItem('loggedIn', 'true');
             localStorage.setItem('userEmail', userData.user.email);
-
-            // Navigiraj na /home
             navigate('/home');
           }
         } catch (err) {
@@ -76,8 +67,7 @@ const Login = () => {
           console.error('❌ Napaka med preverjanjem 2FA:', err);
           setError('Napaka pri preverjanju 2FA');
         }
-      }, 3000);
-
+      }, 5000); // Povečan interval na 5 sekund
     } catch (err) {
       setError('❌ ' + err.message);
     } finally {
@@ -86,39 +76,38 @@ const Login = () => {
   };
 
   return (
-      <div className="login-container">
-        <div className="login-box">
-          <h2 className="login-title">Prijava</h2>
-          <div className="form-group">
-            <label className="form-label" htmlFor="email">E-pošta</label>
-            <input
-                type="email"
-                id="email"
-                className="form-input"
-                placeholder="Vnesite e-pošto"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label" htmlFor="password">Geslo</label>
-            <input
-                type="password"
-                id="password"
-                className="form-input"
-                placeholder="Vnesite geslo"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <button className="login-button" onClick={handleLogin} disabled={loading}>
-            {loading ? 'Prijavljam...' : 'Prijavi se'}
-          </button>
-
-          {status && <p className="status-text" style={{ color: 'green', marginTop: '10px' }}>{status}</p>}
-          {error && <p className="error-text" style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
+    <div className="login-container">
+      <div className="login-box">
+        <h2 className="login-title">Prijava</h2>
+        <div className="form-group">
+          <label className="form-label" htmlFor="email">E-pošta</label>
+          <input
+            type="email"
+            id="email"
+            className="form-input"
+            placeholder="Vnesite e-pošto"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
+        <div className="form-group">
+          <label className="form-label" htmlFor="password">Geslo</label>
+          <input
+            type="password"
+            id="password"
+            className="form-input"
+            placeholder="Vnesite geslo"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+        <button className="login-button" onClick={handleLogin} disabled={loading}>
+          {loading ? 'Prijavljam...' : 'Prijavi se'}
+        </button>
+        {status && <p className="status-text" style={{ color: 'green', marginTop: '10px' }}>{status}</p>}
+        {error && <p className="error-text" style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
       </div>
+    </div>
   );
 };
 
