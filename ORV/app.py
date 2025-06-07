@@ -13,10 +13,11 @@ import gdown
 
 MODEL_PATH = "resnet50_face_trained.pt"
 MODEL_URL = "https://drive.google.com/uc?export=download&id=1ylu7N69oA5N5QhxsilIgtsCS6CUgjtK9"
-# 📦 Začasna shramba 2FA statusov
-two_fa_status = {}
+
 
 def download_model_if_missing():
+
+
     if not os.path.exists(MODEL_PATH):
         print("⬇️ Model ne obstaja – prenašam z Google Drive...")
         url = "https://drive.google.com/uc?id=1ylu7N69oA5N5QhxsilIgtsCS6CUgjtK9"
@@ -195,9 +196,7 @@ def verify_face():
         sim = cosine_similarity(test_embedding, avg_embedding)
 
         logging.info(f"▶️ Cosine similarity: {sim:.4f}")
-        success = bool(sim > 0.8)
-        if success:
-            two_fa_status[email] = True  # ✅ Označi uporabnika kot uspešno preverjenega
+        success = bool(sim > 0.45)
 
         return jsonify({
             "success": success,
@@ -208,15 +207,6 @@ def verify_face():
     except Exception as e:
         logging.exception("❌ Nepričakovana napaka pri preverjanju")
         return jsonify({ "error": str(e) }), 500
-
-@app.route("/auth/check-2fa", methods=["GET"])
-def check_2fa_status():
-    email = request.args.get("email")
-    if not email:
-        return jsonify({ "error": "Email ni podan." }), 400
-
-    is_verified = two_fa_status.get(email, False)
-    return jsonify({ "is2faVerified": is_verified })
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
