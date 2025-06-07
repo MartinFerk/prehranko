@@ -6,22 +6,18 @@ import cv2
 import requests
 import logging
 import torch
+import torch.nn.functional as F
 from torchvision import models, transforms
 import os
-import urllib.request
 import gdown
 
 MODEL_PATH = "resnet50_face_trained.pt"
-MODEL_URL = "https://drive.google.com/uc?export=download&id=1ylu7N69oA5N5QhxsilIgtsCS6CUgjtK9"
-
+MODEL_URL = "https://drive.google.com/uc?id=1ylu7N69oA5N5QhxsilIgtsCS6CUgjtK9"
 
 def download_model_if_missing():
-
-
     if not os.path.exists(MODEL_PATH):
         print("⬇️ Model ne obstaja – prenašam z Google Drive...")
-        url = "https://drive.google.com/uc?id=1ylu7N69oA5N5QhxsilIgtsCS6CUgjtK9"
-        gdown.download(url, output=MODEL_PATH, quiet=False)
+        gdown.download(MODEL_URL, output=MODEL_PATH, quiet=False)
         print("✅ Model uspešno prenesen.")
     else:
         print("📦 Model že obstaja – prenos ni potreben.")
@@ -37,23 +33,20 @@ app = Flask(__name__)
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 
 # === Naloži naučen ResNet-50 model ===
-resnet_model = models.resnet50(pretrained=False)
-resnet_model.fc = torch.nn.Linear(2048, 3)
 download_model_if_missing()
+
+from torch import nn
+resnet_model = models.resnet50(weights=None)
+resnet_model.fc = nn.Identity()  # odstrani klasifikator
 
 try:
     loaded = torch.load(MODEL_PATH, map_location=torch.device("cpu"))
-
     if isinstance(loaded, dict):
-        # Če je naložen state_dict
-        resnet_model = models.resnet50(weights=None)
-        resnet_model.fc = torch.nn.Identity()  # odstranimo klasifikator
         resnet_model.load_state_dict(loaded)
         print("✅ Naložen state_dict model.")
     else:
-        # Če je naložen celoten model
-        resnet_model = loaded
-        print("ℹ️ Naložen celoten model.")
+        print("❌ Model ni v pričakovani obliki state_dict")
+        raise ValueError("Model ni v pričakovani obliki state_dict")
 
     resnet_model.eval()
 
@@ -102,8 +95,9 @@ def extract_resnet_embedding(image_pil):
     face_img = detect_face(image_pil)
     input_tensor = resnet_transform(face_img).unsqueeze(0)
     with torch.no_grad():
-        embedding = resnet_model(input_tensor).squeeze().numpy()
-    return embedding.tolist()
+        embedding = resnet_model(input_tensor)
+        normalized = F.normalize(embedding, p=2, dim=1)  # L2 normalizacija
+        return normalized.squeeze().numpy().tolist()
 
 def cosine_similarity(a, b):
     a = np.array(a)
@@ -112,7 +106,7 @@ def cosine_similarity(a, b):
 
 @app.route("/", methods=["GET"])
 def index():
-    return "<h1>Face Embedding API teče (ResNet-50 naučen model)</h1>"
+    return "<h1>✅ Face Embedding API (Triplet-trained ResNet-50)</h1>"
 
 @app.route("/extract-embeddings", methods=["POST"])
 def extract_embeddings():
@@ -196,7 +190,7 @@ def verify_face():
         sim = cosine_similarity(test_embedding, avg_embedding)
 
         logging.info(f"▶️ Cosine similarity: {sim:.4f}")
-        success = bool(sim > 0.45)
+        success = bool(sim > 0.8)
 
         return jsonify({
             "success": success,
