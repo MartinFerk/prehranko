@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
@@ -11,17 +11,19 @@ const userSchema = new mongoose.Schema({
   },
   caloricGoal: { type: Number, default: 2000 }, // Polje za trajni kalorični cilj - PT
   proteinGoal: { type: Number, default: 200 }, // Polje za trajni kalorični cilj - PT
-  devices: [{
+  devices: [
+    {
       deviceId: { type: String, required: true, unique: true }, // Edinstven ID naprave, npr. UUID
-      deviceName: { type: String, default: '' }, // Ime naprave (npr. "iPhone 12")
-      clientId: { type: String, default: '' }, // MQTT clientId za sledenje povezave
+      deviceName: { type: String, default: "" }, // Ime naprave (npr. "iPhone 12")
+      clientId: { type: String, default: "" }, // MQTT clientId za sledenje povezave
       lastConnected: { type: Date, default: null }, // Zadnja povezava
       isConnected: { type: Boolean, default: false }, // Status povezave
-    }],
+    },
+  ],
   is2faVerified: {
-  type: Boolean,
-  default: false,
-},
+    type: Boolean,
+    default: false,
+  },
 });
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model("User", userSchema);
