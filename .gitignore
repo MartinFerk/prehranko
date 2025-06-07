@@ -38,3 +38,4 @@ Desktop.ini
 # Git repozitoriji znotraj podmap (če obstajajo)
 **/.git
 **/.pt
+ORV/*.pt
