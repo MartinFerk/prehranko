@@ -4,8 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility';
 import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
 import '../styles.css';
-// import { getAllObroki } from '../api/obroki';
-
+import { getAllObroki } from '../api/obroki';
 import L from 'leaflet';
 
 const goldMarkerIcon = new L.Icon({
@@ -18,13 +17,20 @@ const goldMarkerIcon = new L.Icon({
 });
 
 const Home = () => {
-    // const [obroki, setObroki] = useState([]);
+    const [obroki, setObroki] = useState([]);
 
-    // useEffect(() => {
-    //     getAllObroki()
-    //         .then(setObroki)
-    //         .catch((err) => console.error('Napaka pri pridobivanju obrokov:', err));
-    // }, []);
+    useEffect(() => {
+        const fetchObroki = async () => {
+            try {
+                const data = await getAllObroki();
+                setObroki(data);
+            } catch (err) {
+                console.error('❌ Napaka pri pridobivanju obrokov:', err);
+            }
+        };
+
+        fetchObroki();
+    }, []);
 
     return (
         <div className="container">
@@ -43,7 +49,7 @@ const Home = () => {
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
 
-                        {/* {obroki.map((obrok) => (
+                        {obroki.map((obrok) => (
                             <Marker
                                 key={obrok.obrokId}
                                 position={[obrok.locY, obrok.locX]}
@@ -68,7 +74,7 @@ const Home = () => {
                                     </div>
                                 </Popup>
                             </Marker>
-                        ))} */}
+                        ))}
                     </MapContainer>
                 </div>
             </div>
