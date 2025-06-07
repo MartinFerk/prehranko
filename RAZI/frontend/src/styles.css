@@ -21,11 +21,6 @@
   margin-bottom: 1rem;
 }
 
-
-.progress-section {
-  margin-top: 2rem;
-}
-
 .progress-wrapper {
   margin: 1rem 0;
 }
@@ -213,13 +208,13 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 500px;
+  width: 800px;
   margin-bottom: 16px;
 }
 
 
 .label-column {
-  width: 150px;
+  width: 350px;
   font-weight: 500;
   font-size: 16px;
 }
