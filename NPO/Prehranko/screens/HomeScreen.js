@@ -186,14 +186,18 @@ const fetchVsiObroki = async () => {
     navigation.navigate('GoalScreen', { email: userEmail });
   };
 
-  const renderObrokItem = ({ item }) => (
+  const renderObrokItem = ({ item }) => {  
+    return (
     <View style={{ marginTop: 10 }}>
       <Text style={{ fontWeight: 'bold' }}>{item.name}</Text>
       <Text>Kalorije: {item.calories} kcal </Text>
       <Text>Beljakovine: {item.protein} g</Text>
-      <Text>Datum: {moment(item.timestamp).format('DD.MM.YYYY HH:mm')}</Text> {/* Dodan datum */}
+      <Text style={{ fontSize: 14, color: theme.colors.text }}>
+            Datum: {moment(item.timestamp).format('DD.MM.YYYY HH:mm')}
+      </Text>
     </View>
   );
+};
 
   return (
   <View style={homeStyles.container}>
@@ -234,11 +238,11 @@ const fetchVsiObroki = async () => {
       <Text style={homeStyles.cardTitle}>{DATA[1].title}</Text>
       <View style={{ marginTop: 10 }}>
       <Text style={{ fontSize: 14, color: theme.colors.text }}>
-      Kalorije: 
-      <Text style={{ color: theme.colors.primary }}> {todayCalories} </Text>
-      <Text style={{ color: theme.colors.text }}>/ </Text>
-      <Text style={{ color: theme.colors.secondary }}>{caloricGoal || 'N/A'}</Text>
-    </Text>
+        Kalorije: 
+        <Text style={{ color: theme.colors.primary }}> {todayCalories} </Text>
+        <Text style={{ color: theme.colors.text }}>/ </Text>
+        <Text style={{ color: theme.colors.secondary }}>{caloricGoal || 'N/A'}</Text>
+      </Text>
 
     <Progress.Bar
       progress={caloricGoal ? todayCalories / caloricGoal : 0}
