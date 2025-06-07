@@ -7,6 +7,22 @@ import requests
 import logging
 import torch
 from torchvision import models, transforms
+import os
+import urllib.request
+
+MODEL_PATH = "resnet50_face_trained.pt"
+MODEL_URL = "https://drive.google.com/uc?export=download&id=1ylu7N69oA5N5QhxsilIgtsCS6CUgjtK9"
+
+
+def download_model_if_missing():
+    if not os.path.exists(MODEL_PATH):
+        print("⬇️ Model ne obstaja – prenašam...")
+        response = requests.get(MODEL_URL)
+        with open(MODEL_PATH, "wb") as f:
+            f.write(response.content)
+        print("✅ Model uspešno prenesen.")
+    else:
+        print("📦 Model že obstaja – prenos ni potreben.")
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -21,6 +37,7 @@ face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_fronta
 # === Naloži naučen ResNet-50 model ===
 resnet_model = models.resnet50(pretrained=False)
 resnet_model.fc = torch.nn.Linear(2048, 2)
+download_model_if_missing()
 resnet_model.load_state_dict(torch.load("resnet50_face_trained.pt", map_location=torch.device("cpu")))
 resnet_model.fc = torch.nn.Identity()
 resnet_model.eval()

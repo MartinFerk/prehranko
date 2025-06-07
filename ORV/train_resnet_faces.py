@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 
 # === Parametri ===
 data_dir = "dataset"  # mapa s podmapami za vsakega uporabnika
-num_epochs = 10
+num_epochs = 7
 batch_size = 16
 learning_rate = 0.001
 model_path = "resnet50_face_trained.pt"

@@ -11,6 +11,8 @@
 
 .env
 
+
+
 # Windows
 Thumbs.db
 ehthumbs.db
@@ -36,3 +38,4 @@ Desktop.ini
 
 # Git repozitoriji znotraj podmap (če obstajajo)
 **/.git
+**/.pt
