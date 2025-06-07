@@ -44,21 +44,24 @@ const Login = () => {
           if (statusData.is2faVerified) {
             clearInterval(checkInterval);
 
-            const finishData = await getUserByEmail(email);
+            // 🔄 Pridobi uporabnika
+            const userData = await getUserByEmail(email);
 
-
-            if (finishData?.user) {
-              localStorage.setItem('loggedIn', 'true');
-              localStorage.setItem('userEmail', finishData.email);
-              localStorage.setItem('userName', finishData.name || 'Uporabnik');
-              if (finishData.caloricGoal != null) {
-                localStorage.setItem('caloricGoal', finishData.caloricGoal);
-              }
-              if (finishData.proteinGoal != null) {
-                localStorage.setItem('proteinGoal', finishData.proteinGoal);
-              }
+            // 💾 Shrani podatke
+            localStorage.setItem('loggedIn', 'true');
+            localStorage.setItem('userEmail', userData.user.email);
+            localStorage.setItem('userName', userData.user.name || 'Uporabnik');
+            if (userData.user.caloricGoal != null) {
+              localStorage.setItem('caloricGoal', userData.user.caloricGoal);
             }
+            if (userData.user.proteinGoal != null) {
+              localStorage.setItem('proteinGoal', userData.user.proteinGoal);
+            }
+
+            // ✅ Navigacija po uspešni prijavi
+            navigate('/home');
           }
+
         } catch (err) {
           console.error('❌ Napaka med preverjanjem 2FA:', err);
           clearInterval(checkInterval);
