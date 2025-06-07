@@ -20,7 +20,7 @@ router.post('/register', async (req, res) => {
     if (userExists) return res.status(400).json({ message: 'Uporabnik že obstaja' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ username,email, password: hashedPassword });
+    const newUser = new User({ username ,email, password: hashedPassword });
     await newUser.save();
 
     res.status(201).json({ message: 'Registracija uspešna' });

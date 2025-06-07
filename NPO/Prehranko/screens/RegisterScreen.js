@@ -55,7 +55,7 @@ export default function RegisterScreen({ navigation }) {
       <View style={styles.inputContainer}>
         <AuthInput
           placeholder="Username"
-          value={email}
+          value={username}
           onChangeText={setUsername}
         />
         <AuthInput
