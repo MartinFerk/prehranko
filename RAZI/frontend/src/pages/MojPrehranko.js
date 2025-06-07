@@ -100,7 +100,6 @@ const MojPrehranko = () => {
 
     return (
         <div className="container">
-            <h1 className="title">Moj Prehranko</h1>
             <div className="progress-section">
                 <h2>Dnevni pregled</h2>
                 <div className="progress-row">
