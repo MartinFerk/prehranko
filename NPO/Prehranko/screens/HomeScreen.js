@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, FlatList } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import IconButton from '../components/IconButton';
 import { homeStyles } from '../styles/homeStyles';
 import { theme } from '../styles/theme';
 import { useNavigation } from '@react-navigation/native';
 import { API_BASE_URL } from '../services/api'; // ⬅️ poskrbi da to ustreza tvojemu Express backendu
+import moment from 'moment'; // Dodaj za formatiranje datuma
 
 const DATA = [
-  { id: '1', title: 'Statistika', description: 'Preglej statistiko tvojih obrokov.' },
-  { id: '2', title: 'Zajemi obrok', description: 'Dodaj nov obrok z uporabo kamere.' },
-  { id: '3', title: 'Tvoji cilji', description: 'Dodaj ali spremeni tvoje cilje.' },
+  { id: '1', title: 'Statistika', description: 'Tukaj so prikazani vaši vnosi' },
+  { id: '2', title: 'Dnevni dosežek'},
+  { id: '3', title: 'Vaši cilji'},
 ];
 
 export default function HomeScreen({ navigation, route }) {
@@ -140,6 +141,15 @@ const fetchVsiObroki = async () => {
       const data = JSON.parse(text);
       if (res.ok && data) {
         setVsiObroki(data);
+        // Filtriraj današnje obroke in izračunaj skupne kalorije in beljakovine
+        const today = moment().startOf('day');
+        const todayMeals = data.filter((obrok) =>
+          moment(obrok.timestamp).isSame(today, 'day')
+        );
+        const totalCalories = todayMeals.reduce((sum, obrok) => sum + (obrok.calories || 0), 0);
+        const totalProtein = todayMeals.reduce((sum, obrok) => sum + (obrok.protein || 0), 0);
+        setTodayCalories(totalCalories);
+        setTodayProtein(totalProtein);
       }
     } catch (err) {
       console.warn('Napaka pri pridobivanju vseh obrokov:', err.message);
@@ -182,6 +192,7 @@ const fetchVsiObroki = async () => {
       <Text style={{ fontWeight: 'bold' }}>Obrok: {item.name}</Text>
       <Text>Kalorije: {item.calories}</Text>
       <Text>Beljakovine: {item.protein} g</Text>
+      <Text>Datum: {moment(item.timestamp).format('DD.MM.YYYY HH:mm')}</Text> {/* Dodan datum */}
     </View>
   );
 
@@ -211,7 +222,7 @@ const fetchVsiObroki = async () => {
             data={vsiObroki}
             renderItem={renderObrokItem}
             keyExtractor={(item) => item.obrokId}
-            style={{ marginTop: 10 }}
+            style={{ marginTop: 2 }}
           />
         ) : (
           <Text style={{ marginTop: 10 }}>Ni podatkov o obrokih.</Text>
@@ -223,16 +234,16 @@ const fetchVsiObroki = async () => {
       {/* Zajemi obrok card - empty for now */}
       <View style={[homeStyles.halfCard, homeStyles.zajemiObrokCard]}>
         <Text style={homeStyles.cardTitle}>{DATA[1].title}</Text>
-        <Text style={homeStyles.cardDescription}>{DATA[1].description}</Text>
       </View>
 
       {/* Tvoji cilji card */}
       <View style={[homeStyles.halfCard, homeStyles.ciljiCard]}>
         <Text style={homeStyles.cardTitle}>{DATA[2].title}</Text>
-        <Text style={homeStyles.cardDescription}>{DATA[2].description}</Text>
         {caloricGoal !== null ? (
-          <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.primary }}>
-            Cilj: {caloricGoal} kalorij
+          <Text style={{ marginTop: 10, fontSize: 14, color: theme.colors.text }}>
+            Kalorije: <Text style={{ marginTop: 10, fontSize: 14, color: theme.colors.secondary }}>
+              {caloricGoal} kcal
+              </Text> 
           </Text>
         ) : (
           <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.text }}>
@@ -240,8 +251,10 @@ const fetchVsiObroki = async () => {
           </Text>
         )}
         {proteinGoal !== null ? (
-          <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.primary }}>
-            Cilj: {proteinGoal} g beljakovin
+          <Text style={{ marginTop: 10, fontSize: 14, color: theme.colors.text }}>
+            Beljakovine: <Text style={{ marginTop: 10, fontSize: 14, color: theme.colors.secondary }}>
+            {proteinGoal} g
+            </Text> 
           </Text>
         ) : (
           <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.text }}>
