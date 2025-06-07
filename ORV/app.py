@@ -38,7 +38,7 @@ face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_fronta
 resnet_model = models.resnet50(pretrained=False)
 resnet_model.fc = torch.nn.Linear(2048, 2)
 download_model_if_missing()
-resnet_model.load_state_dict(torch.load("resnet50_face_trained.pt", map_location=torch.device("cpu")))
+resnet_model.load_state_dict(torch.load("resnet50_face_trained.pt", map_location=torch.device("cpu"), weights_only=False))
 resnet_model.fc = torch.nn.Identity()
 resnet_model.eval()
 
