@@ -4,10 +4,8 @@ import * as ImagePicker from 'expo-image-picker';
 import uuid from 'react-native-uuid';
 import { API_BASE_URL } from '../services/api';
 import * as FileSystem from 'expo-file-system';
-// Namesto: process.env.IMGUR_CLIENT_ID
 import { IMGUR_CLIENT_ID } from '../services/api';
-
-
+import * as Location from 'expo-location';
 
 export default function CaptureFoodScreen({ navigation, route }) {
   const userEmail = route.params?.email;
