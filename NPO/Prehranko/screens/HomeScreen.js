@@ -238,7 +238,7 @@ const fetchVsiObroki = async () => {
           <Text style={homeStyles.cardTitle}>{DATA[1].title}</Text>
           <View style={{ marginTop: 10 }}>
             <Text style={{ fontSize: 14, color: theme.colors.text }}>
-              Kalorije: {todayCalories}/{caloricGoal || 'N/A'}
+              Kalorije: <Text>{todayCalories}/{caloricGoal || 'N/A'}</Text>
             </Text>
             <Progress.Bar
               progress={caloricGoal ? todayCalories / caloricGoal : 0}
@@ -250,7 +250,7 @@ const fetchVsiObroki = async () => {
               style={{ marginTop: 5 }}
             />
             <Text style={{ fontSize: 14, color: theme.colors.text, marginTop: 10 }}>
-              Beljakovine: {todayProtein}/{proteinGoal || 'N/A'}
+              Beljakovine: <Text>{todayProtein}/{proteinGoal || 'N/A'}</Text>
             </Text>
             <Progress.Bar
               progress={proteinGoal ? todayProtein / proteinGoal : 0}
