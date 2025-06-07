@@ -13,7 +13,8 @@ import gdown
 
 MODEL_PATH = "resnet50_face_trained.pt"
 MODEL_URL = "https://drive.google.com/uc?export=download&id=1ylu7N69oA5N5QhxsilIgtsCS6CUgjtK9"
-
+# 📦 Začasna shramba 2FA statusov
+two_fa_status = {}
 
 def download_model_if_missing():
     if not os.path.exists(MODEL_PATH):
