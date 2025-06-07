@@ -119,7 +119,7 @@ router.post('/login', async (req, res) => {
       message: 'Prijava uspešna',
       user: {
         email: user.email,
-        name: user.name || 'Uporabnik',
+        name: user.username || 'Uporabnik',
         caloricGoal: user.caloricGoal,
         proteinGoal: user.proteinGoal,
         is2faVerified: user.is2faVerified,
@@ -347,7 +347,7 @@ router.get('/finish-login', async (req, res) => {
       message: 'Prijava uspešna',
       user: {
         email: user.email,
-        name: user.name || 'Uporabnik',
+        name: user.username || 'Uporabnik',
         caloricGoal: user.caloricGoal,
         proteinGoal: user.proteinGoal,
         is2faVerified: user.is2faVerified,
@@ -408,7 +408,7 @@ router.get('/user', async (req, res) => {
     res.json({
       user: {
         email: user.email,
-        name: user.name || 'Uporabnik',
+        name: user.username || 'Uporabnik',
         caloricGoal: user.caloricGoal,
         proteinGoal: user.proteinGoal,
         is2faVerified: user.is2faVerified,
