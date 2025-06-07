@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles.css';
+import { getUserByEmail } from '../api/auth';
+
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -17,26 +19,20 @@ const Profile = () => {
 
     const fetchUser = async () => {
       try {
-        const res = await fetch(`/api/auth/user?email=${encodeURIComponent(email)}`);
-        const contentType = res.headers.get("content-type");
-
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("Neveljaven JSON odgovor strežnika.");
-        }
-
-        const data = await res.json();
+        const data = await getUserByEmail(email);
         console.log('🐞 DEBUG: Prejet JSON iz strežnika:', data);
-        if (res.ok && data.username) {
+        if (data?.user?.username) {
           setUser({ name: data.user.username, email });
         } else {
           console.warn('⚠️ Ni imena v odgovoru, uporabljam privzeto.');
-          setUser({ name: 'Uporabnik', email });
+          setUser({ name: 'User', email });
         }
       } catch (err) {
         console.error('❌ Napaka pri pridobivanju uporabnika:', err);
-        setUser({ name: 'Uporabnik', email });
+        setUser({ name: 'User', email });
       }
     };
+
 
     fetchUser();
   }, [navigate]);
