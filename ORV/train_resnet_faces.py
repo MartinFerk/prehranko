@@ -143,6 +143,7 @@ for epoch in range(num_epochs):
     avg_loss = total_loss / len(triplet_loader)
     print(f"Epoch {epoch+1}/{num_epochs} - Loss: {avg_loss:.4f}")
 
+model.eval()
 # === Shrani model ===
 torch.save(model.state_dict(), model_path)
 print(f"\n✅ Triplet model shranjen v {model_path}")
