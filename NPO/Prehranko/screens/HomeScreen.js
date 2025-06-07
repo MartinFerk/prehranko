@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { API_BASE_URL } from '../services/api'; // ⬅️ poskrbi da to ustreza tvojemu Express backendu
 
 const DATA = [
-  { id: '1', title: 'Statistika', description: 'Preglej statistiko tvojih obrokov.' },
+  { id: '1', title: 'Statistika', description: 'Tukaj so prikazani vaši vnosi' },
   { id: '2', title: 'Dnevni dosežek'},
   { id: '3', title: 'Vaši cilji'},
 ];
@@ -140,6 +140,15 @@ const fetchVsiObroki = async () => {
       const data = JSON.parse(text);
       if (res.ok && data) {
         setVsiObroki(data);
+        // Filtriraj današnje obroke in izračunaj skupne kalorije in beljakovine
+        const today = moment().startOf('day');
+        const todayMeals = data.filter((obrok) =>
+          moment(obrok.timestamp).isSame(today, 'day')
+        );
+        const totalCalories = todayMeals.reduce((sum, obrok) => sum + (obrok.calories || 0), 0);
+        const totalProtein = todayMeals.reduce((sum, obrok) => sum + (obrok.protein || 0), 0);
+        setTodayCalories(totalCalories);
+        setTodayProtein(totalProtein);
       }
     } catch (err) {
       console.warn('Napaka pri pridobivanju vseh obrokov:', err.message);
@@ -211,7 +220,7 @@ const fetchVsiObroki = async () => {
             data={vsiObroki}
             renderItem={renderObrokItem}
             keyExtractor={(item) => item.obrokId}
-            style={{ marginTop: 10 }}
+            style={{ marginTop: 2 }}
           />
         ) : (
           <Text style={{ marginTop: 10 }}>Ni podatkov o obrokih.</Text>
@@ -230,7 +239,7 @@ const fetchVsiObroki = async () => {
         <Text style={homeStyles.cardTitle}>{DATA[2].title}</Text>
         {caloricGoal !== null ? (
           <Text style={{ marginTop: 10, fontSize: 14, color: theme.colors.text }}>
-            Kalorije: <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.primary }}>
+            Kalorije: <Text style={{ marginTop: 10, fontSize: 14, color: theme.colors.secondary }}>
               {caloricGoal} kcal
               </Text> 
           </Text>
@@ -241,7 +250,7 @@ const fetchVsiObroki = async () => {
         )}
         {proteinGoal !== null ? (
           <Text style={{ marginTop: 10, fontSize: 14, color: theme.colors.text }}>
-            Beljakovine: <Text style={{ marginTop: 10, fontSize: 16, color: theme.colors.primary }}>
+            Beljakovine: <Text style={{ marginTop: 10, fontSize: 14, color: theme.colors.secondary }}>
             {proteinGoal} g
             </Text> 
           </Text>
