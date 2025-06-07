@@ -13,14 +13,14 @@ const pending2FA = new Map();
 
 // Registracija (ohranjamo nespremenjeno)
 router.post('/register', async (req, res) => {
-  const { email, password } = req.body;
+  const { username ,email, password } = req.body;
 
   try {
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ email, username });
     if (userExists) return res.status(400).json({ message: 'Uporabnik že obstaja' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ email, password: hashedPassword });
+    const newUser = new User({ username,email, password: hashedPassword });
     await newUser.save();
 
     res.status(201).json({ message: 'Registracija uspešna' });
