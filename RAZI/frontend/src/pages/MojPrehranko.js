@@ -106,7 +106,7 @@ const MojPrehranko = () => {
                     <div className="progress-bar">
                         <div
                             className={`progress-fill ${getColorClass(percent(todayCalories, goals.calories))}`}
-                            style={{ width: `${percent(todayCalories, goals.calories)}%` }}
+                            style={{width: `${percent(todayCalories, goals.calories)}%`}}
                         >
                             <span className="progress-percent">{percent(todayCalories, goals.calories)}%</span>
                         </div>
@@ -120,7 +120,7 @@ const MojPrehranko = () => {
                     <div className="progress-bar">
                         <div
                             className={`progress-fill ${getColorClass(percent(todayProtein, goals.protein))}`}
-                            style={{ width: `${percent(todayProtein, goals.protein)}%` }}
+                            style={{width: `${percent(todayProtein, goals.protein)}%`}}
                         >
                             <span className="progress-percent">{percent(todayProtein, goals.protein)}%</span>
                         </div>
@@ -128,15 +128,14 @@ const MojPrehranko = () => {
                 </div>
             </div>
 
-            <div className="weekly-section">
-                <h3>Tedenski pregled kalorij</h3>
+            <div style={{width: '600px', margin: '0 auto'}}>
                 <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={weeklyStats} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis />
-                        <Tooltip formatter={(value) => `${value} kcal`} />
-                        <ReferenceLine y={goals.calories} stroke="gray" strokeDasharray="3 3" />
+                    <LineChart data={weeklyStats} margin={{top: 10, right: 30, left: 0, bottom: 0}}>
+                        <CartesianGrid strokeDasharray="3 3"/>
+                        <XAxis dataKey="date"/>
+                        <YAxis domain={[0, goals.calories * 1.1]}/>
+                        <Tooltip formatter={(value) => `${value} kcal`}/>
+                        <ReferenceLine y={goals.calories} stroke="gray" strokeDasharray="3 3"/>
                         <Line
                             type="monotone"
                             dataKey="calories"
@@ -145,7 +144,7 @@ const MojPrehranko = () => {
                             dot={{
                                 stroke: '#000',
                                 strokeWidth: 1,
-                                fill: (entry) => entry.calories >= goals.calories ? 'green' : 'red'
+                                fill: (entry) => entry.calories >= goals.calories ? 'green' : 'red',
                             }}
                         />
                     </LineChart>
