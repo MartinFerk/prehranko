@@ -4,12 +4,12 @@ import * as FileSystem from 'expo-file-system';
 
 
 // Posodobljena funkcija loginUser
-export const loginUser = async (email, password, deviceId, deviceName, clientId) => {
+export const loginUser = async (username,email, password, deviceId, deviceName, clientId) => {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, from: 'app', deviceId, deviceName, clientId }),
+      body: JSON.stringify({ username,email, password, from: 'app', deviceId, deviceName, clientId }),
     });
 
     const data = await res.json();
@@ -47,7 +47,7 @@ export const logoutUser = async (email, deviceId) => {
   }
 };
 
-export const registerUser = async (username,email, password) => {
+export const registerUser = async (username ,email, password) => {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
