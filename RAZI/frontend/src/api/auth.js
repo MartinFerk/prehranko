@@ -40,6 +40,15 @@ export const trigger2FA = async (email) => {
   return res.json();
 };
 
+export const getUserByEmail = async (email) => {
+  const res = await fetch(`${API_BASE_URL}/auth/user?email=${email}`);
+  const data = await res.json();
+
+  if (!res.ok) throw new Error(data.message || "Napaka pri pridobivanju uporabnika");
+  return data;
+};
+
+
 // ✅ Registracija uporabnika
 export const registerUser = async (email, password) => {
   try {

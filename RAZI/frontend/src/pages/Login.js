@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles.css';
-import { trigger2FA, finishLogin } from '../api/auth';
+import {trigger2FA, finishLogin, getUserByEmail} from '../api/auth';
 import { API_BASE_URL } from '../api/api';
 
 const Login = () => {
@@ -44,23 +44,19 @@ const Login = () => {
           if (statusData.is2faVerified) {
             clearInterval(checkInterval);
 
-            const finishData = await finishLogin(email);
+            const finishData = await getUserByEmail(email);
+
 
             if (finishData?.user) {
               localStorage.setItem('loggedIn', 'true');
-              localStorage.setItem('userEmail', finishData.user.email);
-              localStorage.setItem('userName', finishData.user.name || 'Uporabnik');
-
-              if (finishData.user.caloricGoal != null) {
-                localStorage.setItem('caloricGoal', finishData.user.caloricGoal);
+              localStorage.setItem('userEmail', finishData.email);
+              localStorage.setItem('userName', finishData.name || 'Uporabnik');
+              if (finishData.caloricGoal != null) {
+                localStorage.setItem('caloricGoal', finishData.caloricGoal);
               }
-              if (finishData.user.proteinGoal != null) {
-                localStorage.setItem('proteinGoal', finishData.user.proteinGoal);
+              if (finishData.proteinGoal != null) {
+                localStorage.setItem('proteinGoal', finishData.proteinGoal);
               }
-
-              navigate('/home');
-            } else {
-              throw new Error('Neuspešno branje podatkov po 2FA.');
             }
           }
         } catch (err) {
