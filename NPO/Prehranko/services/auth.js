@@ -4,25 +4,32 @@ import * as FileSystem from 'expo-file-system';
 
 
 // Posodobljena funkcija loginUser
-export const loginUser = async (username,email, password, deviceId, deviceName, clientId) => {
-  try {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username,email, password, from: 'app', deviceId, deviceName, clientId }),
-    });
+export const loginUser = async (email, password, deviceId, deviceName, clientId) => {
+    try {
+        const res = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email,
+                password,
+                from: 'app',
+                deviceId,
+                deviceName,
+                clientId,
+            }),
+        });
 
-    const data = await res.json();
-    console.log('⬅️ Odgovor:', data);
+        const data = await res.json();
+        console.log('⬅️ Odgovor:', data);
 
-    if (!res.ok) {
-      throw new Error(data.message || 'Prijava ni uspela');
+        if (!res.ok) {
+            throw new Error(data.message || 'Prijava ni uspela');
+        }
+        return data;
+    } catch (err) {
+        console.error('❌ Napaka pri prijavi:', err.message);
+        throw err;
     }
-    return data; // Vsebuje { message: 'Prijava uspešna', userId: '...' }
-  } catch (err) {
-    console.error('❌ Napaka pri prijavi:', err.message);
-    throw err;
-  }
 };
 
 // Nova funkcija za odjavo

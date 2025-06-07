@@ -102,6 +102,8 @@ router.post("/login", async (req, res) => {
   try {
     // Preveri, ali uporabnik obstaja
     const user = await User.findOne({ email });
+    console.log("🔍 Najden uporabnik:", user);
+
     if (!user) return res.status(400).json({ message: "Uporabnik ne obstaja" });
 
     // Preveri geslo
