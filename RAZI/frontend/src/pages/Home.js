@@ -18,6 +18,11 @@ const goldMarkerIcon = new L.Icon({
 
 const Home = () => {
     const [obroki, setObroki] = useState([]);
+    const [showMineOnly, setShowMineOnly] = useState(false);
+
+    const userName = localStorage.getItem('userName');
+    const userEmail = localStorage.getItem('userEmail');
+    const isLoggedIn = localStorage.getItem('loggedIn') === 'true';
 
     useEffect(() => {
         const fetchObroki = async () => {
@@ -25,7 +30,6 @@ const Home = () => {
                 const data = await getAllObroki();
                 console.log("📦 Obroki loaded:", data);
 
-                // Optional: warn about invalid ones
                 const invalid = data.filter(
                     (o) => isNaN(parseFloat(o.locY)) || isNaN(parseFloat(o.locX))
                 );
@@ -42,9 +46,30 @@ const Home = () => {
         fetchObroki();
     }, []);
 
+    const filteredObroki = showMineOnly && userEmail
+        ? obroki.filter((o) => o.userEmail === userEmail)
+        : obroki;
+
     return (
         <div className="container">
+            {isLoggedIn && (
+                <h2 className="welcome-text">Pozdravljen, {userName}!</h2>
+            )}
+
             <h1 className="title">Zemljevid</h1>
+
+            {isLoggedIn && (
+                <div className="toggle-wrapper">
+                    <label>
+                        <input
+                            type="checkbox"
+                            checked={showMineOnly}
+                            onChange={() => setShowMineOnly(!showMineOnly)}
+                        />{' '}
+                        Pokaži samo moje obroke
+                    </label>
+                </div>
+            )}
 
             <div className="map-wrapper">
                 <div className="map-container">
@@ -59,10 +84,9 @@ const Home = () => {
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
 
-                        {obroki.map((obrok) => {
+                        {filteredObroki.map((obrok) => {
                             const lat = parseFloat(obrok.locY);
                             const lng = parseFloat(obrok.locX);
-
                             if (isNaN(lat) || isNaN(lng)) return null;
 
                             return (
