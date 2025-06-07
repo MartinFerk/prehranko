@@ -40,21 +40,26 @@ resnet_model.fc = torch.nn.Linear(2048, 3)
 download_model_if_missing()
 
 try:
-    state_dict = torch.load(MODEL_PATH, map_location=torch.device("cpu"), weights_only=False)
-    if isinstance(state_dict, dict) and "fc.weight" in state_dict:
-        resnet_model.load_state_dict(state_dict)
+    loaded = torch.load(MODEL_PATH, map_location=torch.device("cpu"))
+
+    if isinstance(loaded, dict):
+        # Če je naložen state_dict
+        resnet_model = models.resnet50(weights=None)
+        resnet_model.fc = torch.nn.Identity()  # odstranimo klasifikator
+        resnet_model.load_state_dict(loaded)
+        print("✅ Naložen state_dict model.")
     else:
-        # Če ni state_dict ampak celoten model
-        resnet_model = state_dict
-        print("ℹ️ Naložen celoten model (namesto state_dict).")
+        # Če je naložen celoten model
+        resnet_model = loaded
+        print("ℹ️ Naložen celoten model.")
+
+    resnet_model.eval()
+
 except Exception as e:
     print("❌ Napaka pri nalaganju modela:", e)
-    raise e
+    raise
 
-resnet_model.fc = torch.nn.Identity()
-resnet_model.eval()
-
-
+# === Transformacije za vhodne slike ===
 resnet_transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
