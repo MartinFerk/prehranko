@@ -9,12 +9,17 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = async () => {
     setLoading(true);
+    setStatus('');
+    setError('');
+
     try {
-      // 1. Poskusi prijavo
+      // 1. Prijava
       const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -26,44 +31,46 @@ const Login = () => {
 
       // 2. Sproži 2FA
       await trigger2FA(email);
-      alert('✅ Prijava uspešna. Počakaj na preverjanje obraza na telefonu.');
+      setStatus('✅ Prijava uspešna. Čakam na preverjanje obraza na telefonu...');
 
-      // 3. Začni polling za preverjanje 2FA
+      // 3. Polling
       const checkInterval = setInterval(async () => {
         try {
           const statusRes = await fetch(`${API_BASE_URL}/auth/check-2fa?email=${email}`);
           const statusData = await statusRes.json();
+
           console.log('📡 /check-2fa odgovor:', statusData);
 
           if (statusData.is2faVerified) {
             clearInterval(checkInterval);
 
-            // 4. Dokončaj prijavo in dobi vse podatke
             const finishData = await finishLogin(email);
 
-            // 5. Shrani podatke v localStorage
-            localStorage.setItem('loggedIn', 'true');
-            localStorage.setItem('userEmail', finishData.user.email);
-            localStorage.setItem('userName', finishData.user.name || 'Uporabnik');
+            if (finishData?.user) {
+              localStorage.setItem('loggedIn', 'true');
+              localStorage.setItem('userEmail', finishData.user.email);
+              localStorage.setItem('userName', finishData.user.name || 'Uporabnik');
 
-            if (finishData.user.caloricGoal != null) {
-              localStorage.setItem('caloricGoal', finishData.user.caloricGoal);
+              if (finishData.user.caloricGoal != null) {
+                localStorage.setItem('caloricGoal', finishData.user.caloricGoal);
+              }
+              if (finishData.user.proteinGoal != null) {
+                localStorage.setItem('proteinGoal', finishData.user.proteinGoal);
+              }
+
+              navigate('/home');
+            } else {
+              throw new Error('Neuspešno branje podatkov po 2FA.');
             }
-
-            if (finishData.user.proteinGoal != null) {
-              localStorage.setItem('proteinGoal', finishData.user.proteinGoal);
-            }
-
-            // 6. Preusmeri na začetno stran
-            navigate('/home');
           }
-        } catch (error) {
-          console.error('❌ Napaka med preverjanjem 2FA:', error);
+        } catch (err) {
+          console.error('❌ Napaka med preverjanjem 2FA:', err);
           clearInterval(checkInterval);
+          setError('Napaka pri preverjanju 2FA');
         }
       }, 3000);
     } catch (err) {
-      alert('❌ ' + err.message);
+      setError('❌ ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -98,6 +105,9 @@ const Login = () => {
           <button className="login-button" onClick={handleLogin} disabled={loading}>
             {loading ? 'Prijavljam...' : 'Prijavi se'}
           </button>
+
+          {status && <p className="status-text" style={{ color: 'green', marginTop: '10px' }}>{status}</p>}
+          {error && <p className="error-text" style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
         </div>
       </div>
   );
