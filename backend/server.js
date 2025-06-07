@@ -38,6 +38,9 @@ app.use('/api/activities', activityRoutes);
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 
+const authRoutes = require('./routes/2fa');
+app.use('/api/auth', authRoutes);
+
 // ➕ NOVO: Face Upload endpoint (brez ločenega routerja)
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {

@@ -8,6 +8,7 @@ const fs = require("fs");
 const axios = require("axios");
 
 const router = express.Router();
+const pending2FA = new Map();
 const { publish2FARequest } = require('../mqttListener');
 
 // ✅ Registracija
@@ -158,59 +159,6 @@ router.post("/logout", async (req, res) => {
   } catch (err) {
     console.error("❌ Error during logout:", err.message);
     res.status(500).json({ message: "Napaka na strežniku" });
-  }
-});
-
-// Endpoint za sprožitev 2FA
-router.post('/trigger-2fa', async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ error: 'Manjka email' });
-    }
-
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) {
-      return res.status(404).json({ error: 'Uporabnik ni najden' });
-    }
-
-    // Preveri, ali ima uporabnik povezano napravo
-    const connectedDevice = user.devices.find((d) => d.isConnected);
-    if (!connectedDevice) {
-      return res.status(400).json({ error: 'Ni povezanih naprav za 2FA' });
-    }
-
-    // Posodobi pending2FA status
-    user.pending2FA = true;
-    await user.save();
-
-    // Pošlji MQTT sporočilo
-    publish2FARequest(email);
-
-    res.json({ message: '2FA zahteva sprožena' });
-  } catch (err) {
-    console.error('❌ Error triggering 2FA:', err.message);
-    res.status(500).json({ error: 'Napaka pri sprožitvi 2FA' });
-  }
-});
-
-// POST /auth/complete-2fa
-router.post("/complete-2fa", async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: "Email je obvezen" });
-
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ error: "Uporabnik ni najden" });
-
-    user.is2faVerified = true;
-    user.pending2FA = false; // Ponastavi pending2FA
-    await user.save();
-
-    return res.json({ message: "2FA uspešno dokončan" });
-  } catch (err) {
-    console.error("❌ Napaka pri dokončanju 2FA:", err);
-    res.status(500).json({ error: "Napaka strežnika" });
   }
 });
 
@@ -381,45 +329,6 @@ router.get("/finish-login", async (req, res) => {
   } catch (err) {
     console.error("❌ Napaka pri finish-login:", err.message);
     res.status(500).json({ message: "Napaka na strežniku" });
-  }
-});
-
-// Na PRAVI LOKACIJI (zgoraj, pred exportom)
-router.get("/check-2fa", async (req, res) => {
-  let { email } = req.query;
-  if (!email) return res.status(400).json({ message: "Email je zahtevan" });
-  email = email.toLowerCase();
-
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "Uporabnik ne obstaja" });
-
-    res.json({
-      trigger: user.pending2FA || false,
-      is2faVerified: user.is2faVerified || false,
-    });
-  } catch (err) {
-    console.error("❌ Napaka pri preverjanju 2FA:", err);
-    res.status(500).json({ message: "Napaka pri preverjanju statusa" });
-  }
-});
-
-router.get("/status", async (req, res) => {
-  let { email } = req.query;
-  if (!email) return res.status(400).json({ message: "Email je zahtevan" });
-  email = email.toLowerCase();
-
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "Uporabnik ne obstaja" });
-
-    res.json({
-      pending2FA: user.pending2FA || false,
-      is2faVerified: user.is2faVerified || false,
-    });
-  } catch (err) {
-    console.error("❌ Napaka pri preverjanju 2FA statusa:", err);
-    res.status(500).json({ message: "Napaka pri preverjanju statusa" });
   }
 });
 

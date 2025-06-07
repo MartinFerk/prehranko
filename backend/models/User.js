@@ -20,11 +20,9 @@ const userSchema = new mongoose.Schema({
       isConnected: { type: Boolean, default: false }, // Status povezave
     },
   ],
-  is2faVerified: {
-    type: Boolean,
-    default: false,
-  },
-  pending2FA: { type: Boolean, default: false }, // Novo polje za čakajoče 2FA zahteve
+  is2faVerified: {type: Boolean, default: false },
+  pending2FA: { type: Boolean, default: false },
+  pending2FAExpires: { type: Date, default: null },
 });
 
 module.exports = mongoose.model("User", userSchema);
