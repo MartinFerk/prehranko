@@ -138,7 +138,8 @@ html, body {
 
 /* Tedenski pregled */
 .weekly-section {
-  margin-top: 40px;
+  margin: 0 auto;
+  width: 600px;
 }
 
 .weekly-bar-chart {
