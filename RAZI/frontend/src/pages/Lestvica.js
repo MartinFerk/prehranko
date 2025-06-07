@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import '../styles.css';
 import { getAllObroki } from '../api/obroki';
 
+const rankIcons = ['🥇', '🥈', '🥉'];
+
 const Lestvica = () => {
     const [allObroki, setAllObroki] = useState([]);
     const [timeFilter, setTimeFilter] = useState('danes');
@@ -39,56 +41,68 @@ const Lestvica = () => {
 
     const filtered = filterByTime(allObroki);
 
-    const topByCalories = [...filtered].sort((a, b) => b.calories - a.calories).slice(0, 5);
-    const topByProtein = [...filtered].sort((a, b) => b.protein - a.protein).slice(0, 5);
+    const topByCalories = [...filtered]
+        .sort((a, b) => b.calories - a.calories)
+        .slice(0, 3);
+
+    const topByProtein = [...filtered]
+        .sort((a, b) => b.protein - a.protein)
+        .slice(0, 3);
+
     const topUsers = Object.entries(
         filtered.reduce((acc, o) => {
-            acc[o.userEmail] = (acc[o.userEmail] || 0) + 1;
+            acc[o.userEmail] = (acc[o.userEmail] || 0) + (o.calories || 0);
             return acc;
         }, {})
     )
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 5);
+        .slice(0, 3);
 
     return (
         <div className="container">
-            <h1 className="title">Lestvica</h1>
+            <h1 className="title">🏆 Lestvica</h1>
 
             <div className="radio-buttons">
                 {['danes', 'teden', 'lifetime'].map(option => (
-                    <label key={option}>
+                    <label key={option} style={{ marginRight: '15px' }}>
                         <input
                             type="radio"
                             value={option}
                             checked={timeFilter === option}
                             onChange={() => setTimeFilter(option)}
                         />
-                        {option.charAt(0).toUpperCase() + option.slice(1)}
+                        {' '}{option.charAt(0).toUpperCase() + option.slice(1)}
                     </label>
                 ))}
             </div>
 
             <div className="leaderboard-section">
-                <h2>🍽️ Top 5 obrokov po kalorijah</h2>
-                <ul>
+                <h2>🍽️ Top 3 obroki po kalorijah</h2>
+                <ol>
                     {topByCalories.map((o, idx) => (
-                        <li key={o.obrokId}>{idx + 1}. {o.name} – {o.calories} kcal</li>
+                        <li key={o.obrokId} style={{ marginBottom: '10px' }}>
+                            {rankIcons[idx]} <strong>{o.name}</strong> – {o.calories} kcal
+                        </li>
                     ))}
-                </ul>
+                </ol>
 
-                <h2>💪 Top 5 obrokov po beljakovinah</h2>
-                <ul>
+                <h2>💪 Top 3 obroki po beljakovinah</h2>
+                <ol>
                     {topByProtein.map((o, idx) => (
-                        <li key={o.obrokId}>{idx + 1}. {o.name} – {o.protein}g</li>
+                        <li key={o.obrokId} style={{ marginBottom: '10px' }}>
+                            {rankIcons[idx]} <strong>{o.name}</strong> – {o.protein}g
+                        </li>
                     ))}
-                </ul>
+                </ol>
 
-                <h2>👤 Top 5 uporabnikov po številu obrokov</h2>
-                <ul>
-                    {topUsers.map(([email, count], idx) => (
-                        <li key={email}>{idx + 1}. {email} – {count} obrokov</li>
+                <h2>👤 Top 3 uporabniki po skupnih kalorijah</h2>
+                <ol>
+                    {topUsers.map(([email, calSum], idx) => (
+                        <li key={email} style={{ marginBottom: '10px' }}>
+                            {rankIcons[idx]} <strong>{email}</strong> – {Math.round(calSum)} kcal
+                        </li>
                     ))}
-                </ul>
+                </ol>
             </div>
         </div>
     );
