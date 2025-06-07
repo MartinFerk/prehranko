@@ -42,11 +42,13 @@ export const trigger2FA = async (email) => {
 
 export const getUserByEmail = async (email) => {
   const res = await fetch(`${API_BASE_URL}/auth/user?email=${email}`);
-  const data = await res.json();
-
-  if (!res.ok) throw new Error(data.message || "Napaka pri pridobivanju uporabnika");
-  return data;
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.message || 'Napaka pri pridobivanju uporabnika');
+  }
+  return res.json(); // mora vsebovati { user: {...} }
 };
+
 
 
 // ✅ Registracija uporabnika
