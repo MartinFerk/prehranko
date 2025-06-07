@@ -12,7 +12,7 @@ export default function CaptureFoodScreen({ navigation, route }) {
   const [imageUri, setImageUri] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
-    console.log(IMGUR_CLIENT_ID); // ✅ Deluje
+  console.log(IMGUR_CLIENT_ID);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchCameraAsync({

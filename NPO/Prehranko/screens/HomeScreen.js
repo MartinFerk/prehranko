@@ -178,19 +178,15 @@ const fetchVsiObroki = async () => {
     navigation.navigate('SettingsScreen', { email: userEmail });
   };
 
-  const handleCaptureFace = () => {
-    navigation.navigate('CameraScreen', { mode: 'register', email: userEmail });
+  const handleDeleteFood = () => {
+    navigation.navigate('DeleteFoodScreen', { email: userEmail });
   };
 
   const handleSetGoal = () => {
     navigation.navigate('GoalScreen', { email: userEmail });
   };
 
-    const handleCaptureFood = () => {
-      navigation.navigate('CaptureFoodScreen', { email: userEmail });
-    };
-
-    const renderObrokItem = ({ item }) => (
+  const renderObrokItem = ({ item }) => (
     <View style={{ marginTop: 10 }}>
       <Text style={{ fontWeight: 'bold' }}>{item.name}</Text>
       <Text>Kalorije: {item.calories} kcal </Text>
@@ -215,7 +211,7 @@ const fetchVsiObroki = async () => {
       </Text>
     )}
 
-{/* Statistika card - full width at the top, showing all meals */}
+      {/* Statistika card - full width at the top, showing all meals */}
       <View style={homeStyles.statisticsCard}>
         <Text style={homeStyles.cardTitle}>{DATA[0].title}</Text>
         <Text style={homeStyles.cardDescription}>{DATA[0].description}</Text>
@@ -232,12 +228,12 @@ const fetchVsiObroki = async () => {
         )}
       </View>
 
-{/* Row for Zajemi obrok and Tvoji cilji cards */}
+      {/* Row for Zajemi obrok and Tvoji cilji cards */}
       <View style={homeStyles.cardsRow}>
-<View style={[homeStyles.halfCard, homeStyles.zajemiObrokCard]}>
-  <Text style={homeStyles.cardTitle}>{DATA[1].title}</Text>
-  <View style={{ marginTop: 10 }}>
-    <Text style={{ fontSize: 14, color: theme.colors.text }}>
+      <View style={[homeStyles.halfCard, homeStyles.zajemiObrokCard]}>
+      <Text style={homeStyles.cardTitle}>{DATA[1].title}</Text>
+      <View style={{ marginTop: 10 }}>
+      <Text style={{ fontSize: 14, color: theme.colors.text }}>
       Kalorije: 
       <Text style={{ color: theme.colors.primary }}> {todayCalories} </Text>
       <Text style={{ color: theme.colors.text }}>/ </Text>
@@ -312,7 +308,7 @@ const fetchVsiObroki = async () => {
       <IconButton
         iconName="delete"
         title="Izbriši Vnos"
-        onPress={handleCaptureFace}
+        onPress={handleDeleteFood}
         color={theme.colors.secondary}/>
     </View>
   </View>
