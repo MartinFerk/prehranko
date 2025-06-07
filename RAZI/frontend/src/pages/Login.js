@@ -50,7 +50,7 @@ const Login = () => {
             // 💾 Shrani podatke
             localStorage.setItem('loggedIn', 'true');
             localStorage.setItem('userEmail', userData.user.email);
-            localStorage.setItem('userName', userData.user.name || 'Uporabnik');
+            localStorage.setItem('userName', userData.user.username || 'Uporabnik');
             if (userData.user.caloricGoal != null) {
               localStorage.setItem('caloricGoal', userData.user.caloricGoal);
             }
