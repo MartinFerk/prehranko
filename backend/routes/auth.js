@@ -1,4 +1,3 @@
-// auth.js
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
@@ -6,83 +5,57 @@ const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
 const FormData = require("form-data");
 const fs = require("fs");
+const axios = require("axios");
 
 const router = express.Router();
-
 const pending2FA = new Map();
 
-// Registracija (ohranjamo nespremenjeno)
+// ✅ Registracija
 router.post("/register", async (req, res) => {
-  const { username, email, password } = req.body;
+  let { username, email, password } = req.body;
+  email = email?.toLowerCase();
 
-  console.log("📥 Prejem registracijskega zahtevka:", {
-    username,
-    email,
-    password,
-  });
+  console.log("📥 Prejem registracijskega zahtevka:", { username, email, password });
 
   try {
-    // Validacija: manjkajoča polja
     if (!username || !email || !password) {
-      console.warn("⚠️ Manjkajoča polja v registraciji:", {
-        username,
-        email,
-        password,
-      });
       return res.status(400).json({ message: "Vsa polja so obvezna" });
     }
 
-    // Preveri obstoječe uporabnike
     const userExists = await User.findOne({ $or: [{ email }, { username }] });
     if (userExists) {
-      console.warn(
-        "⚠️ Uporabnik že obstaja z emailom ali uporabniškim imenom:",
-        {
-          email,
-          username,
-        }
-      );
       return res.status(400).json({ message: "Uporabnik že obstaja" });
     }
 
-    // Hashiranje gesla
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log("🔐 Geslo uspešno hashirano.");
-
-    // Ustvari novega uporabnika
     const newUser = new User({ username, email, password: hashedPassword });
-    const savedUser = await newUser.save();
 
-    console.log("✅ Uporabnik uspešno shranjen v bazo:", savedUser);
+    await newUser.save();
+    console.log("✅ Uporabnik uspešno registriran:", email);
     res.status(201).json({ message: "Registracija uspešna" });
+
   } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ message: "Email ali uporabniško ime že obstaja" });
+    }
+
     console.error("❌ Napaka na strežniku med registracijo:", err);
-    res
-      .status(500)
-      .json({ message: "Napaka na strežniku", error: err.message });
+    res.status(500).json({ message: "Napaka na strežniku", error: err.message });
   }
 });
 
+// ✅ Posodobi cilje
 router.post("/update-goals", async (req, res) => {
   const { email, caloricGoal, proteinGoal } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ message: "Email je obvezen" });
-  }
+  if (!email) return res.status(400).json({ message: "Email je obvezen" });
 
   try {
     const user = await User.findOneAndUpdate(
-      { email },
-      {
-        caloricGoal: caloricGoal ?? null,
-        proteinGoal: proteinGoal ?? null,
-      },
-      { new: true }
+        { email: email.toLowerCase() },
+        { caloricGoal: caloricGoal ?? null, proteinGoal: proteinGoal ?? null },
+        { new: true }
     );
-
-    if (!user) {
-      return res.status(404).json({ message: "Uporabnik ni najden" });
-    }
+    if (!user) return res.status(404).json({ message: "Uporabnik ni najden" });
 
     res.json({
       message: "Cilji uspešno posodobljeni",
@@ -95,40 +68,33 @@ router.post("/update-goals", async (req, res) => {
   }
 });
 
-// Prijava
+// ✅ Prijava
 router.post("/login", async (req, res) => {
-  const { email, password, from, deviceId, deviceName, clientId } = req.body;
+  let { email, password, from, deviceId, deviceName, clientId } = req.body;
+  email = email?.toLowerCase();
 
   try {
-    // Preveri, ali uporabnik obstaja
     const user = await User.findOne({ email });
-    console.log("🔍 Najden uporabnik:", user);
-
     if (!user) return res.status(400).json({ message: "Uporabnik ne obstaja" });
 
-    // Preveri geslo
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Napačno geslo" });
 
-    // Posodobi ali dodaj napravo
     if (deviceId && clientId) {
       const deviceExists = user.devices.find((d) => d.deviceId === deviceId);
       if (deviceExists) {
-        // Posodobi obstoječo napravo
         await User.updateOne(
-          { _id: user._id, "devices.deviceId": deviceId },
-          {
-            $set: {
-              "devices.$.deviceName": deviceName || deviceExists.deviceName,
-              "devices.$.clientId": clientId,
-              "devices.$.lastConnected": new Date(),
-              "devices.$.isConnected": true,
-            },
-          }
+            { _id: user._id, "devices.deviceId": deviceId },
+            {
+              $set: {
+                "devices.$.deviceName": deviceName || deviceExists.deviceName,
+                "devices.$.clientId": clientId,
+                "devices.$.lastConnected": new Date(),
+                "devices.$.isConnected": true,
+              },
+            }
         );
-        console.log(`✅ Updated device ${deviceId} for user ${email}`);
       } else {
-        // Dodaj novo napravo
         user.devices.push({
           deviceId,
           deviceName: deviceName || "",
@@ -137,14 +103,12 @@ router.post("/login", async (req, res) => {
           isConnected: true,
         });
         await user.save();
-        console.log(`✅ Registered new device ${deviceId} for user ${email}`);
       }
     }
 
-    // Logika za 2FA
     if (from === "web") {
       user.pending2FA = true;
-      user.is2faVerified = false; // 🔴 ponastavi 2FA na začetku
+      user.is2faVerified = false;
       await user.save();
       return res.json({ message: "Prijava uspešna – preveri 2FA na telefonu" });
     }
@@ -161,50 +125,39 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("❌ Error during login:", err.message);
+    console.error("❌ Error during login:", err);
     res.status(500).json({ message: "Napaka na strežniku" });
   }
 });
 
-// Nov endpoint za odjavo
+// ✅ Odjava
 router.post("/logout", async (req, res) => {
   const { email, deviceId } = req.body;
-
-  if (!email || !deviceId) {
-    return res.status(400).json({ message: "Email in deviceId sta obvezna" });
-  }
+  if (!email || !deviceId) return res.status(400).json({ message: "Email in deviceId sta obvezna" });
 
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "Uporabnik ne obstaja" });
-    }
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) return res.status(404).json({ message: "Uporabnik ne obstaja" });
 
-    // Preverjanje, ali naprava obstaja
     const deviceExists = user.devices.find((d) => d.deviceId === deviceId);
-    if (!deviceExists) {
-      return res.status(404).json({ message: "Naprava ni najdena" });
-    }
+    if (!deviceExists) return res.status(404).json({ message: "Naprava ni najdena" });
 
-    // Posodobitev statusa naprave
     await User.updateOne(
-      { _id: user._id, "devices.deviceId": deviceId },
-      {
-        $set: {
-          "devices.$.isConnected": false,
-          "devices.$.lastConnected": new Date(),
-        },
-      }
+        { _id: user._id, "devices.deviceId": deviceId },
+        {
+          $set: {
+            "devices.$.isConnected": false,
+            "devices.$.lastConnected": new Date(),
+          },
+        }
     );
 
-    console.log(`✅ Device ${deviceId} disconnected for user ${email}`);
     res.status(200).json({ message: "Odjava uspešna" });
   } catch (err) {
     console.error("❌ Error during logout:", err.message);
     res.status(500).json({ message: "Napaka na strežniku" });
   }
 });
-
 router.post("/trigger2fa", (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: "Email je zahtevan" });
