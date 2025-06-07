@@ -207,5 +207,14 @@ def verify_face():
         logging.exception("❌ Nepričakovana napaka pri preverjanju")
         return jsonify({ "error": str(e) }), 500
 
+@app.route("/auth/check-2fa", methods=["GET"])
+def check_2fa_status():
+    email = request.args.get("email")
+    if not email:
+        return jsonify({ "error": "Email ni podan." }), 400
+
+    is_verified = two_fa_status.get(email, False)
+    return jsonify({ "is2faVerified": is_verified })
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
