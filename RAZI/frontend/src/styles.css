@@ -201,6 +201,69 @@ html, body {
   margin-top: 40px;
 }
 
+.progress-bar {
+  background-color: #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+  height: 22px;
+  margin: 6px 0;
+  position: relative;
+}
+
+.progress-fill {
+  background-color: #4caf50;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  transition: width 0.3s ease-in-out;
+}
+
+.progress-fill.protein {
+  background-color: #2196f3;
+}
+
+.progress-percent {
+  margin-right: 5px;
+}
+
+.weekly-bar-chart {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 150px;
+  padding: 10px 0;
+  margin-top: 20px;
+  border-top: 1px solid #ccc;
+}
+
+.bar-container {
+  flex: 1;
+  margin: 0 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bar {
+  width: 20px;
+  background-color: #ff9800;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s;
+}
+
+.bar-label {
+  margin-top: 5px;
+  font-size: 12px;
+  text-align: center;
+  color: #333;
+}
+
+
 .weekly-day {
   margin-bottom: 12px;
   padding: 10px;
