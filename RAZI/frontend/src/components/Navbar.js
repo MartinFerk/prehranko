@@ -15,7 +15,7 @@ const Navbar = () => {
 
         const fetchUser = async () => {
             try {
-                const res = await fetch(`/api/auth/user?email=${encodeURIComponent(email)}`);
+                const res = await fetch(`${API_BASE_URL}/auth/user?email=${encodeURIComponent(email)}`)
                 const data = await res.json();
 
                 if (res.ok && data.user?.username) {
