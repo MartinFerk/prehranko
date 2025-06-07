@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import '../styles.css';
 import { getAllObroki } from '../api/obroki';
+import {
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    Tooltip,
+    ResponsiveContainer,
+    ReferenceLine,
+    CartesianGrid
+} from 'recharts';
 
 const MojPrehranko = () => {
     const [todayCalories, setTodayCalories] = useState(0);
@@ -87,11 +97,11 @@ const MojPrehranko = () => {
             <h1 className="title">Moj Prehranko</h1>
 
             <div className="progress-section">
-                <h3>Dnevni cilji</h3>
+                <h3>Dnevni pregled</h3>
 
                 <div className="progress-wrapper">
                     <label>
-                        Kalorije: {todayCalories} / {goals.calories} kcal ({percent(todayCalories, goals.calories)}%)
+                        Kalorije: {todayCalories} / {goals.calories} kcal
                     </label>
                     <div className="progress-bar">
                         <div
@@ -105,7 +115,7 @@ const MojPrehranko = () => {
 
                 <div className="progress-wrapper">
                     <label>
-                        Beljakovine: {todayProtein}g / {goals.protein}g ({percent(todayProtein, goals.protein)}%)
+                        Beljakovine: {todayProtein}g / {goals.protein}g
                     </label>
                     <div className="progress-bar">
                         <div
@@ -119,21 +129,27 @@ const MojPrehranko = () => {
             </div>
 
             <div className="weekly-section">
-                <h3>Tedenski pregled (kalorije)</h3>
-                <div className="weekly-bar-chart">
-                    {weeklyStats.map((entry, index) => (
-                        <div key={index} className="bar-container">
-                            <div
-                                className="bar"
-                                style={{
-                                    height: `${Math.min(entry.calories / goals.calories * 100, 100)}%`,
-                                }}
-                                title={`${entry.calories} kcal`}
-                            ></div>
-                            <div className="bar-label">{entry.date}</div>
-                        </div>
-                    ))}
-                </div>
+                <h3>Tedenski pregled kalorij</h3>
+                <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={weeklyStats} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip formatter={(value) => `${value} kcal`} />
+                        <ReferenceLine y={goals.calories} stroke="gray" strokeDasharray="3 3" />
+                        <Line
+                            type="monotone"
+                            dataKey="calories"
+                            stroke="#8884d8"
+                            strokeWidth={2}
+                            dot={{
+                                stroke: '#000',
+                                strokeWidth: 1,
+                                fill: (entry) => entry.calories >= goals.calories ? 'green' : 'red'
+                            }}
+                        />
+                    </LineChart>
+                </ResponsiveContainer>
             </div>
         </div>
     );

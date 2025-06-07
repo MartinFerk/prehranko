@@ -70,7 +70,7 @@ const Home = () => {
     return (
         <div className="container">
             {isLoggedIn && (
-                <h2 className="welcome-text">Pozdravljen, {userName}!</h2>
+                <h2 className="welcome-text">Pozdravljen, {userEmail}!</h2>
             )}
             {isLoggedIn && (
                 <div className="toggle-wrapper">
