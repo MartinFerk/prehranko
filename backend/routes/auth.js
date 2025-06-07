@@ -296,6 +296,36 @@ router.post('/save-features', async (req, res) => {
   }
 });
 
+
+router.get('/finish-login', async (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ message: 'Email je potreben' });
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user || !user.is2faVerified) {
+      return res.status(401).json({ message: '2FA še ni bila dokončana' });
+    }
+
+    res.json({
+      message: 'Prijava uspešna',
+      user: {
+        email: user.email,
+        name: user.name || 'Uporabnik',
+        caloricGoal: user.caloricGoal,
+        proteinGoal: user.proteinGoal,
+        is2faVerified: user.is2faVerified,
+        _id: user._id,
+      }
+    });
+  } catch (err) {
+    console.error('❌ Napaka pri finish-login:', err.message);
+    res.status(500).json({ message: 'Napaka na strežniku' });
+  }
+});
+
+
 // Na PRAVI LOKACIJI (zgoraj, pred exportom)
 router.get('/check-2fa', async (req, res) => {
   const { email } = req.query;
