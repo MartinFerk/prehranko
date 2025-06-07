@@ -76,9 +76,11 @@ router.post('/login', async (req, res) => {
     // Logika za 2FA
     if (from === 'web') {
       user.pending2FA = true;
+      user.is2faVerified = false;  // 🔴 ponastavi 2FA na začetku
       await user.save();
       return res.json({ message: 'Prijava uspešna – preveri 2FA na telefonu' });
     }
+
 
     res.status(200).json({
       message: 'Prijava uspešna',

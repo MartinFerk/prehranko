@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility';
 import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
@@ -19,11 +20,27 @@ const goldMarkerIcon = new L.Icon({
 const Home = () => {
     const [obroki, setObroki] = useState([]);
     const [showMineOnly, setShowMineOnly] = useState(false);
+    const navigate = useNavigate();
 
     const userName = localStorage.getItem('userName');
     const userEmail = localStorage.getItem('userEmail');
     const isLoggedIn = localStorage.getItem('loggedIn') === 'true';
 
+    // 🧠 Preveri prijavo in redirectaj če ni
+    useEffect(() => {
+        console.log('📦 localStorage check on Home mount:', {
+            userName,
+            userEmail,
+            isLoggedIn,
+        });
+
+        if (!isLoggedIn || !userEmail) {
+            alert('⚠️ Nisi prijavljen – preusmerjam na prijavo.');
+            navigate('/login');
+        }
+    }, [isLoggedIn, userEmail, navigate]);
+
+    // 📡 Naloži obroke
     useEffect(() => {
         const fetchObroki = async () => {
             try {
