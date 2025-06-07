@@ -62,45 +62,57 @@ export default function CaptureFoodScreen({ navigation, route }) {
     }
   };
 
-  const analyzeFoodImage = async (localUri) => {
-    setLoading(true);
-    setResult(null);
+const analyzeFoodImage = async (localUri) => {
+  setLoading(true);
+  setResult(null);
 
-    try {
-      const imgUrl = await uploadToImgur(localUri);
-      const obrokId = uuid.v4();
-
-      // 1️⃣ Ustvari obrok
-      const createRes = await fetch(`${API_BASE_URL}/obroki/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ obrokId, userEmail, imgLink: imgUrl }),
-      });
-
-      if (!createRes.ok) throw new Error('Napaka pri ustvarjanju obroka');
-
-      // 2️⃣ Pokliči analizo
-      const analyzeRes = await fetch(`${API_BASE_URL}/obroki/analyze-food`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ obrokId, imageUrl: imgUrl }),
-      });
-
-      const analyzeData = await analyzeRes.json();
-
-      if (!analyzeRes.ok) {
-        Alert.alert('Napaka pri analizi', analyzeData.error || 'Nepoznana napaka');
-        return;
-      }
-
-      setResult(analyzeData.obrok);
-    } catch (err) {
-      console.error('Napaka:', err.message);
-      Alert.alert('Napaka', err.message);
-    } finally {
-      setLoading(false);
+  try {
+    // 👉 1. Pridobi lokacijo
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Dovoljenje za lokacijo ni odobreno');
+      return;
     }
-  };
+
+    const location = await Location.getCurrentPositionAsync({});
+    const locX = location.coords.latitude;
+    const locY = location.coords.longitude;
+
+    const imgUrl = await uploadToImgur(localUri);
+    const obrokId = uuid.v4();
+
+    // 👉 2. Pošlji lokacijo skupaj z ostalimi podatki
+    const createRes = await fetch(`${API_BASE_URL}/obroki/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ obrokId, userEmail, imgLink: imgUrl, locX, locY }),
+    });
+
+    if (!createRes.ok) throw new Error('Napaka pri ustvarjanju obroka');
+
+    // Nadaljuj z analizo slike
+    const analyzeRes = await fetch(`${API_BASE_URL}/obroki/analyze-food`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ obrokId, imageUrl: imgUrl }),
+    });
+
+    const analyzeData = await analyzeRes.json();
+
+    if (!analyzeRes.ok) {
+      Alert.alert('Napaka pri analizi', analyzeData.error || 'Nepoznana napaka');
+      return;
+    }
+
+    setResult(analyzeData.obrok);
+  } catch (err) {
+    console.error('Napaka:', err.message);
+    Alert.alert('Napaka', err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
     const cancelObrok = async () => {
     try {
