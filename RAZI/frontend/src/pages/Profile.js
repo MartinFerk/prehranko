@@ -18,7 +18,7 @@ const Profile = () => {
 
   return (
     <div className="profile-container">
-      <h1 className="title">Profil</h1>
+      <h1 className="title">Račun</h1>
       <div className="profile-box">
         <p className="profile-text"><strong>Ime:</strong> {userName}</p>
         <p className="profile-text"><strong>E-pošta:</strong> {userEmail}</p>
