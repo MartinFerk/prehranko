@@ -5,28 +5,30 @@ const Activity = require('./models/Activity');
 const User = require('./models/User');
 
 const MQTT_URL = 'mqtt://prehrankomosquitto.railway.internal:1883';
-const TOPIC = 'prehranko/activities';
+const ACTIVITY_TOPIC = 'prehranko/activities';
+const TWO_FA_TOPIC = '2fa/request/+'; // Nova tema za 2FA zahteve
 
 console.log('🚀 Starting MQTT Listener...');
 console.log('📡 Connecting to internal broker at:', MQTT_URL);
 
 const client = mqtt.connect(MQTT_URL, {
-  connectTimeout: 30000, // Povečamo na 30 sekund
+  connectTimeout: 30000,
   clientId: `backend_${Math.random().toString(16).slice(2, 8)}`,
   clean: true,
-  reconnectPeriod: 5000, // Poskus ponovne povezave vsakih 5 sekund
-  keepalive: 60, // Keepalive interval
+  reconnectPeriod: 5000,
+  keepalive: 60,
 });
 
 client.on('connect', async () => {
   console.log('✅ MQTT connection established');
-  console.log(`🔔 Subscribing to topic: ${TOPIC}`);
+  console.log(`🔔 Subscribing to topics: ${ACTIVITY_TOPIC}, ${TWO_FA_TOPIC}`);
 
-  client.subscribe(TOPIC, (err) => {
+  // Naroči se na obe temi
+  client.subscribe([ACTIVITY_TOPIC, TWO_FA_TOPIC], (err) => {
     if (err) {
       console.error('❌ Subscription error:', err.message);
     } else {
-      console.log(`📬 Subscribed to ${TOPIC} successfully`);
+      console.log(`📬 Subscribed to ${ACTIVITY_TOPIC} and ${TWO_FA_TOPIC} successfully`);
     }
   });
 
@@ -45,6 +47,36 @@ client.on('connect', async () => {
       console.error('❌ Error counting active devices:', err.message);
     }
   }, 30000);
+});
+
+client.on('message', async (topic, message) => {
+  try {
+    const data = JSON.parse(message.toString());
+    console.log(`📨 Received message on topic ${topic}:`, data);
+
+    if (topic.startsWith('2fa/request/')) {
+      // Obdelaj 2FA zahtevo
+      const email = topic.split('/').pop(); // Izvleci email iz teme (npr. 2fa/request/test@example.com)
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        console.error(`❌ User not found for email: ${email}`);
+        return;
+      }
+
+      // Posodobi status pending2FA
+      user.pending2FA = true;
+      await user.save();
+      console.log(`✅ Set pending2FA to true for ${email}`);
+    } else if (topic === ACTIVITY_TOPIC) {
+      // Obdelaj aktivnosti (obstoječa logika)
+      const activity = new Activity(data);
+      await activity.save();
+      console.log(`✅ Saved activity: ${data.type}`);
+    }
+  } catch (err) {
+    console.error('❌ Error processing MQTT message:', err.message);
+  }
 });
 
 client.on('reconnect', () => {
@@ -79,3 +111,19 @@ mongoose.connection.on('connected', () => {
 mongoose.connection.on('error', (err) => {
   console.error('❌ MongoDB connection error:', err.message);
 });
+
+// Funkcija za pošiljanje MQTT sporočila za 2FA
+const publish2FARequest = (email) => {
+  const topic = `2fa/request/${email}`;
+  const message = JSON.stringify({ email, pending2FA: true });
+
+  client.publish(topic, message, { qos: 1 }, (err) => {
+    if (err) {
+      console.error(`❌ Error publishing 2FA request for ${email}:`, err.message);
+    } else {
+      console.log(`📬 Published 2FA request to ${topic}`);
+    }
+  });
+};
+
+module.exports = { client, publish2FARequest };
