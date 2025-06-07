@@ -11,6 +11,17 @@
   box-sizing: border-box;
 }
 
+.welcome-text {
+  margin-top: 1rem;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.toggle-wrapper {
+  margin-bottom: 1rem;
+}
+
+
 html, body {
   background-color: var(--background);
   color: var(--text);
