@@ -361,4 +361,28 @@ router.get('/embeddings', async (req, res) => {
   res.json({ faceEmbeddings: user.faceEmbeddings });
 });
 
+// GET /auth/user?email=...
+router.get('/user', async (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ message: 'Email je potreben' });
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'Uporabnik ni najden' });
+
+    res.json({
+      email: user.email,
+      name: user.name || 'Uporabnik',
+      caloricGoal: user.caloricGoal,
+      proteinGoal: user.proteinGoal,
+      is2faVerified: user.is2faVerified,
+      _id: user._id
+    });
+  } catch (err) {
+    console.error('❌ Napaka pri pridobivanju uporabnika:', err);
+    res.status(500).json({ message: 'Napaka strežnika' });
+  }
+});
+
+
 module.exports = router;
