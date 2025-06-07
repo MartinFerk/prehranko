@@ -40,26 +40,20 @@ resnet_model.fc = torch.nn.Linear(2048, 3)
 download_model_if_missing()
 
 try:
-    loaded = torch.load(MODEL_PATH, map_location=torch.device("cpu"))
-
-    if isinstance(loaded, dict):
-        # Če je naložen state_dict
-        resnet_model = models.resnet50(weights=None)
-        resnet_model.fc = torch.nn.Identity()  # odstranimo klasifikator
-        resnet_model.load_state_dict(loaded)
-        print("✅ Naložen state_dict model.")
+    state_dict = torch.load(MODEL_PATH, map_location=torch.device("cpu"), weights_only=False)
+    if isinstance(state_dict, dict) and "fc.weight" in state_dict:
+        resnet_model.load_state_dict(state_dict)
     else:
-        # Če je naložen celoten model
-        resnet_model = loaded
-        print("ℹ️ Naložen celoten model.")
-
-    resnet_model.eval()
-
+        # Če ni state_dict ampak celoten model
+        resnet_model = state_dict
+        print("ℹ️ Naložen celoten model (namesto state_dict).")
 except Exception as e:
     print("❌ Napaka pri nalaganju modela:", e)
-    raise
+    raise e
 
-# === Transformacije za vhodne slike ===
+resnet_model.fc = torch.nn.Identity()
+resnet_model.eval()
+
 resnet_transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
@@ -194,7 +188,7 @@ def verify_face():
         sim = cosine_similarity(test_embedding, avg_embedding)
 
         logging.info(f"▶️ Cosine similarity: {sim:.4f}")
-        success = bool(sim > 0.4)
+        success = bool(sim > 0.35)
 
         return jsonify({
             "success": success,
