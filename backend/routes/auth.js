@@ -370,13 +370,17 @@ router.get('/user', async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: 'Uporabnik ni najden' });
 
+    res.setHeader('Cache-Control', 'no-store'); // prepreči 304 response
+
     res.json({
-      email: user.email,
-      name: user.name || 'Uporabnik',
-      caloricGoal: user.caloricGoal,
-      proteinGoal: user.proteinGoal,
-      is2faVerified: user.is2faVerified,
-      _id: user._id
+      user: {
+        email: user.email,
+        name: user.name || 'Uporabnik',
+        caloricGoal: user.caloricGoal,
+        proteinGoal: user.proteinGoal,
+        is2faVerified: user.is2faVerified,
+        _id: user._id,
+      }
     });
   } catch (err) {
     console.error('❌ Napaka pri pridobivanju uporabnika:', err);
