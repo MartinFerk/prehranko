@@ -6,6 +6,7 @@ import { homeStyles } from '../styles/homeStyles';
 import { theme } from '../styles/theme';
 import { useNavigation } from '@react-navigation/native';
 import { API_BASE_URL } from '../services/api'; // ⬅️ poskrbi da to ustreza tvojemu Express backendu
+import moment from 'moment'; // Dodaj za formatiranje datuma
 
 const DATA = [
   { id: '1', title: 'Statistika', description: 'Tukaj so prikazani vaši vnosi' },
@@ -191,6 +192,7 @@ const fetchVsiObroki = async () => {
       <Text style={{ fontWeight: 'bold' }}>Obrok: {item.name}</Text>
       <Text>Kalorije: {item.calories}</Text>
       <Text>Beljakovine: {item.protein} g</Text>
+      <Text>Datum: {moment(item.timestamp).format('DD.MM.YYYY HH:mm')}</Text> {/* Dodan datum */}
     </View>
   );
 
