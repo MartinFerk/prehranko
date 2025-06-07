@@ -196,7 +196,9 @@ def verify_face():
 
         logging.info(f"▶️ Cosine similarity: {sim:.4f}")
         success = bool(sim > 0.8)
-
+        if success:
+            two_fa_status[email] = True  # ✅ Označi uporabnika kot uspešno preverjenega
+            
         return jsonify({
             "success": success,
             "similarity": float(sim),
