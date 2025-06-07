@@ -68,7 +68,7 @@ const Lestvica = () => {
                 ))}
             </div>
 
-            
+
             <div className="leaderboard-section">
                 <h2>🍽️ Top 5 obrokov po kalorijah</h2>
                 <ul>
