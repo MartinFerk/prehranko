@@ -17,7 +17,7 @@ MODEL_URL = "https://drive.google.com/uc?export=download&id=1ylu7N69oA5N5QhxsilI
 
 def download_model_if_missing():
 
-    
+
     if not os.path.exists(MODEL_PATH):
         print("⬇️ Model ne obstaja – prenašam z Google Drive...")
         url = "https://drive.google.com/uc?id=1ylu7N69oA5N5QhxsilIgtsCS6CUgjtK9"
@@ -196,7 +196,7 @@ def verify_face():
         sim = cosine_similarity(test_embedding, avg_embedding)
 
         logging.info(f"▶️ Cosine similarity: {sim:.4f}")
-        success = bool(sim > 0.65)
+        success = bool(sim > 0.45)
 
         return jsonify({
             "success": success,
