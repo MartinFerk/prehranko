@@ -4,11 +4,32 @@ import '../styles.css';
 
 const Navbar = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem('loggedIn') === 'true');
-    const location = useLocation(); // ⬅️ za zaznavo sprememb lokacije
+    const [user, setUser] = useState({ name: 'User', email: '' });
+    const location = useLocation();
 
     useEffect(() => {
-        // Ob vsaki spremembi poti (npr. po navigate('/home')) preverimo localStorage
         setIsLoggedIn(localStorage.getItem('loggedIn') === 'true');
+
+        const email = localStorage.getItem('userEmail');s
+        if (!email) return;
+
+        const fetchUser = async () => {
+            try {
+                const res = await fetch(`/api/auth/user?email=${encodeURIComponent(email)}`);
+                const data = await res.json();
+
+                if (res.ok && data.user?.username) {
+                    setUser({ name: data.user.username, email });
+                } else {
+                    setUser({ name: 'User', email });
+                }
+            } catch (err) {
+                console.error('❌ Napaka pri pridobivanju uporabnika (Navbar):', err);
+                setUser({ name: 'User', email });
+            }
+        };
+
+        fetchUser();
     }, [location]);
 
     return (
@@ -29,7 +50,7 @@ const Navbar = () => {
                 </li>
                 <li className="navbar-item">
                     {isLoggedIn ? (
-                        <Link to="/profile" className="navbar-link">Račun</Link>
+                        <Link to="/profile" className="navbar-link">{user.name}</Link>
                     ) : (
                         <span className="navbar-link disabled-link">Račun</span>
                     )}
