@@ -75,8 +75,8 @@ const analyzeFoodImage = async (localUri) => {
     }
 
     const location = await Location.getCurrentPositionAsync({});
-    const locX = location.coords.latitude;
-    const locY = location.coords.longitude;
+    const locX = location.coords.longitude;
+    const locY = location.coords.latitude;
 
     const imgUrl = await uploadToImgur(localUri);
     const obrokId = uuid.v4();
