@@ -6,6 +6,7 @@ import 'leaflet-defaulticon-compatibility';
 import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
 import '../styles.css';
 import { getAllObroki } from '../api/obroki';
+import { getUserByEmail } from '../api/auth';
 import L from 'leaflet';
 
 const goldMarkerIcon = new L.Icon({
@@ -20,41 +21,42 @@ const goldMarkerIcon = new L.Icon({
 const Home = () => {
     const [obroki, setObroki] = useState([]);
     const [showMineOnly, setShowMineOnly] = useState(false);
+    const [userName, setUserName] = useState('');
     const navigate = useNavigate();
 
-    const userName = localStorage.getItem('userName');
     const userEmail = localStorage.getItem('userEmail');
     const isLoggedIn = localStorage.getItem('loggedIn') === 'true';
 
-    // 🧠 Preveri prijavo in redirectaj če ni
+    // Preveri prijavo in pridobi ime uporabnika
     useEffect(() => {
-        console.log('📦 localStorage check on Home mount:', {
-            userName,
-            userEmail,
-            isLoggedIn,
-        });
-
         if (!isLoggedIn || !userEmail) {
             alert('⚠️ Nisi prijavljen – preusmerjam na prijavo.');
             navigate('/login');
+            return;
         }
+
+        const fetchUserName = async () => {
+            try {
+                const data = await getUserByEmail(userEmail);
+                setUserName(data.user.username || 'Uporabnik');
+            } catch (err) {
+                console.error("❌ Napaka pri pridobivanju uporabniškega imena:", err);
+                setUserName('Uporabnik');
+            }
+        };
+
+        fetchUserName();
     }, [isLoggedIn, userEmail, navigate]);
 
-    // 📡 Naloži obroke
+    // Naloži obroke
     useEffect(() => {
         const fetchObroki = async () => {
             try {
                 const data = await getAllObroki();
-                console.log("📦 Obroki loaded:", data);
-
-                const invalid = data.filter(
-                    (o) => isNaN(parseFloat(o.locY)) || isNaN(parseFloat(o.locX))
+                const validObroki = data.filter(
+                    (o) => !isNaN(parseFloat(o.locY)) && !isNaN(parseFloat(o.locX))
                 );
-                if (invalid.length > 0) {
-                    console.warn("⚠️ Invalid coordinate entries skipped:", invalid);
-                }
-
-                setObroki(data);
+                setObroki(validObroki);
             } catch (err) {
                 console.error('❌ Napaka pri pridobivanju obrokov:', err);
             }
