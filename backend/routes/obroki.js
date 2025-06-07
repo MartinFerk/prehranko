@@ -113,7 +113,7 @@ router.post('/analyze-food', async (req, res) => {
 
 // 📌 POST /api/obroki/create - Ustvari obrok
 router.post('/create', async (req, res) => {
-  const { obrokId, userEmail, imgLink } = req.body;
+  const { obrokId, userEmail, imgLink, locX, locY } = req.body;
 
   if (!obrokId || !userEmail || !imgLink) {
     return res.status(400).json({ error: 'Manjkajo podatki (obrokId, userEmail, imgLink)' });
@@ -124,6 +124,8 @@ router.post('/create', async (req, res) => {
       obrokId,
       userEmail,
       imgLink,
+      locX: locX || null,
+      locY: locY || null,
     });
 
     await novObrok.save();
