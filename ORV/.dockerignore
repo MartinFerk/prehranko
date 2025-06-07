@@ -1,0 +1,9 @@
+__pycache__/
+*.pt
+dataset/
+.vscode/
+.git/
+*.jpg
+*.png
+node_modules/
+.env
