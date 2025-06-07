@@ -43,14 +43,20 @@ const FaceVerificationScreen = ({ route }) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Napaka pri dokončanju 2FA');
       console.log('✅ 2FA uspešno dokončan');
+      return true;
     } catch (err) {
       console.error('❌ Napaka pri dokončanju 2FA:', err.message);
+      return false;
     }
   };
 
-  const handleVerificationComplete = () => {
-    complete2FA();
-    navigation.goBack();
+  const handleVerificationComplete = async () => {
+    const success = await complete2FA();
+    if (success) {
+      navigation.goBack();
+    } else {
+      console.error('❌ Neuspešno dokončanje 2FA');
+    }
   };
 
   return (
@@ -65,7 +71,7 @@ const FaceVerificationScreen = ({ route }) => {
           <Text style={{ fontSize: 18, marginBottom: 10 }}>🛡 Potrebna je 2FA verifikacija!</Text>
           <Button
             title="Začni preverjanje obraza"
-            onPress={() => navigation.navigate('CameraScreen', { email, onComplete: handleVerificationComplete })}
+            onPress={() => navigation.navigate('CameraScreen', { email, mode: 'verify', onComplete: handleVerificationComplete })}
           />
         </>
       ) : (
