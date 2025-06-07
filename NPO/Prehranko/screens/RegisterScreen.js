@@ -7,6 +7,7 @@ import { registerUser } from '../services/auth';
 import { theme } from '../styles/theme';
 
 export default function RegisterScreen({ navigation }) {
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -14,7 +15,7 @@ export default function RegisterScreen({ navigation }) {
   const [photoTaken, setPhotoTaken] = useState(false);
 
   const handleRegister = async () => {
-  if (!email || !password || !confirmPassword) {
+  if (!username || !email || !password || !confirmPassword) {
     Alert.alert('Napaka', 'Prosimo, izpolnite vsa polja.');
     return;
   }
@@ -29,8 +30,8 @@ export default function RegisterScreen({ navigation }) {
 
   setLoading(true);
   try {
-    console.log('➡️ Registriram z:', email, password);
-    await registerUser(email, password);
+    console.log('➡️ Registriram z:',username, email, password);
+    await registerUser(username,email, password);
     Alert.alert('✅ Registracija uspešna', 'Zdaj se prosim še slikaj za 2FA.');
 
     navigation.navigate('CameraScreen', {
@@ -52,6 +53,11 @@ export default function RegisterScreen({ navigation }) {
     <View style={styles.container}>
       <Text style={styles.title}>Registracija v Prehranko</Text>
       <View style={styles.inputContainer}>
+        <AuthInput
+          placeholder="Username"
+          value={email}
+          onChangeText={setUsername}
+        />
         <AuthInput
           placeholder="Email"
           value={email}

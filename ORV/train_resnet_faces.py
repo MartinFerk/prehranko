@@ -5,7 +5,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import models, transforms, datasets
 from torch.utils.data import DataLoader, Dataset
-from PIL import Image
+from PIL import Image, ImageEnhance, ImageFilter
+import numpy as np
 
 # === Parametri ===
 data_dir = "dataset"
@@ -23,10 +24,42 @@ transform = transforms.Compose([
     transforms.Normalize([0.5]*3, [0.5]*3)
 ])
 
+def flip_horizontal(img_np):
+    return np.fliplr(img_np)
+
+def adjust_brightness(img_np, factor=1.2):
+    img_np = img_np.astype(np.float32) * factor
+    return np.clip(img_np, 0, 255).astype(np.uint8)
+
+def adjust_contrast(img_np, factor=1.5):
+    mean = np.mean(img_np, axis=(0, 1), keepdims=True)
+    img_np = (img_np - mean) * factor + mean
+    return np.clip(img_np, 0, 255).astype(np.uint8)
+
+def add_noise(img_np, std=10):
+    noise = np.random.normal(0, std, img_np.shape)
+    noisy = img_np.astype(np.float32) + noise
+    return np.clip(noisy, 0, 255).astype(np.uint8)
+
+def custom_augment(img):
+    img_np = np.array(img)
+
+    if random.random() > 0.5:
+        img_np = flip_horizontal(img_np)
+    if random.random() > 0.5:
+        img_np = adjust_brightness(img_np, factor=random.uniform(0.7, 1.3))
+    if random.random() > 0.5:
+        img_np = adjust_contrast(img_np, factor=random.uniform(0.8, 1.5))
+    if random.random() > 0.5:
+        img_np = add_noise(img_np, std=random.randint(5, 15))
+
+    return Image.fromarray(img_np.astype(np.uint8))
+
+
 # === Custom Triplet Dataset ===
 class TripletFaceDataset(Dataset):
     def __init__(self, root_dir, transform):
-        self.dataset = datasets.ImageFolder(root=root_dir, transform=transform)
+        self.dataset = datasets.ImageFolder(root=root_dir)
         self.classes = self.dataset.classes
         self.class_to_indices = self._build_index()
         self.transform = transform
@@ -39,21 +72,25 @@ class TripletFaceDataset(Dataset):
         return index
 
     def __getitem__(self, index):
-        anchor_img, anchor_label = self.dataset[index]
+        anchor_path, anchor_label = self.dataset.imgs[index]
         anchor_class = self.dataset.classes[anchor_label]
+        anchor_img = custom_augment(Image.open(anchor_path).convert("RGB"))
+        anchor_img = self.transform(anchor_img)
 
-        # Izberi pozitiven primer
         pos_idx = index
         while pos_idx == index:
             pos_idx = random.choice(self.class_to_indices[anchor_class])
-        positive_img, _ = self.dataset[pos_idx]
+        pos_path, _ = self.dataset.imgs[pos_idx]
+        positive_img = custom_augment(Image.open(pos_path).convert("RGB"))
+        positive_img = self.transform(positive_img)
 
-        # Izberi negativen primer
         neg_class = anchor_class
         while neg_class == anchor_class:
             neg_class = random.choice(self.classes)
         neg_idx = random.choice(self.class_to_indices[neg_class])
-        negative_img, _ = self.dataset[neg_idx]
+        neg_path, _ = self.dataset.imgs[neg_idx]
+        negative_img = custom_augment(Image.open(neg_path).convert("RGB"))
+        negative_img = self.transform(negative_img)
 
         return anchor_img, positive_img, negative_img
 
@@ -64,15 +101,14 @@ class TripletFaceDataset(Dataset):
 class TripletLoss(nn.Module):
     def __init__(self, margin=1.0):
         super().__init__()
-        self.margin = margin
         self.loss_fn = nn.TripletMarginLoss(margin=margin, p=2)
 
     def forward(self, anchor, positive, negative):
         return self.loss_fn(anchor, positive, negative)
 
 # === Model ===
-resnet = models.resnet50(pretrained=True)
-resnet.fc = nn.Identity()  # Embedding output
+resnet = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+resnet.fc = nn.Identity()
 model = resnet.to(device)
 
 # === Dataset & Dataloader ===
@@ -83,7 +119,7 @@ triplet_loader = DataLoader(triplet_dataset, batch_size=batch_size, shuffle=True
 criterion = TripletLoss(margin=0.8)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-print("📚 Začenjam treniranje Triplet modela...\n")
+print("\U0001F4DA Začenjam treniranje Triplet modela...\n")
 
 for epoch in range(num_epochs):
     model.train()
