@@ -23,6 +23,16 @@ const Home = () => {
         const fetchObroki = async () => {
             try {
                 const data = await getAllObroki();
+                console.log("📦 Obroki loaded:", data);
+
+                // Optional: warn about invalid ones
+                const invalid = data.filter(
+                    (o) => isNaN(parseFloat(o.locY)) || isNaN(parseFloat(o.locX))
+                );
+                if (invalid.length > 0) {
+                    console.warn("⚠️ Invalid coordinate entries skipped:", invalid);
+                }
+
                 setObroki(data);
             } catch (err) {
                 console.error('❌ Napaka pri pridobivanju obrokov:', err);
@@ -49,32 +59,39 @@ const Home = () => {
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
 
-                        {obroki.map((obrok) => (
-                            <Marker
-                                key={obrok.obrokId}
-                                position={[obrok.locY, obrok.locX]}
-                                icon={goldMarkerIcon}
-                            >
-                                <Popup>
-                                    <div className="popup-card">
-                                        <div className="popup-image-wrapper">
-                                            <img
-                                                src={obrok.imgLink}
-                                                alt={obrok.name}
-                                                className="popup-image"
-                                            />
+                        {obroki.map((obrok) => {
+                            const lat = parseFloat(obrok.locY);
+                            const lng = parseFloat(obrok.locX);
+
+                            if (isNaN(lat) || isNaN(lng)) return null;
+
+                            return (
+                                <Marker
+                                    key={obrok.obrokId}
+                                    position={[lat, lng]}
+                                    icon={goldMarkerIcon}
+                                >
+                                    <Popup>
+                                        <div className="popup-card">
+                                            <div className="popup-image-wrapper">
+                                                <img
+                                                    src={obrok.imgLink}
+                                                    alt={obrok.name}
+                                                    className="popup-image"
+                                                />
+                                            </div>
+                                            <div className="popup-info">
+                                                <h4>🍽️ {obrok.name}</h4>
+                                                <p>🕒 <strong>{new Date(obrok.timestamp).toLocaleString()}</strong></p>
+                                                <p>📧 {obrok.userEmail}</p>
+                                                <p>🔥 {obrok.calories} kcal</p>
+                                                <p>💪 {obrok.protein}g protein</p>
+                                            </div>
                                         </div>
-                                        <div className="popup-info">
-                                            <h4>🍽️ {obrok.name}</h4>
-                                            <p>🕒 <strong>{new Date(obrok.timestamp).toLocaleString()}</strong></p>
-                                            <p>📧 {obrok.userEmail}</p>
-                                            <p>🔥 {obrok.calories} kcal</p>
-                                            <p>💪 {obrok.protein}g protein</p>
-                                        </div>
-                                    </div>
-                                </Popup>
-                            </Marker>
-                        ))}
+                                    </Popup>
+                                </Marker>
+                            );
+                        })}
                     </MapContainer>
                 </div>
             </div>
