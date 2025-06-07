@@ -3,7 +3,6 @@ if (process.env.NODE_ENV !== 'production') {
 }
 require('./mqttListener');
 
-
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -19,29 +18,36 @@ app.use(cors());
 app.use(express.json({ limit: '20mb' }));
 
 // MongoDB povezava
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000,
+})
   .then(() => console.log('✅ MongoDB povezava uspešna'))
-  .catch(err => console.error('❌ Napaka pri povezavi z MongoDB:', err));
+  .catch(err => {
+    console.error('❌ Napaka pri povezavi z MongoDB:', err.message);
+    process.exit(1); // Izhod iz procesa ob napaki
+  });
 
 // Testna pot
 app.get('/', (req, res) => {
   res.send('🚀 Strežnik deluje!');
 });
 
+// Poti
 const obrokRoutes = require('./routes/obroki');
 app.use('/api/obroki', obrokRoutes);
 
 const activityRoutes = require('./routes/activities');
 app.use('/api/activities', activityRoutes);
 
-// Avtentikacija
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 
-const authRoutes = require('./routes/2fa');
-app.use('/api/auth', authRoutes);
+const twoFactorRoutes = require('./routes/2fa');
+app.use('/api/2fa', twoFactorRoutes);
 
-// ➕ NOVO: Face Upload endpoint (brez ločenega routerja)
+// Face Upload endpoint
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
@@ -56,46 +62,41 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// ➕ NOVA pot za nalaganje slike
 app.post('/api/upload-face-image', upload.single('image'), async (req, res) => {
   if (!req.file || !req.body.email) {
     return res.status(400).json({ message: 'Manjka slika ali email' });
   }
 
   try {
-    // 1. Preberi sliko kot binarno
     const imageBuffer = fs.readFileSync(req.file.path);
     const imageBase64 = imageBuffer.toString('base64');
 
-    // 2. Shrani base64 direktno v MongoDB
-  const user = await User.findOneAndUpdate(
-  { email: req.body.email },
-  {
-    $push: {
-      faceImages: imageBase64,
-      faceEmbeddings: preprocessData.embedding
+    const preprocessRes = await fetch('http://prehrankopython-production.up.railway.app/preprocess', {
+      method: 'POST',
+      body: (() => {
+        const formData = new FormData();
+        formData.append('image', fs.createReadStream(req.file.path));
+        return formData;
+      })(),
+    });
+
+    const preprocessData = await preprocessRes.json();
+
+    if (!preprocessData.embedding) {
+      return res.status(500).json({ message: 'Obdelava slike ni uspela (ni embedding)' });
     }
-  },
-  { new: true }
-  );
 
-  const preprocessRes = await fetch('http://prehrankopython-production.up.railway.app/preprocess', {
-  method: 'POST',
-  body: (() => {
-    const formData = new FormData();
-    formData.append('image', fs.createReadStream(req.file.path));
-    return formData;
-  })(),
-  headers: {} // FormData sam doda content-type
-  });
+    const user = await User.findOneAndUpdate(
+      { email: req.body.email },
+      {
+        $push: {
+          faceImages: imageBase64,
+          faceEmbeddings: preprocessData.embedding,
+        },
+      },
+      { new: true }
+    );
 
-  const preprocessData = await preprocessRes.json();
-
-  if (!preprocessData.embedding) {
-  return res.status(500).json({ message: 'Obdelava slike ni uspela (ni embedding)' });
-  }
-
-    // 3. Počisti datoteko iz diska (ni več potrebna)
     fs.unlinkSync(req.file.path);
 
     if (!user) {
@@ -104,7 +105,7 @@ app.post('/api/upload-face-image', upload.single('image'), async (req, res) => {
 
     res.json({ message: 'Slika uspešno shranjena v MongoDB (base64)' });
   } catch (err) {
-    console.error('❌ Napaka pri shranjevanju slike:', err);
+    console.error('❌ Napaka pri shranjevanju slike:', err.message);
     res.status(500).json({ message: 'Napaka pri shranjevanju slike' });
   }
 });
@@ -129,11 +130,10 @@ app.post('/api/save-embeddings', async (req, res) => {
 
     res.json({ message: 'Značilke uspešno shranjene', count: embeddings.length });
   } catch (err) {
-    console.error('❌ Napaka pri shranjevanju značilk:', err);
+    console.error('❌ Napaka pri shranjevanju značilk:', err.message);
     res.status(500).json({ message: 'Napaka pri shranjevanju značilk' });
   }
 });
-
 
 // POST IN GET ZA SHRANJEVANJE IN PRIDOBIVANJE KALORIČNEGA/BELJAKOVINSEGA CILJA
 app.post('/api/goals/set', async (req, res) => {
@@ -141,7 +141,6 @@ app.post('/api/goals/set', async (req, res) => {
 
   console.log('📥 Prejeta zahteva za /api/goals/set:', { email, caloricGoal, proteinGoal });
 
-  // Validacija za oba cilja
   if (!email || !caloricGoal || isNaN(caloricGoal) || caloricGoal <= 0) {
     console.log('🚫 Neveljavni podatki za kalorije:', { email, caloricGoal });
     return res.status(400).json({ message: 'Manjka email ali veljaven kalorični cilj' });
@@ -157,11 +156,10 @@ app.post('/api/goals/set', async (req, res) => {
       { email },
       { 
         caloricGoal: parseInt(caloricGoal),
-        proteinGoal: parseInt(proteinGoal)
+        proteinGoal: parseInt(proteinGoal),
       },
-      { new: true, upsert: false }
+      { new: true }
     );
-    console.log('🔄 Posodobljen uporabnik:', user);
 
     if (!user) {
       console.log('🚫 Uporabnik ni najden:', email);
@@ -171,15 +169,14 @@ app.post('/api/goals/set', async (req, res) => {
     res.status(200).json({ 
       message: 'Cilji uspešno shranjeni', 
       caloricGoal: user.caloricGoal,
-      proteinGoal: user.proteinGoal // Vključite proteinGoal v odgovor
+      proteinGoal: user.proteinGoal,
     });
   } catch (err) {
-    console.error('❌ Napaka pri shranjevanju ciljev:', err);
+    console.error('❌ Napaka pri shranjevanju ciljev:', err.message);
     res.status(500).json({ error: 'Napaka pri shranjevanju ciljev' });
   }
 });
 
-// GET: Pridobi cilje uporabnika
 app.get('/api/goals/get', async (req, res) => {
   const { email } = req.query;
 
@@ -192,7 +189,6 @@ app.get('/api/goals/get', async (req, res) => {
 
   try {
     const user = await User.findOne({ email }, 'caloricGoal proteinGoal');
-    console.log('🔍 Najden uporabnik:', user);
 
     if (!user) {
       console.log('🚫 Uporabnik ni najden:', email);
@@ -201,12 +197,18 @@ app.get('/api/goals/get', async (req, res) => {
 
     res.status(200).json({ 
       caloricGoal: user.caloricGoal || null,
-      proteinGoal: user.proteinGoal || null // Vključite proteinGoal
+      proteinGoal: user.proteinGoal || null,
     });
   } catch (err) {
-    console.error('❌ Napaka pri pridobivanju ciljev:', err);
+    console.error('❌ Napaka pri pridobivanju ciljev:', err.message);
     res.status(500).json({ error: 'Napaka pri pridobivanju ciljev' });
   }
+});
+
+// Middleware za obvladovanje napak
+app.use((err, req, res, next) => {
+  console.error('❌ Strežniška napaka:', err.stack);
+  res.status(500).json({ message: 'Napaka na strežniku', error: err.message });
 });
 
 // Zagon strežnika
