@@ -373,8 +373,9 @@ router.get("/finish-login", async (req, res) => {
 
 // Na PRAVI LOKACIJI (zgoraj, pred exportom)
 router.get("/check-2fa", async (req, res) => {
-  const { email } = req.query;
+  let { email } = req.query;
   if (!email) return res.status(400).json({ message: "Email je zahtevan" });
+  email = email.toLowerCase();
 
   try {
     const user = await User.findOne({ email });
