@@ -28,13 +28,14 @@ const Login = () => {
     localStorage.setItem('userEmail', email);
     localStorage.setItem('userName', data.name || 'Uporabnik');
     // 🟩 Set goals locally if present
-    if (data.user.caloricGoal != null) {
+    if (data.user && data.user.caloricGoal != null) {
       localStorage.setItem('caloricGoal', data.user.caloricGoal);
     }
 
-    if (data.user.proteinGoal != null) {
+    if (data.user && data.user.proteinGoal != null) {
       localStorage.setItem('proteinGoal', data.user.proteinGoal);
     }
+
 
     // 🔁 ZAČNI POLLING
     const checkInterval = setInterval(async () => {

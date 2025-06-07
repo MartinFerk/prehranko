@@ -80,7 +80,18 @@ router.post('/login', async (req, res) => {
       return res.json({ message: 'Prijava uspešna – preveri 2FA na telefonu' });
     }
 
-    res.status(200).json({ message: 'Prijava uspešna', userId: user._id });
+    res.status(200).json({
+      message: 'Prijava uspešna',
+      user: {
+        email: user.email,
+        name: user.name || 'Uporabnik',
+        caloricGoal: user.caloricGoal,
+        proteinGoal: user.proteinGoal,
+        is2faVerified: user.is2faVerified,
+        _id: user._id,
+      },
+    });
+
   } catch (err) {
     console.error('❌ Error during login:', err.message);
     res.status(500).json({ message: 'Napaka na strežniku' });
