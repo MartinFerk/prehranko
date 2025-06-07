@@ -1,6 +1,7 @@
 import { API_BASE_URL } from './api';
 import { CAMERA_API_URL } from './api';
 
+// ⏺️ Verify face on mobile (image upload)
 export const verifyFaceImage = async (imageUri, email) => {
   const formData = new FormData();
   formData.append("email", email);
@@ -23,6 +24,7 @@ export const verifyFaceImage = async (imageUri, email) => {
   return result;
 };
 
+// ✅ Sproži 2FA na strežniku
 export const trigger2FA = async (email) => {
   const res = await fetch(`${API_BASE_URL}/auth/trigger2fa`, {
     method: 'POST',
@@ -38,6 +40,7 @@ export const trigger2FA = async (email) => {
   return res.json();
 };
 
+// ✅ Registracija uporabnika
 export const registerUser = async (email, password) => {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -46,10 +49,9 @@ export const registerUser = async (email, password) => {
       body: JSON.stringify({ email, password }),
     });
 
-    // ⛔ tukaj je pogosto napaka
     let data;
     try {
-      data = await res.json();  // to fail-a, če backend vrne HTML
+      data = await res.json();
     } catch {
       throw new Error("Strežnik ni vrnil veljavnega JSON (morda napačen endpoint?)");
     }
@@ -61,7 +63,7 @@ export const registerUser = async (email, password) => {
   }
 };
 
-
+// ✅ Prijava uporabnika (prvi del, brez 2FA potrditve)
 export const loginUser = async (email, password) => {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -78,7 +80,6 @@ export const loginUser = async (email, password) => {
     }
 
     if (!res.ok) throw new Error(data.message || "Napaka pri prijavi");
-
     return data;
   } catch (err) {
     console.error("❌ Napaka pri loginu:", err.message);
@@ -86,3 +87,17 @@ export const loginUser = async (email, password) => {
   }
 };
 
+// ✅ NOVO: pridobi podatke po uspešni 2FA
+export const finishLogin = async (email) => {
+  const res = await fetch(`${API_BASE_URL}/auth/finish-login?email=${encodeURIComponent(email)}`);
+
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error("❌ Strežnik ni vrnil veljavnega JSON");
+  }
+
+  if (!res.ok) throw new Error(data.message || "Napaka pri končnem prijavljanju");
+  return data;
+};
