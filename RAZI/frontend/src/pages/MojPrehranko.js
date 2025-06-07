@@ -136,16 +136,28 @@ const MojPrehranko = () => {
             <div style={{ width: '900px', margin: '0 auto' }}>
                 <ResponsiveContainer width="100%" height={200}>
                     <LineChart data={weeklyStats} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <defs>
+                            <linearGradient id="colorCalories" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#8884d8" stopOpacity={0.4}/>
+                                <stop offset="100%" stopColor="#8884d8" stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" />
                         <YAxis domain={[0, goals.calories * 1.1]} />
                         <Tooltip formatter={(value) => `${value} kcal`} />
                         <ReferenceLine y={goals.calories} stroke="gray" strokeDasharray="3 3" />
+                        <Area
+                            type="monotone"
+                            dataKey="calories"
+                            stroke="none"
+                            fill="url(#colorCalories)"
+                        />
                         <Line
                             type="monotone"
                             dataKey="calories"
                             stroke="#8884d8"
-                            strokeWidth={2}
+                            strokeWidth={3}
                             dot={{
                                 stroke: '#000',
                                 strokeWidth: 1,
@@ -160,24 +172,37 @@ const MojPrehranko = () => {
             <div style={{ width: '900px', margin: '0 auto' }}>
                 <ResponsiveContainer width="100%" height={200}>
                     <LineChart data={weeklyStats} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <defs>
+                            <linearGradient id="colorCalories" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#8884d8" stopOpacity={0.4}/>
+                                <stop offset="100%" stopColor="#8884d8" stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" />
-                        <YAxis domain={[0, goals.protein * 1.1]} />
-                        <Tooltip formatter={(value) => `${value} g`} />
-                        <ReferenceLine y={goals.protein} stroke="gray" strokeDasharray="3 3" />
+                        <YAxis domain={[0, goals.calories * 1.1]} />
+                        <Tooltip formatter={(value) => `${value} kcal`} />
+                        <ReferenceLine y={goals.calories} stroke="gray" strokeDasharray="3 3" />
+                        <Area
+                            type="monotone"
+                            dataKey="calories"
+                            stroke="none"
+                            fill="url(#colorCalories)"
+                        />
                         <Line
                             type="monotone"
-                            dataKey="protein"
-                            stroke="#82ca9d"
-                            strokeWidth={2}
+                            dataKey="calories"
+                            stroke="#8884d8"
+                            strokeWidth={3}
                             dot={{
                                 stroke: '#000',
                                 strokeWidth: 1,
-                                fill: (entry) => entry.protein >= goals.protein ? 'green' : 'red',
+                                fill: (entry) => entry.calories >= goals.calories ? 'green' : 'red',
                             }}
                         />
                     </LineChart>
                 </ResponsiveContainer>
+
             </div>
         </div>
     );
