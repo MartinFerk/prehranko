@@ -19,7 +19,6 @@ const MojPrehranko = () => {
 
                 const myObroki = allObroki.filter((o) => o.userEmail === userEmail);
 
-                // Današnji obroki
                 const myTodayObroki = myObroki.filter((o) => {
                     const date = new Date(o.timestamp);
                     date.setHours(0, 0, 0, 0);
@@ -32,7 +31,6 @@ const MojPrehranko = () => {
                 setTodayCalories(caloriesSum);
                 setTodayProtein(proteinSum);
 
-                // Cilji iz localStorage
                 const caloricGoal = parseInt(localStorage.getItem('caloricGoal'));
                 const proteinGoal = parseInt(localStorage.getItem('proteinGoal'));
                 setGoals({
@@ -40,7 +38,6 @@ const MojPrehranko = () => {
                     protein: isNaN(proteinGoal) ? 100 : proteinGoal,
                 });
 
-                // Zadnjih 7 dni
                 const todayDate = new Date();
                 const past7 = Array.from({ length: 7 }, (_, i) => {
                     const d = new Date(todayDate);
@@ -78,6 +75,13 @@ const MojPrehranko = () => {
         return Math.min(100, Math.round((val / goal) * 100));
     };
 
+    const getColorClass = (p) => {
+        if (p < 25) return 'red';
+        if (p < 50) return 'orange';
+        if (p < 75) return 'yellow';
+        return 'green';
+    };
+
     return (
         <div className="container">
             <h1 className="title">Moj Prehranko</h1>
@@ -86,10 +90,12 @@ const MojPrehranko = () => {
                 <h3>Dnevni cilji</h3>
 
                 <div className="progress-wrapper">
-                    <label>Kalorije: {todayCalories} / {goals.calories} kcal</label>
+                    <label>
+                        Kalorije: {todayCalories} / {goals.calories} kcal ({percent(todayCalories, goals.calories)}%)
+                    </label>
                     <div className="progress-bar">
                         <div
-                            className="progress-fill"
+                            className={`progress-fill ${getColorClass(percent(todayCalories, goals.calories))}`}
                             style={{ width: `${percent(todayCalories, goals.calories)}%` }}
                         >
                             <span className="progress-percent">{percent(todayCalories, goals.calories)}%</span>
@@ -98,10 +104,12 @@ const MojPrehranko = () => {
                 </div>
 
                 <div className="progress-wrapper">
-                    <label>Beljakovine: {todayProtein}g / {goals.protein}g</label>
+                    <label>
+                        Beljakovine: {todayProtein}g / {goals.protein}g ({percent(todayProtein, goals.protein)}%)
+                    </label>
                     <div className="progress-bar">
                         <div
-                            className="progress-fill protein"
+                            className={`progress-fill ${getColorClass(percent(todayProtein, goals.protein))}`}
                             style={{ width: `${percent(todayProtein, goals.protein)}%` }}
                         >
                             <span className="progress-percent">{percent(todayProtein, goals.protein)}%</span>

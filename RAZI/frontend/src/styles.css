@@ -87,6 +87,87 @@ html, body {
   display: inline-block;
 }
 
+.progress-section {
+  margin-top: 30px;
+}
+
+.progress-wrapper {
+  margin-bottom: 20px;
+}
+
+.progress-bar {
+  background-color: #e0e0e0;
+  border-radius: 20px;
+  height: 25px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  font-weight: bold;
+  color: white;
+  transition: width 0.4s ease;
+}
+
+/* ✅ Barve po nivoju */
+.progress-fill.red {
+  background-color: #e53935;
+}
+
+.progress-fill.orange {
+  background-color: #f57c00;
+}
+
+.progress-fill.yellow {
+  background-color: #fdd835;
+  color: #333;
+}
+
+.progress-fill.green {
+  background-color: #43a047;
+}
+
+/* Procent znotraj */
+.progress-percent {
+  font-size: 14px;
+}
+
+/* Tedenski pregled */
+.weekly-section {
+  margin-top: 40px;
+}
+
+.weekly-bar-chart {
+  display: flex;
+  align-items: flex-end;
+  height: 120px;
+  border-bottom: 1px solid #ccc;
+  margin-top: 10px;
+}
+
+.bar-container {
+  flex: 1;
+  margin: 0 5px;
+  text-align: center;
+}
+
+.bar {
+  background-color: #4caf50;
+  width: 100%;
+  transition: height 0.4s ease;
+  border-radius: 4px 4px 0 0;
+}
+
+.bar-label {
+  margin-top: 5px;
+  font-size: 13px;
+}
+
+
 .navbar-link {
   color: var(--text); /* Temno sivo besedilo */
   text-decoration: none;
