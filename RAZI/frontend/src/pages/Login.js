@@ -38,7 +38,7 @@ const Login = () => {
 
         if (statusData.is2faVerified) {
           clearInterval(checkInterval);
-          navigate('/dashboard');
+          navigate('/home');
         }
       } catch (error) {
         console.error("Napaka med preverjanjem 2FA:", error);
