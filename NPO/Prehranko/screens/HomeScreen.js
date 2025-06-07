@@ -6,12 +6,11 @@ import { homeStyles } from '../styles/homeStyles';
 import { theme } from '../styles/theme';
 import { useNavigation } from '@react-navigation/native';
 import { API_BASE_URL } from '../services/api'; // ⬅️ poskrbi da to ustreza tvojemu Express backendu
-import * as Progress from 'react-native-progress'; // Dodaj za progress bar
 import moment from 'moment'; // Dodaj za formatiranje datuma
 
 const DATA = [
   { id: '1', title: 'Statistika', description: 'Tukaj so prikazani vaši vnosi' },
-  { id: '2', title: 'Dnevni pregled'},
+  { id: '2', title: 'Dnevni dosežek'},
   { id: '3', title: 'Vaši cilji'},
 ];
 
@@ -21,8 +20,6 @@ export default function HomeScreen({ navigation, route }) {
   const [caloricGoal, setCaloricGoal] = useState(null);
   const [proteinGoal, setProteinGoal] = useState(null);
   const [vsiObroki, setVsiObroki] = useState([]); // Changed from zadnjiObrok to vsiObroki
-  const [todayCalories, setTodayCalories] = useState(0); // Novo stanje za današnje kalorije
-  const [todayProtein, setTodayProtein] = useState(0); // Novo stanje za današnje beljakovine
 
   const fetchEmail = async () => {
     try {
@@ -192,7 +189,7 @@ const fetchVsiObroki = async () => {
 
     const renderObrokItem = ({ item }) => (
     <View style={{ marginTop: 10 }}>
-      <Text style={{ fontWeight: 'bold' }}>{item.name}</Text>
+      <Text style={{ fontWeight: 'bold' }}>Obrok: {item.name}</Text>
       <Text>Kalorije: {item.calories}</Text>
       <Text>Beljakovine: {item.protein} g</Text>
       <Text>Datum: {moment(item.timestamp).format('DD.MM.YYYY HH:mm')}</Text> {/* Dodan datum */}
@@ -232,37 +229,12 @@ const fetchVsiObroki = async () => {
         )}
       </View>
 
-{/* Row for Zajemi obrok and Tvoji cilji cards */}
-      <View style={homeStyles.cardsRow}>
-        <View style={[homeStyles.halfCard, homeStyles.zajemiObrokCard]}>
-          <Text style={homeStyles.cardTitle}>{DATA[1].title}</Text>
-          <View style={{ marginTop: 10 }}>
-            <Text style={{ fontSize: 14, color: theme.colors.text }}>
-              Kalorije: {todayCalories}/{caloricGoal || 'N/A'}
-            </Text>
-            <Progress.Bar
-              progress={caloricGoal ? todayCalories / caloricGoal : 0}
-              width={null}
-              height={8}
-              color={theme.colors.primary}
-              unfilledColor={theme.colors.background}
-              borderWidth={0}
-              style={{ marginTop: 5 }}
-            />
-            <Text style={{ fontSize: 14, color: theme.colors.text, marginTop: 10 }}>
-              Beljakovine: {todayProtein}/{proteinGoal || 'N/A'}
-            </Text>
-            <Progress.Bar
-              progress={proteinGoal ? todayProtein / proteinGoal : 0}
-              width={null}
-              height={8}
-              color={theme.colors.secondary}
-              unfilledColor={theme.colors.background}
-              borderWidth={0}
-              style={{ marginTop: 5 }}
-            />
-          </View>
-        </View>
+    {/* Row for Zajemi obrok and Tvoji cilji cards */}
+    <View style={homeStyles.cardsRow}>
+      {/* Zajemi obrok card - empty for now */}
+      <View style={[homeStyles.halfCard, homeStyles.zajemiObrokCard]}>
+        <Text style={homeStyles.cardTitle}>{DATA[1].title}</Text>
+      </View>
 
       {/* Tvoji cilji card */}
       <View style={[homeStyles.halfCard, homeStyles.ciljiCard]}>
