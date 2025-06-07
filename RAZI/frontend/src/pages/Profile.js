@@ -25,9 +25,9 @@ const Profile = () => {
         }
 
         const data = await res.json();
-
+        console.log('🐞 DEBUG: Prejet JSON iz strežnika:', data);
         if (res.ok && data.username) {
-          setUser({ name: data.username, email });
+          setUser({ name: data.user.username, email });
         } else {
           console.warn('⚠️ Ni imena v odgovoru, uporabljam privzeto.');
           setUser({ name: 'Uporabnik', email });
