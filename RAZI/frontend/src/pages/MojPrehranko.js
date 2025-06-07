@@ -174,26 +174,26 @@ const MojPrehranko = () => {
                 <ResponsiveContainer width="100%" height={200}>
                     <LineChart data={weeklyStats} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                         <defs>
-                            <linearGradient id="colorCalories" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#8884d8" stopOpacity={0.4}/>
-                                <stop offset="100%" stopColor="#8884d8" stopOpacity={0}/>
+                            <linearGradient id="colorProtein" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#82ca9d" stopOpacity={0.4} />
+                                <stop offset="100%" stopColor="#82ca9d" stopOpacity={0} />
                             </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" />
-                        <YAxis domain={[0, goals.protein * 1.1]}  tickFormatter={(value) => Math.round(value)} />
-                        <Tooltip formatter={(value) => `${value} kcal`} />
+                        <YAxis domain={[0, goals.protein * 1.1]} tickFormatter={(value) => Math.round(value)} />
+                        <Tooltip formatter={(value) => `${value} g`} />
                         <ReferenceLine y={goals.protein} stroke="gray" strokeDasharray="3 3" />
                         <Area
                             type="monotone"
-                            dataKey="calories"
+                            dataKey="protein"
                             stroke="none"
-                            fill="url(#colorCalories)"
+                            fill="url(#colorProtein)"
                         />
                         <Line
                             type="monotone"
-                            dataKey="calories"
-                            stroke="#8884d8"
+                            dataKey="protein"
+                            stroke="#82ca9d"
                             strokeWidth={3}
                             dot={{
                                 stroke: '#000',
@@ -203,6 +203,7 @@ const MojPrehranko = () => {
                         />
                     </LineChart>
                 </ResponsiveContainer>
+
 
             </div>
         </div>
