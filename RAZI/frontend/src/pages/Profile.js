@@ -4,23 +4,29 @@ import '../styles.css';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const [userName, setUserName] = useState(localStorage.getItem('userName') || 'Uporabnik');
+
+  const [userName, setUserName] = useState('Uporabnik');
   const userEmail = localStorage.getItem('userEmail') || 'neznano@eposta.com';
 
   useEffect(() => {
-    const fetchName = async () => {
+    const fetchUser = async () => {
       try {
         const res = await fetch(`/api/auth/user?email=${encodeURIComponent(userEmail)}`);
         const data = await res.json();
-        if (data.name) {
+
+        if (res.ok && data.name) {
           setUserName(data.name);
-          localStorage.setItem('userName', data.name);
+        } else {
+          console.warn('⚠️ Ni imena v odgovoru, uporabljam privzeto');
         }
-      } catch (e) {
-        console.error('Napaka pri pridobivanju imena:', e);
+      } catch (err) {
+        console.error('❌ Napaka pri pridobivanju uporabnika:', err);
       }
     };
-    if (userEmail) fetchName();
+
+    if (userEmail && userEmail !== 'neznano@eposta.com') {
+      fetchUser();
+    }
   }, [userEmail]);
 
   const handleLogout = () => {
