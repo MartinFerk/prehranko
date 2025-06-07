@@ -16,6 +16,8 @@ MODEL_URL = "https://drive.google.com/uc?export=download&id=1ylu7N69oA5N5QhxsilI
 
 
 def download_model_if_missing():
+
+    
     if not os.path.exists(MODEL_PATH):
         print("⬇️ Model ne obstaja – prenašam z Google Drive...")
         url = "https://drive.google.com/uc?id=1ylu7N69oA5N5QhxsilIgtsCS6CUgjtK9"
