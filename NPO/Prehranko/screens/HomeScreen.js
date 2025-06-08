@@ -256,7 +256,7 @@ const fetchVsiObroki = async () => {
 <View style={[homeStyles.halfCard, homeStyles.zajemiObrokCard]}>
   <Text style={homeStyles.cardTitle}>{DATA[1].title}</Text>
   <View style={{ marginTop: 10 }}>
-    <Text style={{ fontSize: 14, color: theme.colors.text }}>
+    <Text style={{ fontSize: 13, color: theme.colors.text }}>
       Kalorije: 
       <Text style={{ color: theme.colors.primary }}> {todayCalories} </Text>
       <Text style={{ color: theme.colors.text }}>/ </Text>
@@ -272,7 +272,7 @@ const fetchVsiObroki = async () => {
       borderWidth={0}
       style={{ marginTop: 5, marginBottom: 10 }}/>
 
-    <Text style={{ fontSize: 14, color: theme.colors.text }}>
+    <Text style={{ fontSize: 13, color: theme.colors.text }}>
       Beljakovine:
       <Text style={{ color: theme.colors.primary }}> {todayProtein} </Text>
       <Text style={{ color: theme.colors.text }}>/ </Text>

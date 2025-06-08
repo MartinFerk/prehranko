@@ -546,3 +546,11 @@ html, body {
   margin-top: 16px;
   font-weight: bold;
 }
+
+.latest-obrok {
+  background-color: #fffbe6;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-left: 5px solid #ffcc00;
+  font-size: 1.1rem;
+}
