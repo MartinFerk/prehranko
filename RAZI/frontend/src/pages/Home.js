@@ -112,6 +112,12 @@ const Home = () => {
                 </div>
             )}
 
+            {zadnjiObrok && (
+            <div className="latest-obrok">
+                <h3>🆕 Nedavno dodan obrok:</h3>
+                <p>{zadnjiObrok}</p>
+            </div>)}
+            
             <div className="map-wrapper">
                 <div className="map-container">
                     <MapContainer
