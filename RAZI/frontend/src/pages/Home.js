@@ -112,11 +112,19 @@ const Home = () => {
                 </div>
             )}
 
-            {zadnjiObrok && (
-            <div className="latest-obrok">
-                <h3>🆕 Nedavno dodan obrok:</h3>
-                <p>{zadnjiObrok}</p>
-            </div>)}
+            {zadnjiObrok && typeof zadnjiObrok === 'object' && (
+  <div className="latest-obrok">
+    <h3>🆕 Nedavno dodan obrok:</h3>
+    <p><strong>Ime:</strong> {zadnjiObrok.name}</p>
+    <p><strong>Email:</strong> {zadnjiObrok.userEmail}</p>
+    <p><strong>Kcal:</strong> {zadnjiObrok.calories} kcal</p>
+    <p><strong>Beljakovine:</strong> {zadnjiObrok.protein} g</p>
+    <p>
+      <strong>Lokacija:</strong>{' '}
+      Lat {zadnjiObrok.locY?.toFixed(3)}, Long {zadnjiObrok.locX?.toFixed(3)}
+    </p>
+  </div>
+)}
 
             <div className="map-wrapper">
                 <div className="map-container">
