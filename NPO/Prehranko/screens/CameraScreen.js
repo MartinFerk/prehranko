@@ -1,10 +1,12 @@
-import React, { useRef, useState } from 'react';
+// screens/CameraScreen.js
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Image, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import AuthButton from '../components/AuthButton';
 import { theme } from '../styles/theme';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { API_BASE_URL, CAMERA_API_URL } from '../services/api';
+import { API_BASE_URL } from '../services/api'; 
+import { CAMERA_API_URL } from '../services/api';
 
 export default function CameraScreen({ navigation, route }) {
   const { email, mode = 'register' } = route.params || {};
@@ -37,11 +39,12 @@ export default function CameraScreen({ navigation, route }) {
 
     try {
       const photos = [];
+
       for (let i = 0; i < 5; i++) {
         const photo = await cameraRef.current.takePictureAsync({ base64: false });
         const compressed = await compressPhoto(photo);
         photos.push(compressed);
-        await new Promise((res) => setTimeout(res, 800));
+        await new Promise(res => setTimeout(res, 800));
       }
 
       const formData = new FormData();
@@ -59,17 +62,17 @@ export default function CameraScreen({ navigation, route }) {
       });
 
       const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (err) {
-        throw new Error('Strežnik ni vrnil veljavnega JSON');
-      }
+let data;
+try {
+  data = JSON.parse(text);
+} catch (err) {
+  throw new Error('Strežnik ni vrnil veljavnega JSON');
+}
 
-      if (!res.ok || !data.embeddings) {
-        const msg = data?.error || 'Napaka pri pridobivanju značilk';
-        throw new Error(msg);
-      }
+if (!res.ok || !data.embeddings) {
+  const msg = data?.error || 'Napaka pri pridobivanju značilk';
+  throw new Error(msg);
+}
 
       const upload = await fetch('https://prehranko-production.up.railway.app/api/save-embeddings', {
         method: 'POST',
@@ -81,9 +84,8 @@ export default function CameraScreen({ navigation, route }) {
       console.log('💾 Rezultat shranjevanja:', uploadResult);
 
       Alert.alert('Uspeh', 'Značilke uspešno pridobljene in shranjene.');
-      navigation.goBack();
     } catch (err) {
-      console.error('❌ Napaka:', err.message);
+      console.error('❌ Napaka:', err);
       Alert.alert('Napaka', err.message || 'Napaka pri pridobivanju značilk');
     } finally {
       setLoading(false);
@@ -93,50 +95,58 @@ export default function CameraScreen({ navigation, route }) {
   const takeSingleVerificationPhoto = async () => {
     if (!cameraRef.current) return;
     setLoading(true);
-
+  
     try {
-      const photo = await cameraRef.current.takePictureAsync({ base64: false, skipProcessing: true });
+      const photo = await cameraRef.current.takePictureAsync({ base64: false, skipProcessing: true,});
       const compressed = await compressPhoto(photo);
-
+  
       const formData = new FormData();
       formData.append('image', {
         uri: compressed.uri,
         name: 'verify.jpg',
         type: 'image/jpeg',
       });
-      formData.append('email', email);
-
+      formData.append('email', email); // ⬅️ To je OBVEZNO! Python backend zahteva email
+  
       const res = await fetch(`${CAMERA_API_URL}/api/auth/verify`, {
         method: 'POST',
         body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
-
+  
       const text = await res.text();
-      let data;
+  
       try {
-        data = JSON.parse(text);
+        const data = JSON.parse(text);
+  
+        if (data.success) {
+          Alert.alert('✅ Preverjanje uspešno!');
+          console.log('Similarity:', data.similarity);
+          await fetch(`${API_BASE_URL}/auth/complete-2fa`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+          });
+        } else {
+          Alert.alert('❌ Obraz se ne ujema.');
+          console.log('Similarity:', data.similarity);
+        }
       } catch (parseErr) {
         console.warn('❌ Backend je vrnil HTML ali neveljaven JSON:', text);
         Alert.alert('Napaka', 'Neveljaven odziv strežnika');
-        return;
       }
-
-      if (data.success) {
-        Alert.alert('✅ Preverjanje uspešno!');
-        console.log('Similarity:', data.similarity);
-        navigation.goBack(); // Vrnitev na FaceVerificationScreen
-      } else {
-        Alert.alert('❌ Obraz se ne ujema.');
-        console.log('Similarity:', data.similarity);
-      }
+  
+      navigation.goBack();
     } catch (err) {
-      console.error('❌ Napaka:', err.message);
+      console.error('❌ Napaka:', err);
       Alert.alert('Napaka pri preverjanju', err.message || 'Napaka pri pošiljanju slike');
     } finally {
       setLoading(false);
-      navigation.goBack();
     }
   };
+  
 
   return (
     <View style={styles.container}>

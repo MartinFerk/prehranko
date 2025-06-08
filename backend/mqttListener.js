@@ -1,36 +1,36 @@
+// mqttListener.js
 const mongoose = require('mongoose');
 const mqtt = require('mqtt');
 const Activity = require('./models/Activity');
 const User = require('./models/User');
 
 const MQTT_URL = 'mqtt://prehrankomosquitto.railway.internal:1883';
-const ACTIVITY_TOPIC = 'prehranko/activities';
-const TWO_FA_TOPIC = '2fa/request/+';
+const TOPIC = 'prehranko/activities';
 
 console.log('🚀 Starting MQTT Listener...');
 console.log('📡 Connecting to internal broker at:', MQTT_URL);
 
 const client = mqtt.connect(MQTT_URL, {
-  connectTimeout: 30000,
+  connectTimeout: 30000, // Povečamo na 30 sekund
   clientId: `backend_${Math.random().toString(16).slice(2, 8)}`,
   clean: true,
-  reconnectPeriod: 5000,
-  keepalive: 60,
+  reconnectPeriod: 5000, // Poskus ponovne povezave vsakih 5 sekund
+  keepalive: 60, // Keepalive interval
 });
 
 client.on('connect', async () => {
   console.log('✅ MQTT connection established');
-  console.log(`🔔 Subscribing to topics: ${ACTIVITY_TOPIC}, ${TWO_FA_TOPIC}`);
+  console.log(`🔔 Subscribing to topic: ${TOPIC}`);
 
-  client.subscribe([ACTIVITY_TOPIC, TWO_FA_TOPIC], (err) => {
+  client.subscribe(TOPIC, (err) => {
     if (err) {
       console.error('❌ Subscription error:', err.message);
     } else {
-      console.log(`📬 Subscribed to ${ACTIVITY_TOPIC} and ${TWO_FA_TOPIC} successfully`);
+      console.log(`📬 Subscribed to ${TOPIC} successfully`);
     }
   });
 
-  // Vsakih 30 sekund preverimo število aktivnih naprav
+  // Periodični izpis števila aktivnih naprav
   setInterval(async () => {
     console.log('🔍 Checking MQTT connection status:', client.connected);
     try {
@@ -47,25 +47,6 @@ client.on('connect', async () => {
   }, 30000);
 });
 
-client.on('message', async (topic, message) => {
-  try {
-    const data = JSON.parse(message.toString());
-    console.log(`📨 Received message on topic ${topic}:`, data);
-
-    if (topic === ACTIVITY_TOPIC) {
-      const activity = new Activity(data);
-      await activity.save();
-      console.log(`✅ Saved activity: ${data.type || 'unknown'}`);
-    } else if (topic.startsWith('2fa/request/')) {
-      // Brez akcije – to obravnava mobilna aplikacija prek MQTTListener.js
-      const email = topic.split('/').pop();
-      console.log(`ℹ️ 2FA request message received for ${email}, ignored by backend`);
-    }
-  } catch (err) {
-    console.error('❌ Error processing MQTT message:', err.message);
-  }
-});
-
 client.on('reconnect', () => {
   console.log('🔁 Attempting to reconnect to MQTT broker...');
 });
@@ -74,8 +55,8 @@ client.on('close', async () => {
   console.log('🔌 MQTT connection closed');
   try {
     await User.updateMany(
-        { 'devices.isConnected': true },
-        { $set: { 'devices.$[].isConnected': false } }
+      { 'devices.isConnected': true },
+      { $set: { 'devices.$[].isConnected': false } }
     );
     console.log('✅ Updated all devices to disconnected');
   } catch (err) {
@@ -91,25 +72,10 @@ client.on('offline', () => {
   console.log('⚠️ MQTT client went offline');
 });
 
+// Testna povezava z MongoDB ob zagonu
 mongoose.connection.on('connected', () => {
   console.log('✅ Connected to MongoDB');
 });
 mongoose.connection.on('error', (err) => {
   console.error('❌ MongoDB connection error:', err.message);
 });
-
-// 🔐 Objavi 2FA zahtevo za mobilno aplikacijo
-const publish2FARequest = (email) => {
-  const topic = `2fa/request/${email}`;
-  const message = JSON.stringify({ email, pending2FA: true, from: 'web' });
-
-  client.publish(topic, message, { qos: 1 }, (err) => {
-    if (err) {
-      console.error(`❌ Error publishing 2FA request for ${email}:`, err.message);
-    } else {
-      console.log(`📬 Published 2FA request to ${topic}`);
-    }
-  });
-};
-
-module.exports = { client, publish2FARequest };
