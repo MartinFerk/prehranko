@@ -188,8 +188,8 @@ router.delete('/delete/:obrokId', async (req, res) => {
 });
 
 const { getZadnjiObrok } = require('../mqttListener');
-
 router.get('/last', (req, res) => {
+  res.set('Cache-Control', 'no-store'); // <- to dodaj
   const zadnji = getZadnjiObrok();
   if (zadnji) {
     res.json({ obrok: zadnji });
@@ -197,6 +197,7 @@ router.get('/last', (req, res) => {
     res.status(404).json({ error: 'Ni podatkov.' });
   }
 });
+
 
 
 

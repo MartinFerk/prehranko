@@ -71,16 +71,15 @@ const Home = () => {
         try {
             const res = await fetch('/api/obroki/last');
             const data = await res.json();
+            console.log("📡 Fetch zadnjega obroka:", data.obrok);
             setZadnjiObrok(data.obrok);
         } catch (err) {
             console.error("Napaka pri nalaganju zadnjega obroka:", err);
         }
     };
-
-    fetchZadnjiObrok(); // prvič
-
-    const interval = setInterval(fetchZadnjiObrok, 5000); // nato vsakih 5s
-    return () => clearInterval(interval); // čiščenje
+        fetchZadnjiObrok(); // prvič
+        const interval = setInterval(fetchZadnjiObrok, 5000); // nato vsakih 5s
+        return () => clearInterval(interval); // čiščenje
     }, []);
 
 
@@ -117,7 +116,7 @@ const Home = () => {
                 <h3>🆕 Nedavno dodan obrok:</h3>
                 <p>{zadnjiObrok}</p>
             </div>)}
-            
+
             <div className="map-wrapper">
                 <div className="map-container">
                     <MapContainer

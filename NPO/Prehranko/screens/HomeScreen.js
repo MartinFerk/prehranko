@@ -201,9 +201,9 @@ const fetchVsiObroki = async () => {
     navigation.navigate('GoalScreen', { email: userEmail });
   };
 
-    const handleCaptureFood = () => {
-      navigation.navigate('CaptureFoodScreen', { email: userEmail });
-    };
+  const handleDeleteFood = () => {
+    navigation.navigate('DeleteFoodScreen', { email: userEmail });
+  };
 
     const renderObrokItem = ({ item }) => {  
     return (
@@ -331,7 +331,7 @@ const fetchVsiObroki = async () => {
       <IconButton
         iconName="delete"
         title="Izbriši Vnos"
-        onPress={handleCaptureFace}
+        onPress={handleDeleteFood}
         color={theme.colors.secondary}/>
     </View>
   </View>
