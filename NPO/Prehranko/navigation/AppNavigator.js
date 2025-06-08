@@ -10,7 +10,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import CaptureFoodScreen from '../screens/CaptureFoodScreen.js';
 import FaceVerificationScreen from '../screens/FaceVerificationScreen.js';
 import GoalScreen from '../screens/GoalScreen.js'; // Preveri, ali je pot pravilna
-
+import DeleteFoodScreen from '../screens/DeleteFoodScreen.js';
 
 
 const Stack = createStackNavigator();
@@ -26,6 +26,7 @@ const AppNavigator = () => (
       <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="SettingsScreen" component={SettingsScreen} options={{ headerShown: false }} />
       <Stack.Screen name="GoalScreen" component={GoalScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="DeleteFoodScreen" component={DeleteFoodScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   </NavigationContainer>
 );
