@@ -33,25 +33,20 @@ client.on('connect', async () => {
     }
   });
 
- if (topic === OBROKI_TOPIC) {
-  try {
-    const parsed = JSON.parse(msg);
-    console.log('📥 Prejet obrok (MQTT):', parsed);
-    zadnjiObrok = parsed;
-  } catch (err) {
-    console.error("❌ Napaka pri razčlenjevanju JSON obroka:", err.message);
-  }
-}
+ client.on('message', (incomingTopic, message) => {
+  const msg = message.toString();
 
-  client.on('message', (topic, message) => {
-    const msg = message.toString();
-
-    if (topic === OBROKI_TOPIC) {
-      console.log('📥 Prejet obrok (MQTT):', msg);
-      zadnjiObrok = msg;
+  if (incomingTopic === OBROKI_TOPIC) {
+    try {
+      const parsed = JSON.parse(msg);
+      console.log('📥 Prejet obrok (MQTT):', parsed);
+      zadnjiObrok = parsed;
+    } catch (err) {
+      console.error("❌ Napaka pri razčlenjevanju JSON obroka:", err.message);
     }
+  }
+});
 
-  });
 
   // Periodični izpis števila aktivnih naprav
   setInterval(async () => {
