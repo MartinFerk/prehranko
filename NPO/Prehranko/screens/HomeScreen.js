@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import IconButton from '../components/IconButton';
 import { homeStyles } from '../styles/homeStyles';
@@ -17,14 +17,14 @@ const DATA = [
 ];
 
 export default function HomeScreen({ navigation, route }) {
-  const [username, setUsername] = useState(null);
   const [userEmail, setUserEmail] = useState(route.params?.email || null);
-  const [pending2FA, setPending2FA] = useState(false);
   const [caloricGoal, setCaloricGoal] = useState(null);
   const [proteinGoal, setProteinGoal] = useState(null);
   const [vsiObroki, setVsiObroki] = useState([]);
   const [todayCalories, setTodayCalories] = useState(0);
   const [todayProtein, setTodayProtein] = useState(0);
+  const [pending2FA, setPending2FA] = useState(false);
+  const [checking2FA, setChecking2FA] = useState(false);
 
   const fetchEmail = async () => {
     try {
@@ -34,20 +34,6 @@ export default function HomeScreen({ navigation, route }) {
       console.error('Napaka pri branju e-pošte iz AsyncStorage:', err.message);
     }
   };
-
-  const fetchUsername = async () => {
-  try {
-    const usernameFromStorage = await AsyncStorage.getItem('username');
-    if (usernameFromStorage) setUsername(usernameFromStorage); // <-- PRAVILNO
-  } catch (err) {
-    console.error('Napaka pri branju uporabniškega imena iz AsyncStorage:', err.message);
-  }
-};
-
-
-
-  // Preveri 2FA status (Railway backend) — opcijsko
-  // (Odstranjeno zaradi podvajanja funkcije check2FA)
 
   const fetchGoals = async () => {
     if (!userEmail) return;
@@ -103,33 +89,35 @@ export default function HomeScreen({ navigation, route }) {
   };
 
   const check2FA = async () => {
-    if (!userEmail) return;
+    if (!userEmail || checking2FA) return;
+    setChecking2FA(true);
     try {
       const data = await check2FAStatus(userEmail);
-      setPending2FA(data.pending2FA);
-      if (data.pending2FA) {
+      const isPending = data.pending2FA || false;
+      setPending2FA(isPending);
+      if (isPending) {
+        console.log('🔔 2FA zahteva zaznana, navigiram na FaceVerificationScreen');
+        Alert.alert('2FA zahteva', 'Potrebna je preverba obraza. Odpri zaslon za preverjanje.');
         navigation.navigate('FaceVerificationScreen', { email: userEmail });
       }
     } catch (err) {
       console.error('❌ Napaka pri preverjanju 2FA:', err.message);
+    } finally {
+      setChecking2FA(false);
     }
   };
 
   useEffect(() => {
-  if (route.params?.username) {
-    setUsername(route.params.username);
-  } else {
-    fetchUsername(); // prebere iz AsyncStorage
-  }
-
-  fetchEmail();
-}, []);
+    fetchEmail();
+  }, []);
 
   useEffect(() => {
     if (userEmail) {
-      check2FA();
+      const interval = setInterval(check2FA, 5000); // Periodično preverjanje vsaj 5 sekund
+      check2FA(); // Takojšnje preverjanje ob zagonu
       fetchGoals();
       fetchVsiObroki();
+      return () => clearInterval(interval);
     }
   }, [userEmail]);
 
@@ -159,16 +147,21 @@ export default function HomeScreen({ navigation, route }) {
   };
 
   return (
-  <View style={homeStyles.container}>
-    <View style={homeStyles.header}>
-      <Text style={homeStyles.appName}>Prehranko</Text>
-      <TouchableOpacity style={homeStyles.settingsButton} onPress={handleSettingsPress}>
-        <Text style={homeStyles.settingsIcon}>⚙️</Text>
-      </TouchableOpacity>
-    </View>
-    <Text style={homeStyles.userName}>Pozdravljen, {username || 'Uporabnik'}!</Text>
+    <View style={homeStyles.container}>
+      <View style={homeStyles.header}>
+        <Text style={homeStyles.appName}>Prehranko</Text>
+        <TouchableOpacity style={homeStyles.settingsButton} onPress={handleSettingsPress}>
+          <Text style={homeStyles.settingsIcon}>⚙️</Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={homeStyles.userName}>Pozdravljen, {userEmail || 'Uporabnik'}!</Text>
 
-      {pending2FA && (
+      {checking2FA && (
+        <Text style={{ color: 'blue', marginTop: 10 }}>
+          ⌛ Preverjam 2FA status...
+        </Text>
+      )}
+      {pending2FA && !checking2FA && (
         <Text style={{ color: 'red', marginTop: 10 }}>
           ⚠️ Zahteva za 2FA je aktivna (preveri obraz).
         </Text>
@@ -225,7 +218,7 @@ export default function HomeScreen({ navigation, route }) {
               color={theme.colors.secondary}
               unfilledColor={theme.colors.background}
               borderWidth={0}
-              style={{ marginTop: 5 }}
+              style={{ marginTop: 5}}
             />
           </View>
         </View>

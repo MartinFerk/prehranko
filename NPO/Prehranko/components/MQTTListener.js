@@ -1,74 +1,65 @@
-// src/components/MQTTListener.js
-import React, { useEffect } from 'react';
-import { useNavigation } from '@react-navigation/native';
-import { Alert } from 'react-native';
-import MQTT from 'react-native-mqtt';
+import { useEffect } from 'react';
+import mqtt from 'mqtt';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 
-const MQTT_URL = 'mqtt://prehrankomosquitto.railway.internal:1883';
-
-export default function MQTTListener() {
+const MQTTListener = () => {
   const navigation = useNavigation();
 
   useEffect(() => {
-    const fetchEmailAndConnect = async () => {
-      try {
-        const userEmail = await AsyncStorage.getItem('userEmail');
-        if (!userEmail) {
-          console.log('ℹ️ Ni shranjenega emaila za MQTT povezavo.');
-          return;
-        }
+    const connectMQTT = async () => {
+      const email = await AsyncStorage.getItem('userEmail');
+      if (!email) {
+        console.warn('ℹ Ni shranjenega emaila za MQTT povezavo');
+        return;
+      }
 
-        const clientId = `client_${Math.random().toString(16).slice(3)}`;
-        const client = new MQTT.Client(MQTT_URL, clientId);
+      const clientId = `mobile_${Math.random().toString(16).slice(2, 8)}`;
+      const mqttClient = mqtt.connect('mqtt://prehrankomosquitto.railway.internal:1883', {
+        clientId,
+        clean: true,
+        reconnectPeriod: 5000,
+      });
 
-        client.on('connect', () => {
-          console.log('✅ Povezan z MQTT strežnikom');
-          client.subscribe(`2fa/request/${userEmail}`, (err) => {
-            if (err) console.error('❌ Napaka pri naročanju na 2FA temo:', err);
-            else console.log(`📬 Naročen na 2fa/request/${userEmail}`);
-          });
-        });
-
-        client.on('message', (topic, message) => {
-          try {
-            const data = JSON.parse(message.toString());
-            console.log('📨 Prejeto MQTT sporočilo:', data);
-
-            if (data.email === userEmail && data.pending2FA) {
-              Alert.alert(
-                '🔐 2FA preverjanje',
-                'Odpri kamero in preveri obraz.',
-                [
-                  {
-                    text: 'Začni',
-                    onPress: () => navigation.navigate('FaceVerificationScreen', { email: userEmail }),
-                  },
-                  { text: 'Prekliči', style: 'cancel' },
-                ]
-              );
-            }
-          } catch (err) {
-            console.error('❌ Napaka pri obdelavi MQTT sporočila:', err.message);
+      mqttClient.on('connect', () => {
+        console.log('✅ MQTT client connected');
+        mqttClient.subscribe(`2fa/request/${email}`, (err) => {
+          if (err) {
+            console.error('❌ Subscription error:', err.message);
+          } else {
+            console.log(`📬 Subscribed to 2fa/request/${email}`);
           }
         });
+      });
 
-        client.on('error', (err) => {
-          console.error('❌ MQTT napaka:', err);
-        });
+      mqttClient.on('message', (topic, message) => {
+        console.log(`📨 Received on ${topic}:`, message.toString());
+        if (topic === `2fa/request/${email}`) {
+          const data = JSON.parse(message.toString());
+          if (data.pending2FA) {
+            console.log('🔔 2FA zahteva za', email, 'sprožena, navigacija na FaceVerificationScreen');
+            navigation.navigate('FaceVerificationScreen', { email });
+          }
+        }
+      });
 
-        client.connect();
+      mqttClient.on('error', (err) => {
+        console.error('❌ MQTT error:', err.message);
+      });
 
-        return () => {
-          client.disconnect();
-        };
-      } catch (err) {
-        console.error('❌ Napaka pri branju emaila:', err.message);
-      }
+      mqttClient.on('close', () => {
+        console.log('🔌 MQTT connection closed');
+      });
+
+      return () => {
+        if (mqttClient) mqttClient.end();
+      };
     };
 
-    fetchEmailAndConnect();
+    connectMQTT();
   }, []);
 
-  return null; // Komponenta ne renderira ničesar
-}
+  return null;
+};
+
+export default MQTTListener;
