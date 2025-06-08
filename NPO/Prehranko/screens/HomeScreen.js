@@ -94,12 +94,13 @@ export default function HomeScreen({ navigation, route }) {
     try {
       const data = await check2FAStatus(userEmail);
       const isPending = data.pending2FA || false;
-      setPending2FA(isPending);
       if (isPending) {
-        console.log('🔔 2FA zahteva zaznana, navigiram na FaceVerificationScreen');
+        console.log('🔔 2FA zahteva zaznana, preverjam izvor...');
+        // Predpostavimo, da je zahteva veljavna samo, če prihaja iz spleta
         Alert.alert('2FA zahteva', 'Potrebna je preverba obraza. Odpri zaslon za preverjanje.');
         navigation.navigate('FaceVerificationScreen', { email: userEmail });
       }
+      setPending2FA(isPending);
     } catch (err) {
       console.error('❌ Napaka pri preverjanju 2FA:', err.message);
     } finally {
