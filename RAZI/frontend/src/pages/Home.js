@@ -23,6 +23,7 @@ const Home = () => {
     const [showMineOnly, setShowMineOnly] = useState(false);
     const [userName, setUserName] = useState('');
     const navigate = useNavigate();
+    const [zadnjiObrok, setZadnjiObrok] = useState(''); //Za latest obrok prek mqtt
 
     const userEmail = localStorage.getItem('userEmail');
     const isLoggedIn = localStorage.getItem('loggedIn') === 'true';
@@ -64,6 +65,24 @@ const Home = () => {
 
         fetchObroki();
     }, []);
+
+    useEffect(() => {
+    const fetchZadnjiObrok = async () => {
+        try {
+            const res = await fetch('/api/obroki/last');
+            const data = await res.json();
+            setZadnjiObrok(data.obrok);
+        } catch (err) {
+            console.error("Napaka pri nalaganju zadnjega obroka:", err);
+        }
+    };
+
+    fetchZadnjiObrok(); // prvič
+
+    const interval = setInterval(fetchZadnjiObrok, 5000); // nato vsakih 5s
+    return () => clearInterval(interval); // čiščenje
+    }, []);
+
 
     const now = new Date();
     const sevenDaysAgo = new Date();
