@@ -23,29 +23,32 @@ let zadnjiObrok = null;
 
 client.on('connect', async () => {
   console.log('✅ MQTT connection established');
-  console.log(`🔔 Subscribing to topic: ${TOPIC}`);
+  
+  const topicsToSubscribe = [TOPIC, OBROKI_TOPIC];
 
-  client.subscribe(TOPIC, (err) => {
+  client.subscribe(topicsToSubscribe, (err) => {
     if (err) {
       console.error('❌ Subscription error:', err.message);
     } else {
-      console.log(`📬 Subscribed to ${TOPIC} successfully`);
+      console.log(`📬 Subscribed to topics: ${topicsToSubscribe.join(', ')}`);
     }
   });
 
- client.on('message', (incomingTopic, message) => {
-  const msg = message.toString();
+  client.on('message', (incomingTopic, message) => {
+    const msg = message.toString();
 
-  if (incomingTopic === OBROKI_TOPIC) {
-    try {
-      const parsed = JSON.parse(msg);
-      console.log('📥 Prejet obrok (MQTT):', parsed);
-      zadnjiObrok = parsed;
-    } catch (err) {
-      console.error("❌ Napaka pri razčlenjevanju JSON obroka:", err.message);
+    if (incomingTopic === OBROKI_TOPIC) {
+      try {
+        const parsed = JSON.parse(msg);
+        console.log('📥 Prejet obrok (MQTT):', parsed);
+        zadnjiObrok = parsed;
+      } catch (err) {
+        console.error("❌ Napaka pri razčlenjevanju JSON obroka:", err.message);
+      }
     }
-  }
-});
+
+    // ... lahko dodaš še obdelavo za TOPIC ('prehranko/activities') če želiš
+  });
 
 
   // Periodični izpis števila aktivnih naprav
