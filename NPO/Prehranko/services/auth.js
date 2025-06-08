@@ -73,12 +73,9 @@ export const check2FAStatus = async (email) => {
   try {
     const res = await fetch(`${API_BASE_URL}/2fa/status?email=${encodeURIComponent(email)}`);
     const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.message || 'Napaka pri preverjanju 2FA statusa');
-    }
-    return data;
+    return data; // Vrne { pending2FA, is2faVerified }
   } catch (err) {
-    console.error('❌ Napaka pri preverjanju 2FA:', err.message);
+    console.error('❌ Napaka pri preverjanju 2FA statusa:', err.message);
     throw err;
   }
 };
@@ -90,14 +87,10 @@ export const complete2FA = async (email) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.message || 'Napaka pri dokončanju 2FA');
-    }
-    return data;
+    return res.ok;
   } catch (err) {
     console.error('❌ Napaka pri dokončanju 2FA:', err.message);
-    throw err;
+    return false;
   }
 };
 

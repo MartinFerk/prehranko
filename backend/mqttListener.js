@@ -53,18 +53,7 @@ client.on('message', async (topic, message) => {
 
     if (topic.startsWith('2fa/request/')) {
       const email = topic.split('/').pop();
-      const user = await User.findOne({ email });
-
-      if (!user) {
-        console.error(`❌ User not found for email: ${email}`);
-        return;
-      }
-
-      // Vedno posodobi stanje za novo 2FA zahtevo
-      user.pending2FA = true;
-      user.pending2FAExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minut
-      await user.save();
-      console.log(`✅ Set pending2FA to true and pending2FAExpires for ${email}`);
+      console.log(`ℹ 2FA request received for ${email}, no action taken (handled by auth)`);
     } else if (topic === ACTIVITY_TOPIC) {
       const activity = new Activity(data);
       await activity.save();
@@ -109,7 +98,7 @@ mongoose.connection.on('error', (err) => {
 
 const publish2FARequest = (email) => {
   const topic = `2fa/request/${email}`;
-  const message = JSON.stringify({ email, pending2FA: true });
+  const message = JSON.stringify({ email, pending2FA: true, from: "web" });
 
   client.publish(topic, message, { qos: 1 }, (err) => {
     if (err) {

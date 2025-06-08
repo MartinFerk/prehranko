@@ -111,7 +111,6 @@ router.post("/login", async (req, res) => {
       user.pending2FA = true;
       user.is2faVerified = false;
       await user.save();
-      // Pošlji MQTT sporočilo
       publish2FARequest(email);
       return res.json({ message: "Prijava uspešna – preveri 2FA na telefonu" });
     }

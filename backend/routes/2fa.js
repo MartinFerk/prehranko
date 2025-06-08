@@ -3,41 +3,33 @@ const User = require('../models/User');
 const { publish2FARequest } = require('../mqttListener');
 const router = express.Router();
 
-// Sproži 2FA
-router.post('/trigger-2fa', async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ error: 'Manjka email' });
-    }
+// Sproži 2FA (onemogočeno za zdaj, razen za testiranje)
+// router.post('/trigger-2fa', async (req, res) => {
+//   try {
+//     const { email } = req.body;
+//     if (!email) {
+//       return res.status(400).json({ error: 'Manjka email' });
+//     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) {
-      return res.status(404).json({ error: 'Uporabnik ni najden' });
-    }
+//     const user = await User.findOne({ email: email.toLowerCase() });
+//     if (!user) {
+//       return res.status(404).json({ error: 'Uporabnik ni najden' });
+//     }
 
-    // Preveri, ali ima uporabnik povezano napravo
-    const connectedDevice = user.devices.find((d) => d.isConnected);
-    if (!connectedDevice) {
-      return res.status(400).json({ error: 'Ni povezanih naprav za 2FA' });
-    }
+//     user.pending2FA = true;
+//     user.pending2FAExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minut
+//     await user.save();
 
-    // Posodobi pending2FA in časovno omejitev
-    user.pending2FA = true;
-    user.pending2FAExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minut
-    await user.save();
+//     console.log(`🔐 2FA sprožen za ${email}`);
 
-    console.log(`🔐 2FA sprožen za ${email}`);
+//     publish2FARequest(email);
 
-    // Pošlji MQTT sporočilo
-    publish2FARequest(email);
-
-    res.json({ message: '2FA zahteva sprožena' });
-  } catch (err) {
-    console.error('❌ Napaka pri sprožitvi 2FA:', err.message);
-    res.status(500).json({ error: 'Napaka pri sprožitvi 2FA' });
-  }
-});
+//     res.json({ message: '2FA zahteva sprožena' });
+//   } catch (err) {
+//     console.error('❌ Napaka pri sprožitvi 2FA:', err.message);
+//     res.status(500).json({ error: 'Napaka pri sprožitvi 2FA' });
+//   }
+// });
 
 // Dokončaj 2FA
 router.post('/complete-2fa', async (req, res) => {
@@ -72,7 +64,6 @@ router.get('/check-2fa', async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: 'Uporabnik ne obstaja' });
 
-    // Preveri časovno omejitev
     if (user.pending2FA && user.pending2FAExpires && new Date() > user.pending2FAExpires) {
       console.log(`⏰ 2FA zahteva za ${email} je potekla`);
       user.pending2FA = false;
@@ -106,7 +97,6 @@ router.get('/status', async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: 'Uporabnik ne obstaja' });
 
-    // Preveri časovno omejitev
     if (user.pending2FA && user.pending2FAExpires && new Date() > user.pending2FAExpires) {
       console.log(`⏰ 2FA zahteva za ${email} je potekla`);
       user.pending2FA = false;
@@ -127,7 +117,7 @@ router.get('/status', async (req, res) => {
   } catch (err) {
     console.error('❌ Napaka pri preverjanju 2FA statusa:', err.message);
     res.status(500).json({ message: 'Napaka pri preverjanju statusa' });
-    }
+  }
 });
 
 module.exports = router;
