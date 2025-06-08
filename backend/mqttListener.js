@@ -1,66 +1,123 @@
-import { useEffect } from 'react';
-   import Mqtt from 'react-native-mqtt';
-   import AsyncStorage from '@react-native-async-storage/async-storage';
-   import { useNavigation } from '@react-navigation/native';
+const mongoose = require('mongoose');
+const mqtt = require('mqtt');
+const Activity = require('./models/Activity');
+const User = require('./models/User');
 
-   const MQTTListener = () => {
-     const navigation = useNavigation();
+const MQTT_URL = 'mqtt://prehrankomosquitto.railway.internal:1883';
+const ACTIVITY_TOPIC = 'prehranko/activities';
+const TWO_FA_TOPIC = '2fa/request/+';
 
-     useEffect(() => {
-       const connectMQTT = async () => {
-         const email = await AsyncStorage.getItem('userEmail');
-         if (!email) {
-           console.warn('ℹ Ni shranjenega emaila za MQTT povezavo');
-           return;
-         }
+console.log('🚀 Starting MQTT Listener...');
+console.log('📡 Connecting to internal broker at:', MQTT_URL);
 
-         const clientId = `mobile_${Math.random().toString(16).slice(2, 8)}`;
-         const mqttClient = await Mqtt.connect('mqtt://prehrankomosquitto.railway.internal:1883', {
-           clientId,
-           clean: true,
-           reconnect: true,
-           keepalive: 60,
-         });
+const client = mqtt.connect(MQTT_URL, {
+  connectTimeout: 30000,
+  clientId: `backend_${Math.random().toString(16).slice(2, 8)}`,
+  clean: true,
+  reconnectPeriod: 5000,
+  keepalive: 60,
+});
 
-         mqttClient.on('connect', () => {
-           console.log('✅ MQTT client connected');
-           mqttClient.subscribe(`2fa/request/${email}`, (err) => {
-             if (err) {
-               console.error('❌ Subscription error:', err.message);
-             } else {
-               console.log(`📬 Subscribed to 2fa/request/${email}`);
-             }
-           });
-         });
+client.on('connect', async () => {
+  console.log('✅ MQTT connection established');
+  console.log(`🔔 Subscribing to topics: ${ACTIVITY_TOPIC}, ${TWO_FA_TOPIC}`);
 
-         mqttClient.on('message', (topic, message) => {
-           console.log(`📨 Received on ${topic}:`, message.toString());
-           if (topic === `2fa/request/${email}`) {
-             const data = JSON.parse(message.toString());
-             if (data.pending2FA) {
-               console.log('🔔 2FA zahteva za', email, 'sprožena, navigacija na FaceVerificationScreen');
-               navigation.navigate('FaceVerificationScreen', { email });
-             }
-           }
-         });
+  client.subscribe([ACTIVITY_TOPIC, TWO_FA_TOPIC], (err) => {
+    if (err) {
+      console.error('❌ Subscription error:', err.message);
+    } else {
+      console.log(`📬 Subscribed to ${ACTIVITY_TOPIC} and ${TWO_FA_TOPIC} successfully`);
+    }
+  });
 
-         mqttClient.on('error', (err) => {
-           console.error('❌ MQTT error:', err.message);
-         });
+  setInterval(async () => {
+    console.log('🔍 Checking MQTT connection status:', client.connected);
+    try {
+      const activeDevices = await User.aggregate([
+        { $unwind: '$devices' },
+        { $match: { 'devices.isConnected': true } },
+        { $count: 'activeDevices' },
+      ]);
+      const count = activeDevices[0]?.activeDevices || 0;
+      console.log(`📊 Active devices: ${count}`);
+    } catch (err) {
+      console.error('❌ Error counting active devices:', err.message);
+    }
+  }, 30000);
+});
 
-         mqttClient.on('closed', () => {
-           console.log('🔌 MQTT connection closed');
-         });
+client.on('message', async (topic, message) => {
+  try {
+    const data = JSON.parse(message.toString());
+    console.log(`📨 Received message on topic ${topic}:`, data);
 
-         return () => {
-           if (mqttClient) mqttClient.disconnect();
-         };
-       };
+    if (topic.startsWith('2fa/request/')) {
+      const email = topic.split('/').pop();
+      const user = await User.findOne({ email });
 
-       connectMQTT();
-     }, []);
+      if (!user) {
+        console.error(`❌ User not found for email: ${email}`);
+        return;
+      }
 
-     return null;
-   };
+      // Vedno posodobi stanje za novo 2FA zahtevo
+      user.pending2FA = true;
+      user.pending2FAExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minut
+      await user.save();
+      console.log(`✅ Set pending2FA to true and pending2FAExpires for ${email}`);
+    } else if (topic === ACTIVITY_TOPIC) {
+      const activity = new Activity(data);
+      await activity.save();
+      console.log(`✅ Saved activity: ${data.type}`);
+    }
+  } catch (err) {
+    console.error('❌ Error processing MQTT message:', err.message);
+  }
+});
 
-   export default MQTTListener;
+client.on('reconnect', () => {
+  console.log('🔁 Attempting to reconnect to MQTT broker...');
+});
+
+client.on('close', async () => {
+  console.log('🔌 MQTT connection closed');
+  try {
+    await User.updateMany(
+      { 'devices.isConnected': true },
+      { $set: { 'devices.$[].isConnected': false } }
+    );
+    console.log('✅ Updated all devices to disconnected');
+  } catch (err) {
+    console.error('❌ Error updating device status:', err.message);
+  }
+});
+
+client.on('error', (err) => {
+  console.error('❌ MQTT connection error:', err.message);
+});
+
+client.on('offline', () => {
+  console.log('⚠️ MQTT client went offline');
+});
+
+mongoose.connection.on('connected', () => {
+  console.log('✅ Connected to MongoDB');
+});
+mongoose.connection.on('error', (err) => {
+  console.error('❌ MongoDB connection error:', err.message);
+});
+
+const publish2FARequest = (email) => {
+  const topic = `2fa/request/${email}`;
+  const message = JSON.stringify({ email, pending2FA: true });
+
+  client.publish(topic, message, { qos: 1 }, (err) => {
+    if (err) {
+      console.error(`❌ Error publishing 2FA request for ${email}:`, err.message);
+    } else {
+      console.log(`📬 Published 2FA request to ${topic}`);
+    }
+  });
+};
+
+module.exports = { client, publish2FARequest };
