@@ -25,7 +25,6 @@ export default function HomeScreen({ navigation, route }) {
   const [vsiObroki, setVsiObroki] = useState([]);
   const [todayCalories, setTodayCalories] = useState(0);
   const [todayProtein, setTodayProtein] = useState(0);
-  const [pending2FA, setPending2FA] = useState(false);
 
   const fetchEmail = async () => {
     try {
@@ -45,72 +44,10 @@ export default function HomeScreen({ navigation, route }) {
   }
 };
 
-  const pollFor2FA = () => {
-    const interval = setInterval(async () => {
-      try {
-        if (!userEmail) return;
-  
-        const res = await fetch(`${API_BASE_URL}/auth/check-2fa?email=${encodeURIComponent(userEmail)}`);
-        const text = await res.text();
-  
-        // Debug izpis
-        console.log('📡 /check-2fa odgovor:', text);
-  
-        // Če dobimo HTML, ne nadaljujemo
-        if (text.trim().startsWith('<')) {
-          console.warn('❌ Backend vrnil HTML – preveri URL in backend');
-          return;
-        }
-  
-        const data = JSON.parse(text);
-  
-        if (data.trigger) {
-          clearInterval(interval);
-          Alert.alert(
-            '🔐 2FA preverjanje',
-            'Odpri kamero in preveri obraz.',
-            [
-              {
-                text: 'Začni',
-                onPress: () => navigation.navigate('CameraScreen', { mode: 'verify', email: userEmail }),
-              },
-              { text: 'Prekliči', style: 'cancel' },
-            ]
-          );
-        }
-      } catch (err) {
-        console.error('Napaka pri preverjanju 2FA:', err.message);
-      }
-    }, 5000);
-  
-    return () => clearInterval(interval);
-  };
-  
+
 
   // Preveri 2FA status (Railway backend) — opcijsko
-  const check2FA = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/auth/check-2fa?email=${userEmail}`);
-      const contentType = res.headers.get('content-type');
-    
-      if (!res.ok) throw new Error('Napaka pri preverjanju 2FA');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await res.text();
-        console.warn('❌ Backend vrnil HTML – preveri URL in backend');
-        console.log('📡 /check-2fa odgovor:', text);
-        throw new Error('Odziv ni bil JSON');
-      }
-    
-      const data = await res.json();
-    
-      if (data.trigger) {
-        clearInterval(interval);
-        navigation.navigate('CameraScreen', { mode: 'verify', email: userEmail });
-      }
-    } catch (err) {
-      console.log('Napaka pri preverjanju 2FA:', err.message);
-    }    
-  };
+  // (Odstranjeno zaradi podvajanja funkcije check2FA)
 
   const fetchGoals = async () => {
     if (!userEmail) return;
@@ -339,5 +276,5 @@ export default function HomeScreen({ navigation, route }) {
         />
       </View>
     </View>
-
+  );
 }
