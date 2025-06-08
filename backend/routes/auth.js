@@ -110,6 +110,7 @@ router.post("/login", async (req, res) => {
     if (from === "web") {
       user.pending2FA = true;
       user.is2faVerified = false;
+      user.pending2FAExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minut
       await user.save();
       publish2FARequest(email);
       return res.json({ message: "Prijava uspešna – preveri 2FA na telefonu" });

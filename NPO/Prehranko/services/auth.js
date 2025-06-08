@@ -73,7 +73,11 @@ export const check2FAStatus = async (email) => {
   try {
     const res = await fetch(`${API_BASE_URL}/2fa/status?email=${encodeURIComponent(email)}`);
     const data = await res.json();
-    return data; // Vrne { pending2FA, is2faVerified }
+    return {
+      pending2FA: data.pending2FA || false,
+      is2faVerified: data.is2faVerified || false,
+      pending2FAExpires: data.pending2FAExpires || null,
+    };
   } catch (err) {
     console.error('❌ Napaka pri preverjanju 2FA statusa:', err.message);
     throw err;
