@@ -1,38 +1,34 @@
-import { API_BASE_URL } from './api';
-import { CAMERA_API_URL } from './api';
+import { API_BASE_URL, CAMERA_API_URL } from './api';
 import * as FileSystem from 'expo-file-system';
 
-
-// Posodobljena funkcija loginUser
 export const loginUser = async (email, password, deviceId, deviceName, clientId) => {
-    try {
-        const res = await fetch(`${API_BASE_URL}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                email,
-                password,
-                from: 'app',
-                deviceId,
-                deviceName,
-                clientId,
-            }),
-        });
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password,
+        from: 'app',
+        deviceId,
+        deviceName,
+        clientId,
+      }),
+    });
 
-        const data = await res.json();
-        console.log('⬅️ Odgovor:', data);
+    const data = await res.json();
+    console.log('⬅️ Odgovor:', data);
 
-        if (!res.ok) {
-            throw new Error(data.message || 'Prijava ni uspela');
-        }
-        return data;
-    } catch (err) {
-        console.error('❌ Napaka pri prijavi:', err.message);
-        throw err;
+    if (!res.ok) {
+      throw new Error(data.message || 'Prijava ni uspela');
     }
+    return data;
+  } catch (err) {
+    console.error('❌ Napaka pri prijavi:', err.message);
+    throw err;
+  }
 };
 
-// Nova funkcija za odjavo
 export const logoutUser = async (email, deviceId) => {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/logout`, {
@@ -54,7 +50,7 @@ export const logoutUser = async (email, deviceId) => {
   }
 };
 
-export const registerUser = async (username ,email, password) => {
+export const registerUser = async (username, email, password) => {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
@@ -69,6 +65,38 @@ export const registerUser = async (username ,email, password) => {
     return data;
   } catch (err) {
     console.error('❌ Napaka pri registraciji:', err.message);
+    throw err;
+  }
+};
+
+export const check2FAStatus = async (email) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/2fa/status?email=${encodeURIComponent(email)}`);
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Napaka pri preverjanju 2FA statusa');
+    }
+    return data;
+  } catch (err) {
+    console.error('❌ Napaka pri preverjanju 2FA:', err.message);
+    throw err;
+  }
+};
+
+export const complete2FA = async (email) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/2fa/complete-2fa`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Napaka pri dokončanju 2FA');
+    }
+    return data;
+  } catch (err) {
+    console.error('❌ Napaka pri dokončanju 2FA:', err.message);
     throw err;
   }
 };
@@ -104,9 +132,6 @@ export const preprocessImage = async (photoUri) => {
     const res = await fetch(`${CAMERA_API_URL}/preprocess`, {
       method: 'POST',
       body: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
     });
 
     const data = await res.json();
@@ -120,8 +145,6 @@ export const preprocessImage = async (photoUri) => {
   }
 };
 
-
-
 export const uploadFaceImage = async (uri, email) => {
   const formData = new FormData();
   formData.append('image', {
@@ -131,17 +154,12 @@ export const uploadFaceImage = async (uri, email) => {
   });
   formData.append('email', email);
 
-  const res = await fetch('https://prehranko-production.up.railway.app/api/upload-face-image', {
+  const res = await fetch(`${API_BASE_URL}/upload-face-image`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
     body: formData,
   });
 
-  // 👉 najprej preverimo, če je sploh JSON
   const text = await res.text();
-
   if (!res.ok) {
     console.error('❌ Server returned HTML or error text:', text.slice(0, 100));
     throw new Error('Strežnik vrnil napako: ' + text.slice(0, 100));
@@ -154,7 +172,6 @@ export const uploadFaceImage = async (uri, email) => {
   }
 };
 
-
 export const uploadFaceImagesForRegistration = async (photoUris, email) => {
   try {
     const formData = new FormData();
@@ -162,7 +179,7 @@ export const uploadFaceImagesForRegistration = async (photoUris, email) => {
       formData.append('images', {
         uri,
         name: `photo${i + 1}.jpg`,
-        type: 'image/jpeg'
+        type: 'image/jpeg',
       });
     });
     formData.append('email', email);
@@ -170,18 +187,15 @@ export const uploadFaceImagesForRegistration = async (photoUris, email) => {
     const res = await fetch(`${CAMERA_API_URL}/register`, {
       method: 'POST',
       body: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
     });
 
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.message || 'Napaka pri registraciji obraznih značilk');
     }
-    return data; // pričakujemo { features: [...] }
+    return data;
   } catch (err) {
-    console.error('❌ Napaka pri nalaganju značilk:', err);
+    console.error('❌ Napaka pri nalaganju značilk:', err.message);
     throw err;
   }
 };
@@ -190,10 +204,8 @@ export const saveFeaturesToBackend = async (email, features) => {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/save-features`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email, features })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, features }),
     });
 
     const data = await res.json();
@@ -202,12 +214,7 @@ export const saveFeaturesToBackend = async (email, features) => {
     }
     return data;
   } catch (err) {
-    console.error('❌ Napaka pri shranjevanju značilk:', err);
+    console.error('❌ Napaka pri shranjevanju značilk:', err.message);
     throw err;
   }
 };
-
-
-
-
-
