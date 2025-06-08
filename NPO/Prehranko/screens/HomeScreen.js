@@ -16,6 +16,7 @@ const DATA = [
 ];
 
 export default function HomeScreen({ navigation, route }) {
+  const [username, setUsername] = useState(null);
   const [userEmail, setUserEmail] = useState(route.params?.email || null);
   const [pending2FA, setPending2FA] = useState(false);
   const [caloricGoal, setCaloricGoal] = useState(null);
@@ -32,6 +33,15 @@ export default function HomeScreen({ navigation, route }) {
       console.error('Napaka pri branju e-pošte iz AsyncStorage:', err.message);
     }
   };
+
+  const fetchUsername = async () => {
+  try {
+    const usernameFromStorage = await AsyncStorage.getItem('username');
+    if (usernameFromStorage) setUsername(usernameFromStorage); // <-- PRAVILNO
+  } catch (err) {
+    console.error('Napaka pri branju uporabniškega imena iz AsyncStorage:', err.message);
+  }
+};
 
   const pollFor2FA = () => {
     const interval = setInterval(async () => {
@@ -159,10 +169,15 @@ const fetchVsiObroki = async () => {
     }
   };
 
-  // Ob zagonu
-  useEffect(() => {
-    fetchEmail();
-  }, []);
+   useEffect(() => {
+  if (route.params?.username) {
+    setUsername(route.params.username);
+  } else {
+    fetchUsername(); // prebere iz AsyncStorage
+  }
+
+  fetchEmail();
+}, []);
 
   useEffect(() => {
     if (userEmail) {
@@ -207,7 +222,7 @@ const fetchVsiObroki = async () => {
         <Text style={homeStyles.settingsIcon}>⚙️</Text>
       </TouchableOpacity>
     </View>
-    <Text style={homeStyles.userName}>Pozdravljen, {userEmail || 'Uporabnik'}!</Text>
+    <Text style={homeStyles.userName}>Pozdravljen, {username || 'Uporabnik'}!</Text>
 
     {pending2FA && (
       <Text style={{ color: 'red', marginTop: 10 }}>
