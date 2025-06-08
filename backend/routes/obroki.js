@@ -120,10 +120,20 @@ obrok.name = foodData.foodName || 'Neznan obrok';
 
 await obrok.save();
 
-const msg = `${obrok.userEmail} : ${obrok.name} : ${obrok.calories} kcal : ${obrok.protein} g beljakovin  Latituda: ${obrok.locY.toFixed(3)} Longituda: ${obrok.locX.toFixed(3)}`;
+const msg = {
+  obrokId: obrok.obrokId,
+  userEmail: obrok.userEmail,
+  name: obrok.name,
+  calories: obrok.calories,
+  protein: obrok.protein,
+  locX: obrok.locX,
+  locY: obrok.locY,
+  timestamp: obrok.timestamp,
+  imgLink: obrok.imgLink,
+}
 
     if (mqttClient.connected) {
-      mqttClient.publish(MQTT_TOPIC, msg, { qos: 1 }, (err) => {
+      mqttClient.publish(MQTT_TOPIC, JSON.stringify(msg), { qos: 1 }, (err) => {
         if (err) {
           console.error('❌ Napaka pri pošiljanju MQTT sporočila:', err.message);
         } else {
