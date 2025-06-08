@@ -60,11 +60,7 @@ client.on('message', async (topic, message) => {
         return;
       }
 
-      if (user.pending2FA) {
-        console.log(`ℹ User ${email} already has pending2FA set to true`);
-        return;
-      }
-
+      // Vedno posodobi stanje za novo 2FA zahtevo
       user.pending2FA = true;
       user.pending2FAExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minut
       await user.save();
