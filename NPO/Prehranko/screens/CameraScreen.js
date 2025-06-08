@@ -1,5 +1,4 @@
-// CameraScreen.js
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, Image, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import AuthButton from '../components/AuthButton';
@@ -8,7 +7,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { API_BASE_URL, CAMERA_API_URL } from '../services/api';
 
 export default function CameraScreen({ navigation, route }) {
-  const { email, mode = 'register', onComplete } = route.params || {};
+  const { email, mode = 'register' } = route.params || {};
   const cameraRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [image, setImage] = useState(null);
@@ -82,8 +81,9 @@ export default function CameraScreen({ navigation, route }) {
       console.log('💾 Rezultat shranjevanja:', uploadResult);
 
       Alert.alert('Uspeh', 'Značilke uspešno pridobljene in shranjene.');
+      navigation.goBack();
     } catch (err) {
-      console.error('❌ Napaka:', err);
+      console.error('❌ Napaka:', err.message);
       Alert.alert('Napaka', err.message || 'Napaka pri pridobivanju značilk');
     } finally {
       setLoading(false);
@@ -109,9 +109,6 @@ export default function CameraScreen({ navigation, route }) {
       const res = await fetch(`${CAMERA_API_URL}/api/auth/verify`, {
         method: 'POST',
         body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
       });
 
       const text = await res.text();
@@ -127,18 +124,13 @@ export default function CameraScreen({ navigation, route }) {
       if (data.success) {
         Alert.alert('✅ Preverjanje uspešno!');
         console.log('Similarity:', data.similarity);
-        await fetch(`${API_BASE_URL}/auth/complete-2fa`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-        });
-        if (onComplete) onComplete(); // Pokliči callback, če obstaja
+        navigation.goBack(); // Vrnitev na FaceVerificationScreen
       } else {
         Alert.alert('❌ Obraz se ne ujema.');
         console.log('Similarity:', data.similarity);
       }
     } catch (err) {
-      console.error('❌ Napaka:', err);
+      console.error('❌ Napaka:', err.message);
       Alert.alert('Napaka pri preverjanju', err.message || 'Napaka pri pošiljanju slike');
     } finally {
       setLoading(false);
