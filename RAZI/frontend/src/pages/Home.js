@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility';
 import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
 import '../styles.css';
-import { getAllObroki } from '../api/obroki';
+import { getAllObroki, getLastObrok} from '../api/obroki';
 import { getUserByEmail } from '../api/auth';
 import L from 'leaflet';
 
@@ -66,21 +66,22 @@ const Home = () => {
         fetchObroki();
     }, []);
 
-    useEffect(() => {
-    const fetchZadnjiObrok = async () => {
-        try {
-            const res = await fetch('/api/obroki/last');
-            const data = await res.json();
-            console.log("📡 Fetch zadnjega obroka:", data.obrok);
+        useEffect(() => {
+        const fetchZadnjiObrok = async () => {
+            try {
+            const data = await getLastObrok();
+            console.log("📡 Zadnji obrok:", data.obrok);
             setZadnjiObrok(data.obrok);
-        } catch (err) {
+            } catch (err) {
             console.error("Napaka pri nalaganju zadnjega obroka:", err);
-        }
-    };
-        fetchZadnjiObrok(); // prvič
-        const interval = setInterval(fetchZadnjiObrok, 5000); // nato vsakih 5s
-        return () => clearInterval(interval); // čiščenje
-    }, []);
+            }
+        };
+
+        fetchZadnjiObrok();
+        const interval = setInterval(fetchZadnjiObrok, 5000);
+        return () => clearInterval(interval);
+        }, []);
+
 
 
     const now = new Date();
