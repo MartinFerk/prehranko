@@ -3,12 +3,30 @@ const router = express.Router();
 const Obrok = require('../models/Obrok');
 require('dotenv').config();
 
+const mqtt = require('mqtt');
+const MQTT_URL = 'mqtt://prehrankomosquitto.railway.internal:1883';
+const MQTT_TOPIC = 'prehranko/obroki';
+
 // ✅ Novi način uvoza za openai v4
 const OpenAI = require('openai');
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+const mqttClient = mqtt.connect(MQTT_URL, {
+  clientId: `api_${Math.random().toString(16).slice(2, 8)}`,
+  clean: true,
+  connectTimeout: 4000,
+  reconnectPeriod: 5000,
+});
+
+mqttClient.on('connect', () => {
+  console.log('📡 MQTT client connected from obroki route');
+});
+
+mqttClient.on('error', (err) => {
+  console.error('❌ MQTT error:', err.message);
+});
 
 // ✅ Novi način uvoza za openai v4
 // GET /api/obroki
@@ -104,6 +122,19 @@ router.post('/analyze-food', async (req, res) => {
     );
 
     if (!updated) return res.status(404).json({ error: 'Obrok ni najden' });
+    const msg = `${updated.userEmail} : ${updated.name} : ${updated.calories} kcal : ${updated.protein} g beljakovin`;
+
+    if (mqttClient.connected) {
+      mqttClient.publish(MQTT_TOPIC, msg, { qos: 1 }, (err) => {
+        if (err) {
+          console.error('❌ Napaka pri pošiljanju MQTT sporočila:', err.message);
+        } else {
+          console.log('✅ MQTT sporočilo poslano:', msg);
+        }
+      });
+    } else {
+      console.warn('⚠️ MQTT client ni povezan - sporočilo NI poslano');
+  }
 
     res.json({ success: true, obrok: updated });
   } catch (err) {

@@ -6,6 +6,7 @@ const User = require('./models/User');
 
 const MQTT_URL = 'mqtt://prehrankomosquitto.railway.internal:1883';
 const TOPIC = 'prehranko/activities';
+const OBROKI_TOPIC = 'prehranko/obroki';
 
 console.log('🚀 Starting MQTT Listener...');
 console.log('📡 Connecting to internal broker at:', MQTT_URL);
@@ -30,6 +31,18 @@ client.on('connect', async () => {
     }
   });
 
+  client.subscribe(OBROKI_TOPIC, (err) => {
+  if (!err) {
+    console.log(`🛎️ Subscribed to ${OBROKI_TOPIC}`);
+  }
+  });
+
+  client.on('message', (topic, message) => {
+  if (topic === OBROKI_TOPIC) {
+    console.log('📥 Prejet obrok (MQTT):', message.toString());
+    // Lahko shraniš ali dodatno obdelaš podatke tukaj
+  }
+  });
   // Periodični izpis števila aktivnih naprav
   setInterval(async () => {
     console.log('🔍 Checking MQTT connection status:', client.connected);
