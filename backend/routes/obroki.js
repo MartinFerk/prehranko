@@ -111,20 +111,16 @@ router.post('/analyze-food', async (req, res) => {
       return res.status(400).json({ error: 'Na sliki ni hrane ali ni prepoznavna.' });
     }
 
-    const updated = await Obrok.findOneAndUpdate(
-      { obrokId },
-      {
-        calories: foodData.calories || 0,
-        protein: foodData.protein || 0,
-        name: foodData.foodName || 'Neznan obrok',
-        locX: foodData.locX || 0,
-        locY: foodData.locY || 0
-      },
-      { new: true }
-    );
+    const obrok = await Obrok.findOne({ obrokId });
+if (!obrok) return res.status(404).json({ error: 'Obrok ni najden' });
 
-    if (!updated) return res.status(404).json({ error: 'Obrok ni najden' });
-    const msg = `${updated.userEmail} : ${updated.name} : ${updated.calories} kcal : ${updated.protein} g beljakovin  Latituda: ${updated.locY} Longituda: ${updated.locX}`;
+obrok.calories = foodData.calories || 0;
+obrok.protein = foodData.protein || 0;
+obrok.name = foodData.foodName || 'Neznan obrok';
+
+await obrok.save();
+
+const msg = `${obrok.userEmail} : ${obrok.name} : ${obrok.calories} kcal : ${obrok.protein} g beljakovin  Latituda: ${obrok.locY} Longituda: ${obrok.locX}`;
 
     if (mqttClient.connected) {
       mqttClient.publish(MQTT_TOPIC, msg, { qos: 1 }, (err) => {
@@ -138,7 +134,7 @@ router.post('/analyze-food', async (req, res) => {
       console.warn('⚠️ MQTT client ni povezan - sporočilo NI poslano');
   }
 
-    res.json({ success: true, obrok: updated });
+    res.json({ success: true, obrok });
   } catch (err) {
     console.error('Napaka pri analizi hrane:', err.message);
     res.status(500).json({ error: 'Napaka pri analizi hrane' });
