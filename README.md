@@ -18,7 +18,7 @@
   Možnost nastavitve dnevnega cilja za kalorije in beljakovine.
 
 - 🔒 **2FA preverjanje**  
-  Ob vsakem prijavnem poskusu mora uporabnik opraviti prepoznavo obraza.
+  Ob prijavi v spletno aplikacijo mora uporabnik opraviti prepoznavo obraza na mobilni napravi.
 
 - 🗑️ **Odstranitev obroka**  
   Po želji lahko uporabnik izbriše poljuben vpis iz sistema.
