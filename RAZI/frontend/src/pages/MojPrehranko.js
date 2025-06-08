@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import '../styles.css';
+import { getUserByEmail } from '../api/auth';
 import { getAllObroki } from '../api/obroki';
 import {
     LineChart,
@@ -42,8 +43,10 @@ const MojPrehranko = () => {
                 setTodayCalories(caloriesSum);
                 setTodayProtein(proteinSum);
 
-                const caloricGoal = parseInt(localStorage.getItem('caloricGoal'));
-                const proteinGoal = parseInt(localStorage.getItem('proteinGoal'));
+                const userData = await getUserByEmail(userEmail);
+                const caloricGoal = parseInt(userData.user.caloricGoal);
+                const proteinGoal = parseInt(userData.user.proteinGoal);
+
                 setGoals({
                     calories: isNaN(caloricGoal) ? 2000 : caloricGoal,
                     protein: isNaN(proteinGoal) ? 100 : proteinGoal,
@@ -97,7 +100,6 @@ const MojPrehranko = () => {
 
     return (
         <div className="container">
-            <h1 className="title">Moj Prehranko</h1>
             <div className="progress-section">
                 <h2>Dnevni pregled</h2>
                 <div className="progress-row">

@@ -57,13 +57,23 @@ export default function LoginScreen({ navigation }) {
       console.log('➡️ Poskušam se prijaviti z:', { email, password, deviceId, deviceName: Device.deviceName || 'Unknown Device', clientId });
 
       const result = await loginUser(email, password, deviceId, Device.deviceName || 'Unknown Device', clientId);
-
+      if (result.user?.username) {
+  await AsyncStorage.setItem('username', result.user.username);
+  navigation.navigate('Home', {
+    email: result.user.email,
+    userId: result.user._id,
+    username: result.user.username,
+  });
+} else {
+  console.warn("⚠️ Uporabniško ime ni bilo vrnjeno s strežnika.");
+}
+      
       console.log('⬅️ Odgovor:', result);
       console.log('🐞 DEBUG rezultat:', JSON.stringify(result, null, 2));
 
       Alert.alert('Uspeh', 'Prijava uspešna!');
 
-      navigation.navigate('Home', { email, userId: result.userId });
+      
 
     } catch (err) {
       Alert.alert('Napaka', err.message || 'Napaka pri povezavi s strežnikom');
