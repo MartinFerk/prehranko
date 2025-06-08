@@ -1,0 +1,13 @@
+diff --git a/node_modules/react-native-mqtt/android/build.gradle b/node_modules/react-native-mqtt/android/build.gradle
+index 7673991..24fac7f 100644
+--- a/node_modules/react-native-mqtt/android/build.gradle
++++ b/node_modules/react-native-mqtt/android/build.gradle
+@@ -33,7 +33,7 @@ repositories {
+ }
+ 
+ dependencies {
+-  compile 'com.facebook.react:react-native:0.19.+'
++  implementation 'com.facebook.react:react-native:0.19.+'
+   compile('org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.0.2') {
+       exclude module: 'support-v4'
+   }

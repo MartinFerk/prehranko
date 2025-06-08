@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "5e736558-b17c-441c-bb58-061b68e1b5be"
+      }
+    },
+    "android": {
+      "package": "com.martinferk.prehranko"
+    }
+  }
+}
