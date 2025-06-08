@@ -37,9 +37,11 @@ import { useEffect } from 'react';
            console.log(`📨 Received on ${topic}:`, message.toString());
            if (topic === `2fa/request/${email}`) {
              const data = JSON.parse(message.toString());
-             if (data.pending2FA) {
-               console.log('🔔 2FA zahteva za', email, 'sprožena, navigacija na FaceVerificationScreen');
+             if (data.pending2FA && data.from === 'web') {
+               console.log('🔔 2FA zahteva iz spleta za', email, '— navigacija na FaceVerificationScreen');
                navigation.navigate('FaceVerificationScreen', { email });
+             } else {
+               console.log('ℹ️ 2FA zahteva ignorirana — ni prišla iz web:', data.from);
              }
            }
          });
