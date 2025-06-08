@@ -47,11 +47,11 @@ def custom_augment(img):
     if random.random() > 0.5:
         img_np = flip_horizontal(img_np)
     if random.random() > 0.5:
-        img_np = adjust_brightness(img_np, factor=random.uniform(0.7, 1.3))
+        img_np = adjust_brightness(img_np, factor=random.uniform(0.9, 1.1))
     if random.random() > 0.5:
-        img_np = adjust_contrast(img_np, factor=random.uniform(0.8, 1.5))
+        img_np = adjust_contrast(img_np, factor=random.uniform(0.9, 1.1))
     if random.random() > 0.5:
-        img_np = add_noise(img_np, std=random.randint(5, 15))
+        img_np = add_noise(img_np, std=random.randint(1, 5))
 
     return Image.fromarray(img_np.astype(np.uint8))
 
@@ -107,7 +107,7 @@ class TripletLoss(nn.Module):
         return self.loss_fn(anchor, positive, negative)
 
 # === Model ===
-resnet = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+resnet = models.resnet50(weights=None)
 resnet.fc = nn.Identity()
 model = resnet.to(device)
 

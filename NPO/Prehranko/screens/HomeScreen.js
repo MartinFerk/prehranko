@@ -205,14 +205,18 @@ const fetchVsiObroki = async () => {
       navigation.navigate('CaptureFoodScreen', { email: userEmail });
     };
 
-    const renderObrokItem = ({ item }) => (
+    const renderObrokItem = ({ item }) => {  
+    return (
     <View style={{ marginTop: 10 }}>
       <Text style={{ fontWeight: 'bold' }}>{item.name}</Text>
       <Text>Kalorije: {item.calories} kcal </Text>
       <Text>Beljakovine: {item.protein} g</Text>
-      <Text>Datum: {moment(item.timestamp).format('DD.MM.YYYY HH:mm')}</Text> {/* Dodan datum */}
+      <Text style={{ fontSize: 14, color: theme.colors.text }}>
+            Datum: {moment(item.timestamp).format('DD.MM.YYYY HH:mm')}
+      </Text>
     </View>
   );
+};
 
   return (
   <View style={homeStyles.container}>
@@ -239,7 +243,7 @@ const fetchVsiObroki = async () => {
           <FlatList
             data={vsiObroki}
             renderItem={renderObrokItem}
-            keyExtractor={(item) => item.obrokId}
+            keyExtractor={(item) => String(item.obrokId)}
             style={{ marginTop: 2 }}
           />
         ) : (
