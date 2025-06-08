@@ -71,8 +71,15 @@ export const registerUser = async (username, email, password) => {
 
 export const check2FAStatus = async (email) => {
   try {
-    const res = await fetch(`${API_BASE_URL}/2fa/check-2fa?email=${encodeURIComponent(email)}`);
-    const data = await res.json();
+    const res = await fetch(`${API_BASE_URL}/2fa/status?email=${encodeURIComponent(email)}`);
+    const text = await res.text();
+
+    if (!res.ok) {
+      console.error('❌ Backend napaka:', res.status, text);
+      throw new Error('Backend napaka pri statusu');
+    }
+
+    const data = JSON.parse(text);
     return {
       pending2FA: data.pending2FA || false,
       is2faVerified: data.is2faVerified || false,
@@ -83,6 +90,7 @@ export const check2FAStatus = async (email) => {
     throw err;
   }
 };
+
 
 export const complete2FA = async (email) => {
   try {
