@@ -33,13 +33,15 @@ client.on('connect', async () => {
     }
   });
 
-  client.subscribe(OBROKI_TOPIC, (err) => {
-    if (!err) {
-      console.log(`🛎️ Subscribed to ${OBROKI_TOPIC}`);
-    } else {
-      console.error('❌ Error subscribing to OBROKI_TOPIC:', err.message);
-    }
-  });
+ if (topic === OBROKI_TOPIC) {
+  try {
+    const parsed = JSON.parse(msg);
+    console.log('📥 Prejet obrok (MQTT):', parsed);
+    zadnjiObrok = parsed;
+  } catch (err) {
+    console.error("❌ Napaka pri razčlenjevanju JSON obroka:", err.message);
+  }
+}
 
   client.on('message', (topic, message) => {
     const msg = message.toString();
