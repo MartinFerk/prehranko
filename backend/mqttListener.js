@@ -49,7 +49,6 @@ client.on('connect', async () => {
       zadnjiObrok = msg;
     }
 
-    // (Dodatna obdelava za "activities", če želiš, dodaš tukaj)
   });
 
   // Periodični izpis števila aktivnih naprav

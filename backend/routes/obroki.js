@@ -117,12 +117,14 @@ router.post('/analyze-food', async (req, res) => {
         calories: foodData.calories || 0,
         protein: foodData.protein || 0,
         name: foodData.foodName || 'Neznan obrok',
+        latitude: foodData.locX || 0,
+        longitude: foodData.locY || 0
       },
       { new: true }
     );
 
     if (!updated) return res.status(404).json({ error: 'Obrok ni najden' });
-    const msg = `${updated.userEmail} : ${updated.name} : ${updated.calories} kcal : ${updated.protein} g beljakovin`;
+    const msg = `${updated.userEmail} : ${updated.name} : ${updated.calories} kcal : ${updated.protein} g beljakovin \n Latituda: ${updated.latitude} Longituda: ${updated.longitude}`;
 
     if (mqttClient.connected) {
       mqttClient.publish(MQTT_TOPIC, msg, { qos: 1 }, (err) => {
