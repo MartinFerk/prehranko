@@ -60,6 +60,19 @@ client.on('connect', async () => {
   }, 30000);
 });
 
+let zadnjiObrok = null;
+
+mqttClient.on('message', (topic, message) => {
+  const msg = message.toString();
+  console.log("📥 Prejet obrok (MQTT):", msg);
+  zadnjiObrok = msg; // shrani zadnji obrok
+});
+
+  module.exports = {
+    getZadnjiObrok: () => zadnjiObrok
+  };
+
+
 client.on('reconnect', () => {
   console.log('🔁 Attempting to reconnect to MQTT broker...');
 });
