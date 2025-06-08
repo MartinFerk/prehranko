@@ -138,14 +138,14 @@ export default function HomeScreen({ navigation, route }) {
   };
 
   return (
-    <View style={homeStyles.container}>
-      <View style={homeStyles.header}>
-        <Text style={homeStyles.appName}>Prehranko</Text>
-        <TouchableOpacity style={homeStyles.settingsButton} onPress={handleSettingsPress}>
-          <Text style={homeStyles.settingsIcon}>⚙️</Text>
-        </TouchableOpacity>
-      </View>
-      <Text style={homeStyles.userName}>Pozdravljen, {userEmail || 'Uporabnik'}!</Text>
+  <View style={homeStyles.container}>
+    <View style={homeStyles.header}>
+      <Text style={homeStyles.appName}>Prehranko</Text>
+      <TouchableOpacity style={homeStyles.settingsButton} onPress={handleSettingsPress}>
+        <Text style={homeStyles.settingsIcon}>⚙️</Text>
+      </TouchableOpacity>
+    </View>
+    <Text style={homeStyles.userName}>Pozdravljen, {userEmail || 'Uporabnik'}!</Text>
 
       {pending2FA && (
         <Text style={{ color: 'red', marginTop: 10 }}>
