@@ -30,6 +30,7 @@ client.on('connect', async () => {
     }
   });
 
+  // Vsakih 30 sekund preverimo število aktivnih naprav
   setInterval(async () => {
     console.log('🔍 Checking MQTT connection status:', client.connected);
     try {
@@ -51,13 +52,14 @@ client.on('message', async (topic, message) => {
     const data = JSON.parse(message.toString());
     console.log(`📨 Received message on topic ${topic}:`, data);
 
-    if (topic.startsWith('2fa/request/')) {
-      const email = topic.split('/').pop();
-      console.log(`ℹ 2FA request received for ${email}, no action taken (handled by auth)`);
-    } else if (topic === ACTIVITY_TOPIC) {
+    if (topic === ACTIVITY_TOPIC) {
       const activity = new Activity(data);
       await activity.save();
-      console.log(`✅ Saved activity: ${data.type}`);
+      console.log(`✅ Saved activity: ${data.type || 'unknown'}`);
+    } else if (topic.startsWith('2fa/request/')) {
+      // Brez akcije – to obravnava mobilna aplikacija prek MQTTListener.js
+      const email = topic.split('/').pop();
+      console.log(`ℹ️ 2FA request message received for ${email}, ignored by backend`);
     }
   } catch (err) {
     console.error('❌ Error processing MQTT message:', err.message);
@@ -72,8 +74,8 @@ client.on('close', async () => {
   console.log('🔌 MQTT connection closed');
   try {
     await User.updateMany(
-      { 'devices.isConnected': true },
-      { $set: { 'devices.$[].isConnected': false } }
+        { 'devices.isConnected': true },
+        { $set: { 'devices.$[].isConnected': false } }
     );
     console.log('✅ Updated all devices to disconnected');
   } catch (err) {
@@ -96,9 +98,10 @@ mongoose.connection.on('error', (err) => {
   console.error('❌ MongoDB connection error:', err.message);
 });
 
+// 🔐 Objavi 2FA zahtevo za mobilno aplikacijo
 const publish2FARequest = (email) => {
   const topic = `2fa/request/${email}`;
-  const message = JSON.stringify({ email, pending2FA: true, from: "web" });
+  const message = JSON.stringify({ email, pending2FA: true, from: 'web' });
 
   client.publish(topic, message, { qos: 1 }, (err) => {
     if (err) {

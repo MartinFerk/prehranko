@@ -71,7 +71,7 @@ export const registerUser = async (username, email, password) => {
 
 export const check2FAStatus = async (email) => {
   try {
-    const res = await fetch(`${API_BASE_URL}/2fa/status?email=${encodeURIComponent(email)}`);
+    const res = await fetch(`${API_BASE_URL}/2fa/check-2fa?email=${encodeURIComponent(email)}`);
     const data = await res.json();
     return {
       pending2FA: data.pending2FA || false,
