@@ -12,12 +12,14 @@ console.log('🚀 Starting MQTT Listener...');
 console.log('📡 Connecting to internal broker at:', MQTT_URL);
 
 const client = mqtt.connect(MQTT_URL, {
-  connectTimeout: 30000, // Povečamo na 30 sekund
+  connectTimeout: 30000,
   clientId: `backend_${Math.random().toString(16).slice(2, 8)}`,
   clean: true,
-  reconnectPeriod: 5000, // Poskus ponovne povezave vsakih 5 sekund
-  keepalive: 60, // Keepalive interval
+  reconnectPeriod: 5000,
+  keepalive: 60,
 });
+
+let zadnjiObrok = null;
 
 client.on('connect', async () => {
   console.log('✅ MQTT connection established');
@@ -32,17 +34,24 @@ client.on('connect', async () => {
   });
 
   client.subscribe(OBROKI_TOPIC, (err) => {
-  if (!err) {
-    console.log(`🛎️ Subscribed to ${OBROKI_TOPIC}`);
-  }
+    if (!err) {
+      console.log(`🛎️ Subscribed to ${OBROKI_TOPIC}`);
+    } else {
+      console.error('❌ Error subscribing to OBROKI_TOPIC:', err.message);
+    }
   });
 
   client.on('message', (topic, message) => {
-  if (topic === OBROKI_TOPIC) {
-    console.log('📥 Prejet obrok (MQTT):', message.toString());
-    // Lahko shraniš ali dodatno obdelaš podatke tukaj
-  }
+    const msg = message.toString();
+
+    if (topic === OBROKI_TOPIC) {
+      console.log('📥 Prejet obrok (MQTT):', msg);
+      zadnjiObrok = msg;
+    }
+
+    // (Dodatna obdelava za "activities", če želiš, dodaš tukaj)
   });
+
   // Periodični izpis števila aktivnih naprav
   setInterval(async () => {
     console.log('🔍 Checking MQTT connection status:', client.connected);
@@ -60,18 +69,10 @@ client.on('connect', async () => {
   }, 30000);
 });
 
-let zadnjiObrok = null;
-
-mqttClient.on('message', (topic, message) => {
-  const msg = message.toString();
-  console.log("📥 Prejet obrok (MQTT):", msg);
-  zadnjiObrok = msg; // shrani zadnji obrok
-});
-
-  module.exports = {
-    getZadnjiObrok: () => zadnjiObrok
-  };
-
+// Export zadnjega obroka
+module.exports = {
+  getZadnjiObrok: () => zadnjiObrok,
+};
 
 client.on('reconnect', () => {
   console.log('🔁 Attempting to reconnect to MQTT broker...');
@@ -98,10 +99,11 @@ client.on('offline', () => {
   console.log('⚠️ MQTT client went offline');
 });
 
-// Testna povezava z MongoDB ob zagonu
+// MongoDB log
 mongoose.connection.on('connected', () => {
   console.log('✅ Connected to MongoDB');
 });
+
 mongoose.connection.on('error', (err) => {
   console.error('❌ MongoDB connection error:', err.message);
 });
