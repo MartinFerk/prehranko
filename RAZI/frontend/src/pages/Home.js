@@ -112,7 +112,7 @@ const Home = () => {
                 </div>
             )}
 
-            {zadnjiObrok && typeof zadnjiObrok === 'object' && (
+  {zadnjiObrok && typeof zadnjiObrok === 'object' && (
   <div className="latest-obrok">
     <h3>🆕 Nedavno dodan obrok:</h3>
     <p><strong>Ime:</strong> {zadnjiObrok.name}</p>
