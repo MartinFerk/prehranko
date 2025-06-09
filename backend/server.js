@@ -208,8 +208,8 @@ app.get('/api/goals/get', async (req, res) => {
 
 // Zagon strežnika
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`📡 Strežnik posluša na portu ${PORT}`);
 });
 
-module.exports = app;
+module.exports = { app, server };
