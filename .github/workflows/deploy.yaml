@@ -1,4 +1,4 @@
-name: Build and Push Docker Images (Matrix)
+name: Build, Test and Push Docker Images
 
 on:
   push:
@@ -6,6 +6,37 @@ on:
       - main
 
 jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo
+        ports:
+          - 27017:27017
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm install
+
+      - name: Run backend tests
+        run: |
+          cd backend
+          npm test
+        env:
+          MONGO_URI: mongodb://localhost:27017/prehranko_test
+          OPENAI_API_KEY: dummy_key_for_testing
+
   test-orv:
     runs-on: ubuntu-latest
 
@@ -29,7 +60,7 @@ jobs:
           pytest tests
 
   build-and-push:
-    needs: test-orv  # 🧪 Začne se šele po uspešnih testih
+    needs: [test-backend, test-orv]  # Čaka na oba testa
     runs-on: ubuntu-latest
 
     strategy:
