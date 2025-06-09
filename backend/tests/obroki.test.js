@@ -1,11 +1,19 @@
 jest.setTimeout(20000);
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../server'); // poskrbi, da je to pravilna pot
+const { app, server } = require('../server'); // poskrbi, da je to pravilna pot
 const Obrok = require('../models/Obrok');
 
 beforeAll(async () => {
-  await mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+  await mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  });
+
+  // Izbriši obstoječe z istim obrokId
+  await Obrok.deleteMany({ obrokId: 'test-obrok-id' });
+
+  // Dodaj testni obrok
   await Obrok.create({
     obrokId: 'test-obrok-id',
     userEmail: 'test@example.com',
@@ -16,8 +24,10 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await Obrok.deleteMany({});
   await mongoose.connection.close();
+  if (server && server.close) {
+    server.close();
+  }
 });
 
 describe('API testi - Obroki', () => {
