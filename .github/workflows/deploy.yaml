@@ -1,4 +1,4 @@
-name: Build, Test and Push Docker Images
+name: Build and Push Docker Images (Matrix)
 
 on:
   push:
@@ -6,40 +6,30 @@ on:
       - main
 
 jobs:
-  test-backend:
+  test-orv:
     runs-on: ubuntu-latest
 
-    services:
-      mongo:
-        image: mongo
-        ports:
-          - 27017:27017
-
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          node-version: 18
-          
+          python-version: "3.10"
 
       - name: Install dependencies
         run: |
-          cd backend
-          npm install
+          pip install -r ORV/requirements.txt
+          pip install pytest gdown
 
-      - name: Run backend tests
+      - name: Run ORV tests
         run: |
-          cd backend
-          npm test
-        env:
-          MONGO_URI: mongodb://localhost:27017/prehranko_test
-          OPENAI_API_KEY: dummy_key_for_testing
+          cd ORV
+          pytest tests
 
   build-and-push:
-    needs: test-backend  # 🧪 Izvede se šele po uspešnih testih
+    needs: test-orv  # 🧪 Začne se šele po uspešnih testih
     runs-on: ubuntu-latest
 
     strategy:
