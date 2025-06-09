@@ -27,7 +27,7 @@ const Home = () => {
 
   const userEmail = localStorage.getItem('userEmail');
   const isLoggedIn = localStorage.getItem('loggedIn') === 'true';
-    /*
+
   useEffect(() => {
     if (!isLoggedIn || !userEmail) {
       alert('⚠️ Nisi prijavljen – preusmerjam na prijavo.');
@@ -47,7 +47,7 @@ const Home = () => {
 
     fetchUserName();
   }, [isLoggedIn, userEmail, navigate]);
-*/
+  
   useEffect(() => {
     const fetchObroki = async () => {
       try {
