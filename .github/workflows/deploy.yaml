@@ -1,0 +1,54 @@
+name: Build and Push Docker Images (Matrix)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        component:
+          - name: backend
+            context: .
+            dockerfile: ./Dockerfile
+            tag: martinferk/prehranko-backend:latest
+
+          - name: mqtt-backend
+            context: ./NPO/MQTT
+            dockerfile: ./NPO/MQTT/Dockerfile
+            tag: martinferk/prehranko-mqtt-backend:latest
+
+          - name: orv
+            context: ./ORV
+            dockerfile: ./ORV/Dockerfile
+            tag: martinferk/prehranko-orv:latest
+
+          - name: frontend
+            context: ./RAZI/frontend
+            dockerfile: ./RAZI/frontend/Dockerfile
+            tag: martinferk/prehranko-frontend:latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push ${{ matrix.component.name }}
+      uses: docker/build-push-action@v5
+      with:
+        context: ${{ matrix.component.context }}
+        file: ${{ matrix.component.dockerfile }}
+        push: true
+        tags: ${{ matrix.component.tag }}
