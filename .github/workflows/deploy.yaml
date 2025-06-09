@@ -59,8 +59,30 @@ jobs:
           cd ORV
           pytest tests
 
+  test-frontend:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: RAZI/frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Run frontend tests
+        run: npm test -- --watchAll=false
+
   build-and-push:
-    needs: [test-backend, test-orv]  # Čaka na oba testa
+    needs: [test-backend, test-orv, test-frontend]  # Čaka na vse tri teste
     runs-on: ubuntu-latest
 
     strategy:
