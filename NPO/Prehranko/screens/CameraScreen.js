@@ -84,6 +84,7 @@ if (!res.ok || !data.embeddings) {
       console.log('💾 Rezultat shranjevanja:', uploadResult);
 
       Alert.alert('Uspeh', 'Značilke uspešno pridobljene in shranjene.');
+      navigation.goBack();
     } catch (err) {
       console.error('❌ Napaka:', err);
       Alert.alert('Napaka', err.message || 'Napaka pri pridobivanju značilk');
