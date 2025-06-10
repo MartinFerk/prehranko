@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import '../styles.css';
 import { getUserByEmail } from '../api/auth';
+import { useNavigate } from 'react-router-dom';
 import { getAllObroki } from '../api/obroki';
 import {
     LineChart,
