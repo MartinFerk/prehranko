@@ -19,6 +19,7 @@ const MojPrehranko = () => {
     const [todayProtein, setTodayProtein] = useState(0);
     const [goals, setGoals] = useState({ calories: 2000, protein: 100 });
     const [weeklyStats, setWeeklyStats] = useState([]);
+    const navigate = useNavigate();
 
     const userEmail = localStorage.getItem('userEmail');
      const isLoggedIn = localStorage.getItem('loggedIn') === 'true';
