@@ -13,6 +13,7 @@ const Profile = () => {
 
     if (!email) {
       console.warn('⚠️ Ni emaila v localStorage — preusmerjam na prijavo.');
+      alert('⚠️ Nisi prijavljen – preusmerjam na prijavo.');
       navigate('/login');
       return;
     }
