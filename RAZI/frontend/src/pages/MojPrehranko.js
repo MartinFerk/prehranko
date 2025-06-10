@@ -21,8 +21,18 @@ const MojPrehranko = () => {
     const [weeklyStats, setWeeklyStats] = useState([]);
 
     const userEmail = localStorage.getItem('userEmail');
+     const isLoggedIn = localStorage.getItem('loggedIn') === 'true';
 
     useEffect(() => {
+    if (!isLoggedIn || !userEmail) {
+      alert('⚠️ Nisi prijavljen – preusmerjam na prijavo.');
+      navigate('/login');
+      return;
+     }
+    });
+
+    useEffect(() => {
+        
         const fetchAndCalculate = async () => {
             try {
                 const allObroki = await getAllObroki();
