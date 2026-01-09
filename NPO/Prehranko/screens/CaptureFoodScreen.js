@@ -51,8 +51,8 @@ export default function CaptureFoodScreen({ navigation, route }) {
 
             // B) DCT Kompresija
             // Uporabimo fiksno velikost 128x128 za hitrost in kompatibilnost
-            const width = 128;
-            const height = 128;
+            const width = 512;
+            const height = 512;
 
             console.log('Stiskam sliko z DCT...');
             const compressedBinary = await compressImageDCT(localUri, width, height);
