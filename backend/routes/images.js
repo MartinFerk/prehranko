@@ -40,16 +40,14 @@ router.post('/uploadimg', async (req, res) => {
     try {
         const binaryBuffer = Buffer.from(compressedData, 'base64');
 
-        // 1. REKONSTRUKCIJA SLIKE (Nova barvna dekompresija)
+        // 1. REKONSTRUKCIJA SLIKE
         console.time('⏱️ Dekompresija in Sharp');
-        // Ta funkcija zdaj vrne Base64 string barvne slike
         const b64Image = await getJpegBase64(binaryBuffer, width, height);
         console.timeEnd('⏱️ Dekompresija in Sharp');
 
-        // --- DEBUG: Shranjevanje slike na disk ---
+        // Debug shranjevanje (ostaja, da lahko fizično preveriš sliko)
         const debugPath = path.join(__dirname, '..', `debug_${obrokId}.jpg`);
         fs.writeFileSync(debugPath, Buffer.from(b64Image, 'base64'));
-        console.log(`📸 Debug barvna slika shranjena.`);
 
         // 2. ANALIZA S POMOČJO OPENAI GPT-4o
         console.log('🧠 Pošiljanje na OpenAI...');
@@ -61,7 +59,11 @@ router.post('/uploadimg', async (req, res) => {
                     content: [
                         {
                             type: 'text',
-                            text: 'Analiziraj hrano na sliki. Bodi natančen. Vrni JSON: { "isFood": boolean, "calories": št, "protein": št, "foodName": "ime" }'
+                            text: `Analiziraj sliko. 
+                            1. Če je na sliki hrana, vrni "isFood": true in oceni kalorije/proteine.
+                            2. Če na sliki NI hrane ali je slika nejasna, vrni "isFood": false, kalorije/proteine nastavi na 0.
+                            3. V VSAKEM PRIMERU v polju "aiDescription" podrobno opiši, kaj vidiš (npr. "vidi se krožnik s testeninami", "vidim samo barvne lise in kocke", "slika je popolnoma črna").
+                            Vrni izključno JSON: { "isFood": boolean, "calories": št, "protein": št, "foodName": "ime", "aiDescription": "opis" }`
                         },
                         {
                             type: 'image_url',
@@ -74,10 +76,18 @@ router.post('/uploadimg', async (req, res) => {
         });
 
         const foodData = JSON.parse(completion.choices[0].message.content);
-        console.log('📝 Odgovor OpenAI:', foodData);
 
+        // Logiramo celoten odgovor, da vidimo opis v konzoli
+        console.log('📝 OpenAI opis slike:', foodData.aiDescription);
+        console.log('📊 Podatki:', { isFood: foodData.isFood, name: foodData.foodName });
+
+        // Če ni hrane, vrnemo opis uporabniku/logom, namesto samo generične napake
         if (!foodData.isFood) {
-            return res.status(400).json({ error: 'Hrana ni zaznana.', aiDescription: foodData.foodName });
+            console.warn(`🚫 Hrana ni bila zaznana. Razlog: ${foodData.aiDescription}`);
+            return res.status(400).json({
+                error: 'Na sliki ni bila zaznana hrana.',
+                details: foodData.aiDescription
+            });
         }
 
         // 3. SHRANJEVANJE V BAZO
@@ -100,13 +110,12 @@ router.post('/uploadimg', async (req, res) => {
             mqttClient.publish(MQTT_TOPIC, JSON.stringify(novObrok), { qos: 1 });
         }
 
-        console.log(`✅ Končano v ${(Date.now() - startTime)/1000}s`);
+        console.log(`✅ Uspešno končano v ${(Date.now() - startTime)/1000}s`);
         res.status(201).json({ success: true, obrok: novObrok });
 
     } catch (err) {
-        console.error('❌ Napaka:', err);
-        res.status(500).json({ error: 'Interna napaka' });
+        console.error('❌ Napaka v procesu:', err);
+        res.status(500).json({ error: 'Interna napaka pri obdelavi slike' });
     }
 });
-
 module.exports = router;
