@@ -1,114 +1,152 @@
-// 1. Standardna JPEG tabela za kvantizacijo (Mora biti ista kot na backendu!)
-const Q_TABLE = [
-    [16, 11, 10, 16, 24, 40, 51, 61],
-    [12, 12, 14, 19, 26, 58, 60, 55],
-    [14, 13, 16, 24, 40, 57, 69, 56],
-    [14, 17, 22, 29, 51, 87, 80, 62],
-    [18, 22, 37, 56, 68, 109, 103, 77],
-    [24, 35, 55, 64, 81, 104, 113, 92],
-    [49, 64, 78, 87, 103, 121, 120, 101],
-    [72, 92, 95, 98, 112, 100, 103, 99]
-];
+import { Buffer } from 'buffer';
 
-const ZIGZAG_MAP = [
-    0,  1,  5,  6, 14, 15, 27, 28,
-    2,  4,  7, 13, 16, 26, 29, 42,
-    3,  8, 12, 17, 25, 30, 41, 43,
-    9, 11, 18, 24, 31, 40, 44, 53,
-    10, 19, 23, 32, 39, 45, 52, 54,
-    20, 22, 33, 38, 46, 51, 55, 60,
-    21, 34, 37, 47, 50, 56, 59, 61,
-    35, 36, 48, 49, 57, 58, 62, 63
+// 1. Vnaprej izračunana tabela kosinusov za hitrost (FDCT)
+const COS_TABLE = Array.from({ length: 8 }, (_, u) =>
+    Array.from({ length: 8 }, (_, x) => Math.cos(((2 * x + 1) * u * Math.PI) / 16))
+);
+
+// 2. ZigZag mapa po tvojem Python vrstnem redu
+const ZIGZAG_INDICES = [
+    [0,0],[0,1],[1,0],[2,0],[1,1],[0,2],[0,3],[1,2],
+    [2,1],[3,0],[4,0],[3,1],[2,2],[1,3],[0,4],[0,5],
+    [1,4],[2,3],[3,2],[4,1],[5,0],[6,0],[5,1],[4,2],
+    [3,3],[2,4],[1,5],[0,6],[0,7],[1,6],[2,5],[3,4],
+    [4,3],[5,2],[6,1],[7,0],[7,1],[6,2],[5,3],[4,4],
+    [3,5],[2,6],[1,7],[2,7],[3,6],[4,5],[5,4],[6,3],
+    [7,2],[7,3],[6,4],[5,5],[4,6],[3,7],[4,7],[5,6],
+    [6,5],[7,4],[7,5],[6,6],[5,7],[6,7],[7,6],[7,7]
 ];
 
 /**
- * POMOŽNA: Pridobi 8x8 blok iz surovih pikslov
+ * FDCT 8x8 na enem kanalu
  */
-const getBlock8x8 = (pixels, startX, startY, width) => {
-    let block = Array.from({ length: 8 }, () => new Array(8));
-    for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 8; j++) {
-            // Predpostavljamo, da so pixels že grayscale (en bajt na piksel)
-            block[i][j] = pixels[(startY + i) * width + (startX + j)];
-        }
-    }
-    return block;
-};
-
-/**
- * POMOŽNA: Diskretna kosinusna transformacija (DCT)
- * Formula: $G_{u,v} = \frac{1}{4} \alpha(u) \alpha(v) \sum_{x=0}^7 \sum_{y=0}^7 g_{x,y} \cos[\frac{(2x+1)u\pi}{16}] \cos[\frac{(2y+1)v\pi}{16}]$
- */
-const applyDCT = (block) => {
-    const N = 8;
-    let dctBlock = Array.from({ length: N }, () => new Array(N).fill(0));
-
-    for (let u = 0; u < N; u++) {
-        for (let v = 0; v < N; v++) {
+const fdct8x8 = (block) => {
+    let F = new Float64Array(64);
+    for (let u = 0; u < 8; u++) {
+        for (let v = 0; v < 8; v++) {
+            let cu = (u === 0) ? 1 / Math.sqrt(2) : 1;
+            let cv = (v === 0) ? 1 / Math.sqrt(2) : 1;
             let sum = 0;
-            let alphaU = (u === 0) ? Math.sqrt(1 / N) : Math.sqrt(2 / N);
-            let alphaV = (v === 0) ? Math.sqrt(1 / N) : Math.sqrt(2 / N);
-
-            for (let x = 0; x < N; x++) {
-                for (let y = 0; y < N; y++) {
-                    sum += block[x][y] * Math.cos(((2 * x + 1) * u * Math.PI) / 16) * Math.cos(((2 * y + 1) * v * Math.PI) / 16);
+            for (let x = 0; x < 8; x++) {
+                for (let y = 0; y < 8; y++) {
+                    sum += block[x * 8 + y] * COS_TABLE[u][x] * COS_TABLE[v][y];
                 }
             }
-            dctBlock[u][v] = Math.round(alphaU * alphaV * sum);
+            F[u * 8 + v] = 0.25 * cu * cv * sum;
         }
     }
-    return dctBlock;
-};
-
-/**
- * POMOŽNA: Kvantizacija (zmanjšanje natančnosti s tabelo Q_TABLE)
- */
-const quantize = (dctBlock) => {
-    return dctBlock.map((row, i) =>
-        row.map((val, j) => Math.round(val / Q_TABLE[i][j]))
-    );
-};
-
-const zigzagOrder = (quantizedBlock) => {
-    const flat = quantizedBlock.flat();
-    const zigzagged = new Array(64);
-    for (let i = 0; i < 64; i++) {
-        zigzagged[i] = flat[ZIGZAG_MAP[i]];
-    }
-    return zigzagged;
-};
-
-export const applyRLE = (data) => {
-    let rle = [];
-    let count = 1;
-    for (let i = 0; i < data.length; i++) {
-        if (i < data.length - 1 && data[i] === data[i + 1] && count < 255) {
-            count++;
-        } else {
-            rle.push(count);
-            rle.push(data[i]);
-            count = 1;
-        }
-    }
-    return new Uint8Array(rle);
+    return F;
 };
 
 /**
  * GLAVNA FUNKCIJA: compressImageDCT
- * pixelData: Uint8Array grayscale pikslov (0-255)
+ * @param {Uint8Array} pixelData - RGBA piksli (iz canvas.getImageData)
+ * @param {number} width - Širina slike
+ * @param {number} height - Višina slike
+ * @param {number} factor - Število koeficientov, ki jih odrežemo (0-63)
  */
-export const compressImageDCT = async (pixelData, width, height) => {
-    let allCompressedBlocks = [];
+export const compressImageDCT = async (pixelData, width, height, factor = 20) => {
+    const channelNames = ["B", "G", "R"]; // OpenCV format vrstni red
+    let finalBuffers = [];
 
-    for (let y = 0; y < height; y += 8) {
-        for (let x = 0; x < width; x += 8) {
-            let block = getBlock8x8(pixelData, x, y, width);
-            let dct = applyDCT(block);
-            let quantized = quantize(dct);
-            let zigzagged = zigzagOrder(quantized);
-            allCompressedBlocks.push(...zigzagged);
+    // Gremo čez vsak kanal posebej (Modra, Zelena, Rdeča)
+    for (let c = 0; c < 3; c++) {
+        let channelBlocks = [];
+
+        for (let i = 0; i < height; i += 8) {
+            for (let j = 0; j < width; j += 8) {
+                let block = new Float64Array(64);
+
+                // Priprava 8x8 bloka (-128 centriranje)
+                for (let x = 0; x < 8; x++) {
+                    for (let y = 0; y < 8; y++) {
+                        // pixelData je RGBA [R, G, B, A, R, G, B, A...]
+                        // Izberemo kanal (2-c) za BGR vrstni red
+                        let pixelIdx = ((i + x) * width + (j + y)) * 4;
+                        block[x * 8 + y] = pixelData[pixelIdx + (2 - c)] - 128;
+                    }
+                }
+
+                // 1. Izračun DCT
+                let F = fdct8x8(block);
+
+                // 2. ZigZag transformacija + factor (odrez koeficientov)
+                let zigzagged = new Float64Array(64);
+                let limit = 63 - factor;
+                for (let k = 0; k < 64; k++) {
+                    if (k > limit) {
+                        zigzagged[k] = 0;
+                    } else {
+                        let [u, v] = ZIGZAG_INDICES[k];
+                        zigzagged[k] = F[u * 8 + v];
+                    }
+                }
+                channelBlocks.push(zigzagged);
+            }
+        }
+
+        // 3. Zapis v binarni format po tvojem Python protokolu
+        let channelHeader = Buffer.alloc(5);
+        channelHeader.write(channelNames[c], 0, 'ascii');
+        channelHeader.writeUInt32LE(channelBlocks.length, 1);
+        finalBuffers.push(channelHeader);
+
+        for (let zz of channelBlocks) {
+            let blockDataParts = [];
+
+            // DC vrednost (float)
+            let dcBuf = Buffer.alloc(4);
+            dcBuf.writeFloatLE(zz[0]);
+            blockDataParts.push(dcBuf);
+
+            let runLength = 0;
+            for (let k = 1; k < 64; k++) {
+                let val = zz[k];
+                if (val === 0) {
+                    runLength++;
+                } else {
+                    if (runLength > 0) {
+                        // Rule 0: RunLength sledi vrednost
+                        let ruleBuf = Buffer.alloc(3); // [rule, run, bitlen]
+                        ruleBuf.writeInt8(0, 0);
+                        ruleBuf.writeUInt8(runLength, 1);
+                        ruleBuf.writeUInt8(0, 2); // bitLen (v tvojem py je fiksno, tu damo 0)
+                        blockDataParts.push(ruleBuf);
+
+                        let valBuf = Buffer.alloc(4);
+                        valBuf.writeFloatLE(val);
+                        blockDataParts.push(valBuf);
+                        runLength = 0;
+                    } else {
+                        // Rule 1: Takojšnja vrednost
+                        let ruleBuf = Buffer.alloc(2); // [rule, bitlen]
+                        ruleBuf.writeInt8(1, 0);
+                        ruleBuf.writeUInt8(0, 1);
+                        blockDataParts.push(ruleBuf);
+
+                        let valBuf = Buffer.alloc(4);
+                        valBuf.writeFloatLE(val);
+                        blockDataParts.push(valBuf);
+                    }
+                }
+            }
+            // Če so na koncu same ničle
+            if (runLength > 0) {
+                let endBuf = Buffer.alloc(2);
+                endBuf.writeInt8(0, 0);
+                endBuf.writeUInt8(runLength, 1);
+                blockDataParts.push(endBuf);
+            }
+
+            let combinedBlock = Buffer.concat(blockDataParts);
+            let blockHeader = Buffer.alloc(5);
+            blockHeader.write('B', 0, 'ascii');
+            blockHeader.writeUInt32LE(combinedBlock.length, 1);
+
+            finalBuffers.push(blockHeader, combinedBlock);
         }
     }
 
-    return applyRLE(allCompressedBlocks);
+    // Združimo vse v en Uint8Array za pošiljanje
+    return Buffer.concat(finalBuffers);
 };
