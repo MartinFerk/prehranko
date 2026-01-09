@@ -23,9 +23,11 @@ const obrokSchema = new mongoose.Schema({
         type: Number,
         default: null,
     },
-    imgLink: {
-        type: String,
-        default: '',
+    // Shranjujemo referenco (ID) na dokument v zbirki 'Image'
+    imageId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Image',
+        default: null,
     },
     calories: {
         type: Number,
@@ -41,4 +43,4 @@ const obrokSchema = new mongoose.Schema({
     },
 });
 
-module.exports = mongoose.model('Obrok', obrokSchema);
+module.exports = mongoose.model('Obrok', obrokSchema);s

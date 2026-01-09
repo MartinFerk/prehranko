@@ -21,13 +21,16 @@
     "mongoose": "^8.14.3",
     "mqtt": "^5.13.0",
     "multer": "^2.0.0",
-    "openai": "^5.1.0"
+    "openai": "^5.1.0",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "jest": "^29.7.0",
     "supertest": "^7.1.1"
   },
   "jest": {
-  "setupFiles": ["<rootDir>/tests/jest.setup.js"]
-}
+    "setupFiles": [
+      "<rootDir>/tests/jest.setup.js"
+    ]
+  }
 }

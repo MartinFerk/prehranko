@@ -30,6 +30,8 @@ app.get('/', (req, res) => {
 
 const obrokRoutes = require('./routes/obroki');
 app.use('/api/obroki', obrokRoutes);
+const imageRoutes = require('./routes/images');
+app.use('/api/images', imageRoutes);
 
 const activityRoutes = require('./routes/activities');
 app.use('/api/activities', activityRoutes);

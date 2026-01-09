@@ -61,58 +61,65 @@ export default function CaptureFoodScreen({ navigation, route }) {
       throw error;
     }
   };
+    import { compressImageDCT } from '../utils/compression';
 
-const analyzeFoodImage = async (localUri) => {
-  setLoading(true);
-  setResult(null);
+    const analyzeFoodImage = async (localUri) => {
+        setLoading(true);
+        setResult(null);
 
-  try {
-    // 👉 1. Pridobi lokacijo
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Dovoljenje za lokacijo ni odobreno');
-      return;
-    }
+        try {
+            // 1. Pridobi lokacijo
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') throw new Error('Dovoljenje za lokacijo ni odobreno');
 
-    const location = await Location.getCurrentPositionAsync({});
-    const locX = location.coords.longitude;
-    const locY = location.coords.latitude;
+            const location = await Location.getCurrentPositionAsync({});
+            const locX = location.coords.longitude;
+            const locY = location.coords.latitude;
 
-    const imgUrl = await uploadToImgur(localUri);
-    const obrokId = uuid.v4();
+            // 2. DCT Kompresija (Namesto Imgurja)
+            // Opomba: Za compressImageDCT boš verjetno potreboval piksle,
+            // širino in višino (npr. 128x128).
+            const width = 128;
+            const height = 128;
+            const compressedBinary = await compressImageDCT(localUri, width, height);
 
-    // 👉 2. Pošlji lokacijo skupaj z ostalimi podatki
-    const createRes = await fetch(`${API_BASE_URL}/obroki/create`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ obrokId, userEmail, imgLink: imgUrl, locX, locY }),
-    });
+            // Pretvori Uint8Array v Base64 niz za prenos preko JSON-a
+            const base64ForPost = Buffer.from(compressedBinary).toString('base64');
 
-    if (!createRes.ok) throw new Error('Napaka pri ustvarjanju obroka');
+            const obrokId = uuid.v4();
 
-    // Nadaljuj z analizo slike
-    const analyzeRes = await fetch(`${API_BASE_URL}/obroki/analyze-food`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ obrokId, imageUrl: imgUrl }),
-    });
+            // 3. POKLIČI NOVI ROUTE: /api/images/uploadimg
+            // Ta klic bo naredil VSE: dekompresijo, OpenAI, shranil sliko in shranil obrok.
+            const response = await fetch(`${API_BASE_URL}/images/uploadimg`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    obrokId,
+                    userEmail,
+                    compressedData: base64ForPost,
+                    locX,
+                    locY,
+                    width,
+                    height
+                }),
+            });
 
-    const analyzeData = await analyzeRes.json();
+            const data = await response.json();
 
-    if (!analyzeRes.ok) {
-      Alert.alert('Napaka pri analizi', analyzeData.error || 'Nepoznana napaka');
-      return;
-    }
+            if (!response.ok) {
+                throw new Error(data.error || 'Napaka pri obdelavi na strežniku');
+            }
 
-    setResult(analyzeData.obrok);
-  } catch (err) {
-    console.error('Napaka:', err.message);
-    Alert.alert('Napaka', err.message);
-  } finally {
-    setLoading(false);
-  }
-};
+            // Rezultat dobimo nazaj že analiziran s strani OpenAI
+            setResult(data.obrok);
 
+        } catch (err) {
+            console.error('Napaka:', err.message);
+            Alert.alert('Napaka', err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const cancelObrok = async () => {
     try {
