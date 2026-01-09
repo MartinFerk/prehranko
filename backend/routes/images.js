@@ -17,6 +17,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // --- MQTT KONFIGURACIJA ---
 const MQTT_URL = 'mqtt://prehrankomosquitto.railway.internal:1883';
+// --- MQTT KONFIGURACIJA ---
 const MQTT_TOPIC = 'prehranko/obroki';
 
 const mqttClient = mqtt.connect(MQTT_URL, {
