@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, Button, Image, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, Button, Image, ActivityIndicator, Alert, StyleSheet } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import uuid from 'react-native-uuid';
 import * as Location from 'expo-location';
-import { Buffer } from 'buffer'; // Ne pozabi: npm install buffer
+import * as ImageManipulator from 'expo-image-manipulator';
+import { GLView } from 'expo-gl';
+import Expo2DContext from 'expo-2d-context';
+import uuid from 'react-native-uuid';
+import { Buffer } from 'buffer';
 
-// Uvozi tvoje pomožne funkcije
 import { API_BASE_URL } from '../services/api';
 import { compressImageDCT } from '../utils/compression';
 
@@ -15,54 +17,74 @@ export default function CaptureFoodScreen({ navigation, route }) {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
 
-    // 1. Izbira slike s kamero
+    // Ref za Canvas context
+    const contextRef = useRef(null);
+
+    // 1. Priprava Canvasa (skrita funkcija, ki se sproži ob GLView loadu)
+    const onContextCreate = (gl) => {
+        const ctx = new Expo2DContext(gl);
+        contextRef.current = ctx;
+    };
+
     const pickImage = async () => {
         const pickerResult = await ImagePicker.launchCameraAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
-            aspect: [1, 1], // Za DCT je najbolje imeti kvadratno sliko
-            quality: 0.7,
+            aspect: [1, 1],
+            quality: 1, // Vzamemo polno kvaliteto, ker bomo sami zmanjšali
         });
 
         if (!pickerResult.canceled && pickerResult.assets?.length > 0) {
             const pickedUri = pickerResult.assets[0].uri;
             setImageUri(pickedUri);
-            // Takoj sprožimo analizo z novim postopkom
             analyzeFoodImage(pickedUri);
         }
     };
 
-    // 2. Glavna logika: Kompresija in pošiljanje na Backend
     const analyzeFoodImage = async (localUri) => {
+        if (!contextRef.current) {
+            Alert.alert("Napaka", "Sistem za obdelavo slike se še nalaga.");
+            return;
+        }
+
         setLoading(true);
         setResult(null);
 
         try {
-            // A) Pridobivanje lokacije
+            // A) Lokacija
             const { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-                Alert.alert('Napaka', 'Dovoljenje za lokacijo je obvezno.');
-                setLoading(false);
-                return;
-            }
-
+            if (status !== 'granted') throw new Error('Dovoljenje za lokacijo ni odobreno.');
             const location = await Location.getCurrentPositionAsync({});
             const { longitude: locX, latitude: locY } = location.coords;
 
-            // B) DCT Kompresija
-            // Uporabimo fiksno velikost 128x128 za hitrost in kompatibilnost
-            const width = 512;
-            const height = 512;
+            // B) Priprava slike (Resize na 512x512)
+            console.log('Resize slike...');
+            const manipulated = await ImageManipulator.manipulateAsync(
+                localUri,
+                [{ resize: { width: 512, height: 512 } }],
+                { format: 'png' } // PNG je boljši za branje pikslov
+            );
 
-            console.log('Stiskam sliko z DCT...');
-            const compressedBinary = await compressImageDCT(localUri, width, height);
+            // C) Risanje na Canvas in branje pikslov
+            const ctx = contextRef.current;
+            const img = await ctx.initializeImage(manipulated.uri);
 
-            // C) Priprava podatkov za prenos (Uint8Array -> Base64)
+            ctx.clearRect(0, 0, 512, 512);
+            ctx.drawImage(img, 0, 0, 512, 512);
+            ctx.flush(); // Pomembno za Expo GL
+
+            // Izvlečemo piksle (Uint8ClampedArray)
+            const imageData = ctx.getImageData(0, 0, 512, 512);
+            const pixelData = imageData.data;
+
+            // D) DCT Kompresija (Zdaj ima piksle!)
+            console.log('DCT Kompresija...');
+            const compressedBinary = await compressImageDCT(pixelData, 512, 512, 20);
+
+            // E) Pošiljanje
             const base64Data = Buffer.from(compressedBinary).toString('base64');
             const obrokId = uuid.v4();
 
-            // D) Pošiljanje na tvoj NOVI backend endpoint
-            console.log('Pošiljam stisnjene podatke na backend...');
             const response = await fetch(`${API_BASE_URL}/images/uploadimg`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -70,81 +92,69 @@ export default function CaptureFoodScreen({ navigation, route }) {
                     obrokId,
                     userEmail,
                     compressedData: base64Data,
-                    locX,
-                    locY,
-                    width,
-                    height,
+                    locX, locY,
+                    width: 512, height: 512,
                 }),
             });
 
             const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Server Error');
 
-            if (!response.ok) {
-                throw new Error(data.error || 'Napaka pri obdelavi na strežniku');
-            }
-
-            // Shranimo rezultat analize, ki jo je vrnil OpenAI preko tvojega backenda
             setResult(data.obrok);
 
         } catch (err) {
-            console.error('Napaka pri analizi:', err.message);
+            console.error(err);
             Alert.alert('Napaka', err.message);
         } finally {
             setLoading(false);
         }
     };
 
-    // 3. Brisanje obroka, če uporabnik klikne "Prekliči"
-    const cancelObrok = async () => {
-        if (!result?.obrokId) return;
-
-        try {
-            const res = await fetch(`${API_BASE_URL}/obroki/delete/${result.obrokId}`, {
-                method: 'DELETE',
-            });
-
-            if (res.ok) {
-                Alert.alert('Preklicano', 'Obrok je bil izbrisan.');
-                navigation.navigate('Home', { email: userEmail });
-            }
-        } catch (err) {
-            console.error('Napaka pri brisanju:', err.message);
-        }
-    };
-
     return (
-        <View style={{ flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={styles.container}>
+            {/* SKRITI CANVAS ZA OBDELAVO */}
+            <View style={{ height: 0, width: 0, opacity: 0, position: 'absolute' }}>
+                <GLView
+                    style={{ width: 512, height: 512 }}
+                    onContextCreate={onContextCreate}
+                />
+            </View>
+
             {!result && !loading && (
                 <Button title="Zajemi obrok s kamero" onPress={pickImage} />
             )}
 
             {imageUri && (
-                <Image source={{ uri: imageUri }} style={{ width: 300, height: 300, marginTop: 20, borderRadius: 10 }} />
+                <Image source={{ uri: imageUri }} style={styles.previewImage} />
             )}
 
             {loading && (
-                <View style={{ marginTop: 20, alignItems: 'center' }}>
-                    <ActivityIndicator size="large" color="orange" />
-                    <Text style={{ marginTop: 10 }}>Stiskanje in AI analiza...</Text>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#FF8C00" />
+                    <Text style={styles.loadingText}>Obdelava frekvenc (DCT) & AI...</Text>
                 </View>
             )}
 
             {result && (
-                <View style={{ marginTop: 30, alignItems: 'center', backgroundColor: '#f9f9f9', padding: 20, borderRadius: 15 }}>
-                    <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{result.name}</Text>
-                    <Text style={{ fontSize: 18, color: 'gray' }}>🔥 {result.calories} kcal</Text>
-                    <Text style={{ fontSize: 18, color: 'gray' }}>💪 {result.protein}g beljakovin</Text>
-
-                    <View style={{ flexDirection: 'row', marginTop: 25 }}>
-                        <Button
-                            title="Shrani obrok"
-                            onPress={() => navigation.navigate('Home', { email: userEmail })}
-                        />
-                        <View style={{ width: 20 }} />
-                        <Button title="Izbriši" color="red" onPress={cancelObrok} />
+                <View style={styles.resultCard}>
+                    <Text style={styles.foodName}>{result.name}</Text>
+                    <Text style={styles.stats}>🔥 {result.calories} kcal | 💪 {result.protein}g P</Text>
+                    <View style={styles.buttonRow}>
+                        <Button title="V redu" onPress={() => navigation.navigate('Home', { email: userEmail })} />
                     </View>
                 </View>
             )}
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: { flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
+    previewImage: { width: 300, height: 300, marginTop: 20, borderRadius: 15 },
+    loadingContainer: { marginTop: 20, alignItems: 'center' },
+    loadingText: { marginTop: 10, fontWeight: '500' },
+    resultCard: { marginTop: 30, padding: 25, backgroundColor: '#fdfdfd', borderRadius: 20, elevation: 5, alignItems: 'center' },
+    foodName: { fontSize: 24, fontWeight: 'bold', marginBottom: 5 },
+    stats: { fontSize: 18, color: '#666', marginBottom: 20 },
+    buttonRow: { marginTop: 10 }
+});

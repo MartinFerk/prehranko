@@ -1,11 +1,11 @@
 import { Buffer } from 'buffer';
 
-// 1. Vnaprej izračunana tabela kosinusov za hitrost (FDCT)
+// 1. Vnaprej izračunana tabela kosinusov za FDCT (hitrejše procesiranje)
 const COS_TABLE = Array.from({ length: 8 }, (_, u) =>
     Array.from({ length: 8 }, (_, x) => Math.cos(((2 * x + 1) * u * Math.PI) / 16))
 );
 
-// 2. ZigZag mapa po tvojem Python vrstnem redu
+// 2. ZigZag mapa (indeksi u, v v 8x8 matriki) - ISTA KOT NA BACKENDU
 const ZIGZAG_INDICES = [
     [0,0],[0,1],[1,0],[2,0],[1,1],[0,2],[0,3],[1,2],
     [2,1],[3,0],[4,0],[3,1],[2,2],[1,3],[0,4],[0,5],
@@ -18,7 +18,7 @@ const ZIGZAG_INDICES = [
 ];
 
 /**
- * FDCT 8x8 na enem kanalu
+ * POMOŽNA: FDCT 8x8 na enem kanalu
  */
 const fdct8x8 = (block) => {
     let F = new Float64Array(64);
@@ -40,16 +40,21 @@ const fdct8x8 = (block) => {
 
 /**
  * GLAVNA FUNKCIJA: compressImageDCT
- * @param {Uint8Array} pixelData - RGBA piksli (iz canvas.getImageData)
- * @param {number} width - Širina slike
- * @param {number} height - Višina slike
- * @param {number} factor - Število koeficientov, ki jih odrežemo (0-63)
+ * @param {Uint8ClampedArray} pixelData - Surovi RGBA piksli iz Canvasa
+ * @param {number} width - Širina slike (priporočeno 512)
+ * @param {number} height - Višina slike (priporočeno 512)
+ * @param {number} factor - Koliko koeficientov odrežemo (0-63). Večja vrednost = večja kompresija.
  */
 export const compressImageDCT = async (pixelData, width, height, factor = 20) => {
-    const channelNames = ["B", "G", "R"]; // OpenCV format vrstni red
+    const channelNames = ["B", "G", "R"]; // BGR vrstni red za skladnost z OpenCV/Python
     let finalBuffers = [];
 
-    // Gremo čez vsak kanal posebej (Modra, Zelena, Rdeča)
+    // Preverjanje, če smo dobili podatke
+    if (!pixelData || pixelData.length === 0) {
+        throw new Error("Pixel data je prazen. Preveri zajem iz Canvasa.");
+    }
+
+    // Procesiramo vsak kanal posebej (Modra, Zelena, Rdeča)
     for (let c = 0; c < 3; c++) {
         let channelBlocks = [];
 
@@ -57,22 +62,22 @@ export const compressImageDCT = async (pixelData, width, height, factor = 20) =>
             for (let j = 0; j < width; j += 8) {
                 let block = new Float64Array(64);
 
-                // Priprava 8x8 bloka (-128 centriranje)
+                // 1. Priprava 8x8 bloka (-128 centriranje za DCT)
                 for (let x = 0; x < 8; x++) {
                     for (let y = 0; y < 8; y++) {
-                        // pixelData je RGBA [R, G, B, A, R, G, B, A...]
-                        // Izberemo kanal (2-c) za BGR vrstni red
+                        // pixelData je ploščat [R, G, B, A, R, G, B, A...]
+                        // Izberemo ustrezen kanal (2-c) za BGR vrstni red
                         let pixelIdx = ((i + x) * width + (j + y)) * 4;
                         block[x * 8 + y] = pixelData[pixelIdx + (2 - c)] - 128;
                     }
                 }
 
-                // 1. Izračun DCT
+                // 2. Izračun DCT transformacije
                 let F = fdct8x8(block);
 
-                // 2. ZigZag transformacija + factor (odrez koeficientov)
+                // 3. ZigZag skeniranje in uporaba faktorja kompresije
                 let zigzagged = new Float64Array(64);
-                let limit = 63 - factor;
+                let limit = 63 - factor; // Koliko koeficientov obdržimo
                 for (let k = 0; k < 64; k++) {
                     if (k > limit) {
                         zigzagged[k] = 0;
@@ -85,7 +90,8 @@ export const compressImageDCT = async (pixelData, width, height, factor = 20) =>
             }
         }
 
-        // 3. Zapis v binarni format po tvojem Python protokolu
+        // 4. Binarno pakiranje v tvoj specifičen RLE protokol
+        // Glava kanala: Ime (1 byte) + Število blokov (4 bytes)
         let channelHeader = Buffer.alloc(5);
         channelHeader.write(channelNames[c], 0, 'ascii');
         channelHeader.writeUInt32LE(channelBlocks.length, 1);
@@ -94,7 +100,7 @@ export const compressImageDCT = async (pixelData, width, height, factor = 20) =>
         for (let zz of channelBlocks) {
             let blockDataParts = [];
 
-            // DC vrednost (float)
+            // DC koeficient (prva vrednost) se zapiše kot Float (4 bytes)
             let dcBuf = Buffer.alloc(4);
             dcBuf.writeFloatLE(zz[0]);
             blockDataParts.push(dcBuf);
@@ -106,11 +112,11 @@ export const compressImageDCT = async (pixelData, width, height, factor = 20) =>
                     runLength++;
                 } else {
                     if (runLength > 0) {
-                        // Rule 0: RunLength sledi vrednost
-                        let ruleBuf = Buffer.alloc(3); // [rule, run, bitlen]
-                        ruleBuf.writeInt8(0, 0);
-                        ruleBuf.writeUInt8(runLength, 1);
-                        ruleBuf.writeUInt8(0, 2); // bitLen (v tvojem py je fiksno, tu damo 0)
+                        // Rule 0: Zapis zaporedja ničel
+                        let ruleBuf = Buffer.alloc(3);
+                        ruleBuf.writeInt8(0, 0);       // Rule ID
+                        ruleBuf.writeUInt8(runLength, 1); // Koliko ničel
+                        ruleBuf.writeUInt8(0, 2);      // bitLen (neuporabljeno)
                         blockDataParts.push(ruleBuf);
 
                         let valBuf = Buffer.alloc(4);
@@ -118,10 +124,10 @@ export const compressImageDCT = async (pixelData, width, height, factor = 20) =>
                         blockDataParts.push(valBuf);
                         runLength = 0;
                     } else {
-                        // Rule 1: Takojšnja vrednost
-                        let ruleBuf = Buffer.alloc(2); // [rule, bitlen]
-                        ruleBuf.writeInt8(1, 0);
-                        ruleBuf.writeUInt8(0, 1);
+                        // Rule 1: Takojšen zapis vrednosti (brez predhodnih ničel)
+                        let ruleBuf = Buffer.alloc(2);
+                        ruleBuf.writeInt8(1, 0);       // Rule ID
+                        ruleBuf.writeUInt8(0, 1);      // bitLen (neuporabljeno)
                         blockDataParts.push(ruleBuf);
 
                         let valBuf = Buffer.alloc(4);
@@ -130,7 +136,8 @@ export const compressImageDCT = async (pixelData, width, height, factor = 20) =>
                     }
                 }
             }
-            // Če so na koncu same ničle
+
+            // Zapis preostalih ničel na koncu bloka
             if (runLength > 0) {
                 let endBuf = Buffer.alloc(2);
                 endBuf.writeInt8(0, 0);
@@ -138,6 +145,7 @@ export const compressImageDCT = async (pixelData, width, height, factor = 20) =>
                 blockDataParts.push(endBuf);
             }
 
+            // Sestavimo blok in dodamo glavo bloka ('B' + dolžina)
             let combinedBlock = Buffer.concat(blockDataParts);
             let blockHeader = Buffer.alloc(5);
             blockHeader.write('B', 0, 'ascii');
@@ -147,6 +155,6 @@ export const compressImageDCT = async (pixelData, width, height, factor = 20) =>
         }
     }
 
-    // Združimo vse v en Uint8Array za pošiljanje
+    // Vrnemo celoten binarni paket
     return Buffer.concat(finalBuffers);
 };

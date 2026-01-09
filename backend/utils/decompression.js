@@ -1,11 +1,10 @@
 const sharp = require('sharp');
 
-// Vnaprej izračunana tabela kosinusov za IDCT (pohitritev)
+// Vnaprej izračunana tabela kosinusov za IDCT
 const COS_TABLE = Array.from({ length: 8 }, (_, u) =>
     Array.from({ length: 8 }, (_, x) => Math.cos(((2 * x + 1) * u * Math.PI) / 16))
 );
 
-// ZigZag mapa mora biti ISTA kot na Pythonu/Frontendu
 const ZIGZAG_INDICES = [
     [0,0],[0,1],[1,0],[2,0],[1,1],[0,2],[0,3],[1,2],
     [2,1],[3,0],[4,0],[3,1],[2,2],[1,3],[0,4],[0,5],
@@ -17,9 +16,6 @@ const ZIGZAG_INDICES = [
     [6,5],[7,4],[7,5],[6,6],[5,7],[6,7],[7,6],[7,7]
 ];
 
-/**
- * IDCT 8x8 transformacija
- */
 function idct8x8(F) {
     let block = new Float32Array(64);
     for (let x = 0; x < 8; x++) {
@@ -39,14 +35,13 @@ function idct8x8(F) {
 }
 
 /**
- * Glavna funkcija, ki jo kličeš v routerju
+ * @param {Buffer} binaryBuffer
  */
 async function getJpegBase64(binaryBuffer, width, height) {
     let i = 0;
     const channels = {};
-    const channelNames = ["B", "G", "R"]; // Vrstni red iz Pythona
+    const channelNames = ["B", "G", "R"];
 
-    // 1. Dekodiranje binarnega RLE formata
     try {
         while (i < binaryBuffer.length) {
             let channelName = binaryBuffer.slice(i, i + 1).toString('ascii');
@@ -56,7 +51,9 @@ async function getJpegBase64(binaryBuffer, width, height) {
 
             let blocks = [];
             for (let b = 0; b < blockCount; b++) {
-                if (binaryBuffer.slice(i, i + 1).toString('ascii') !== 'B') break;
+                if (i >= binaryBuffer.length) break;
+
+                let bTag = binaryBuffer.slice(i, i + 1).toString('ascii');
                 i += 1;
                 let blockLen = binaryBuffer.readUInt32LE(i);
                 i += 4;
@@ -64,7 +61,7 @@ async function getJpegBase64(binaryBuffer, width, height) {
                 let blockData = binaryBuffer.slice(i, i + blockLen);
                 i += blockLen;
 
-                // Branje RLE znotraj bloka
+                // --- RLE DEKODIRANJE BLOKA ---
                 let j = 0;
                 let dc = blockData.readFloatLE(j);
                 j += 4;
@@ -74,20 +71,24 @@ async function getJpegBase64(binaryBuffer, width, height) {
                     let rule = blockData.readInt8(j);
                     j += 1;
 
-                    if (rule === 0) { // Rule 0: Run-length of zeros
+                    if (rule === 0) { // Rule 0: [rule, runLength, bitLen] + (opcijsko Float)
                         let run = blockData.readUInt8(j);
                         j += 1;
+                        j += 1; // Preskočimo bitLen (tisti ruleBuf.writeUInt8(0, 2))
+
                         for (let r = 0; r < run; r++) data.push(0);
 
-                        if (j + 5 <= blockData.length) {
-                            j += 1; // preskoči bitLen byte
+                        // Če po ničlah sledi vrednost (ni konec bloka)
+                        if (j + 4 <= blockData.length) {
                             data.push(blockData.readFloatLE(j));
                             j += 4;
                         }
-                    } else if (rule === 1) { // Rule 1: Next value is float
-                        j += 1; // preskoči bitLen byte
-                        data.push(blockData.readFloatLE(j));
-                        j += 4;
+                    } else if (rule === 1) { // Rule 1: [rule, bitLen] + Float
+                        j += 1; // Preskočimo bitLen
+                        if (j + 4 <= blockData.length) {
+                            data.push(blockData.readFloatLE(j));
+                            j += 4;
+                        }
                     }
                 }
                 while (data.length < 64) data.push(0);
@@ -96,11 +97,11 @@ async function getJpegBase64(binaryBuffer, width, height) {
             channels[channelName] = blocks;
         }
     } catch (e) {
-        console.error("Napaka pri razčlenjevanju binarnega bufferja:", e);
+        console.error("Kritična napaka pri dekompresiji:", e);
     }
 
-    // 2. Rekonstrukcija pikslov (Inverzni ZigZag + IDCT + Color Merge)
-    const outBuffer = Buffer.alloc(width * height * 3); // RGB buffer
+    // 2. REKONSTRUKCIJA SLIKE
+    const outBuffer = Buffer.alloc(width * height * 3);
 
     channelNames.forEach((name, cIdx) => {
         const blocks = channels[name];
@@ -114,13 +115,11 @@ async function getJpegBase64(binaryBuffer, width, height) {
                 let zz = blocks[bIdx++];
                 let F = new Float32Array(64);
 
-                // Inverzni ZigZag
                 for (let k = 0; k < 64; k++) {
                     let [u, v] = ZIGZAG_INDICES[k];
                     F[u * 8 + v] = zz[k];
                 }
 
-                // IDCT + Restoration (+128)
                 let restored = idct8x8(F);
 
                 for (let x = 0; x < 8; x++) {
@@ -128,9 +127,13 @@ async function getJpegBase64(binaryBuffer, width, height) {
                         let val = Math.round(restored[x * 8 + y] + 128);
                         val = Math.max(0, Math.min(255, val));
 
-                        // Izračun pozicije v končnem RGB bufferju
-                        // Python kanal B -> RGB[2], G -> RGB[1], R -> RGB[0]
-                        let pixelPos = ((r + x) * width + (c + y)) * 3 + (2 - cIdx);
+                        // FRONTEND: BGR vrstni red
+                        // Python kanal B (cIdx 0) -> SHARP kanal 2 (Blue)
+                        // Python kanal G (cIdx 1) -> SHARP kanal 1 (Green)
+                        // Python kanal R (cIdx 2) -> SHARP kanal 0 (Red)
+                        let targetChannel = 2 - cIdx;
+                        let pixelPos = ((r + x) * width + (c + y)) * 3 + targetChannel;
+
                         if (pixelPos < outBuffer.length) {
                             outBuffer[pixelPos] = val;
                         }
@@ -140,14 +143,10 @@ async function getJpegBase64(binaryBuffer, width, height) {
         }
     });
 
-    // 3. Pretvorba v JPEG Base64 s Sharp
-    const jpegBuffer = await sharp(outBuffer, {
-        raw: { width, height, channels: 3 }
-    })
+    return await sharp(outBuffer, { raw: { width, height, channels: 3 } })
         .jpeg()
-        .toBuffer();
-
-    return jpegBuffer.toString('base64');
+        .toBuffer()
+        .then(buf => buf.toString('base64'));
 }
 
 module.exports = { getJpegBase64 };

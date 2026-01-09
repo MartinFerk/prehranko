@@ -5,20 +5,15 @@ const mqtt = require('mqtt');
 const fs = require('fs');
 const path = require('path');
 
-// Uvoz modelov
 const Image = require('../models/Image');
 const Obrok = require('../models/Obrok');
-
-// POZOR: Uvozi novo funkcijo, ki smo jo napisali zadnjič
-// Ta funkcija zdaj vključuje celotno pot od binarnih podatkov do Base64 JPEG-a
 const { getJpegBase64 } = require('../utils/decompression');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // --- MQTT KONFIGURACIJA ---
 const MQTT_URL = 'mqtt://prehrankomosquitto.railway.internal:1883';
-// --- MQTT KONFIGURACIJA ---
-const MQTT_TOPIC = 'prehranko/obroki';
+const MQTT_TOPIC = 'prehranko/obroki'; // Uporabimo to konstanto spodaj
 
 const mqttClient = mqtt.connect(MQTT_URL, {
     clientId: `api_images_${Math.random().toString(16).slice(2, 8)}`,
@@ -27,7 +22,6 @@ const mqttClient = mqtt.connect(MQTT_URL, {
     reconnectPeriod: 5000,
 });
 
-// 🎯 POST /api/images/uploadimg
 router.post('/uploadimg', async (req, res) => {
     const startTime = Date.now();
     const { obrokId, userEmail, compressedData, locX, locY, width, height } = req.body;
@@ -46,7 +40,7 @@ router.post('/uploadimg', async (req, res) => {
         const b64Image = await getJpegBase64(binaryBuffer, width, height);
         console.timeEnd('⏱️ Dekompresija in Sharp');
 
-        // Debug shranjevanje (ostaja, da lahko fizično preveriš sliko)
+        // Debug shranjevanje
         const debugPath = path.join(__dirname, '..', `debug_${obrokId}.jpg`);
         fs.writeFileSync(debugPath, Buffer.from(b64Image, 'base64'));
 
@@ -77,14 +71,10 @@ router.post('/uploadimg', async (req, res) => {
         });
 
         const foodData = JSON.parse(completion.choices[0].message.content);
-
-        // Logiramo celoten odgovor, da vidimo opis v konzoli
         console.log('📝 OpenAI opis slike:', foodData.aiDescription);
-        console.log('📊 Podatki:', { isFood: foodData.isFood, name: foodData.foodName });
 
-        // Če ni hrane, vrnemo opis uporabniku/logom, namesto samo generične napake
         if (!foodData.isFood) {
-            console.warn(`🚫 Hrana ni bila zaznana. Razlog: ${foodData.aiDescription}`);
+            console.warn(`🚫 Hrana ni bila zaznana: ${foodData.aiDescription}`);
             return res.status(400).json({
                 error: 'Na sliki ni bila zaznana hrana.',
                 details: foodData.aiDescription
@@ -108,7 +98,9 @@ router.post('/uploadimg', async (req, res) => {
 
         // 4. MQTT OBVESTILO
         if (mqttClient.connected) {
+            // Pomembno: JSON.stringify in uporaba MQTT_TOPIC konstante
             mqttClient.publish(MQTT_TOPIC, JSON.stringify(novObrok), { qos: 1 });
+            console.log('📡 MQTT sporočilo poslano na:', MQTT_TOPIC);
         }
 
         console.log(`✅ Uspešno končano v ${(Date.now() - startTime)/1000}s`);
@@ -119,4 +111,5 @@ router.post('/uploadimg', async (req, res) => {
         res.status(500).json({ error: 'Interna napaka pri obdelavi slike' });
     }
 });
+
 module.exports = router;
