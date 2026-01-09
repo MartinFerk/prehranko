@@ -43,4 +43,4 @@ const obrokSchema = new mongoose.Schema({
     },
 });
 
-module.exports = mongoose.model('Obrok', obrokSchema);s
+module.exports = mongoose.model('Obrok', obrokSchema);
