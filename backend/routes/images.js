@@ -6,7 +6,6 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const FormData = require('form-data');
-const IMGUR_CLIENT_ID= '51e1094da5a4093';
 const Image = require('../models/Image');
 const Obrok = require('../models/Obrok');
 const { getJpegBase64 } = require('../utils/decompression');
@@ -36,7 +35,7 @@ async function uploadToImgur(imageBuffer) {
         const response = await axios.post('https://api.imgur.com/3/image', formData, {
             headers: {
                 ...formData.getHeaders(),
-                'Authorization': `Client-ID ${IMGUR_CLIENT_ID}`
+                'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
             }
         });
         return response.data.data.link;
