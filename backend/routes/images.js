@@ -4,6 +4,8 @@ const OpenAI = require('openai');
 const mqtt = require('mqtt');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
+const FormData = require('form-data');
 
 const Image = require('../models/Image');
 const Obrok = require('../models/Obrok');
@@ -13,7 +15,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // --- MQTT KONFIGURACIJA ---
 const MQTT_URL = 'mqtt://prehrankomosquitto.railway.internal:1883';
-const MQTT_TOPIC = 'prehranko/obroki'; // Uporabimo to konstanto spodaj
+const MQTT_TOPIC = 'prehranko/obroki';
 
 const mqttClient = mqtt.connect(MQTT_URL, {
     clientId: `api_images_${Math.random().toString(16).slice(2, 8)}`,
@@ -22,11 +24,34 @@ const mqttClient = mqtt.connect(MQTT_URL, {
     reconnectPeriod: 5000,
 });
 
+/**
+ * Pomožna funkcija za upload na Imgur
+ */
+async function uploadToImgur(imageBuffer) {
+    const formData = new FormData();
+    formData.append('image', imageBuffer);
+    formData.append('type', 'buffer');
+
+    try {
+        const response = await axios.post('https://api.imgur.com/3/image', formData, {
+            headers: {
+                ...formData.getHeaders(),
+                'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
+            }
+        });
+        return response.data.data.link;
+    } catch (error) {
+        console.error('❌ Imgur Upload Error:', error.response?.data || error.message);
+        throw new Error('Nalaganje slike na Imgur ni uspelo.');
+    }
+}
+
+// 🎯 POST /api/images/uploadimg
 router.post('/uploadimg', async (req, res) => {
     const startTime = Date.now();
     const { obrokId, userEmail, compressedData, locX, locY, width, height } = req.body;
 
-    console.log(`\n--- 🚀 Začetek procesa [ID: ${obrokId}] ---`);
+    console.log(`\n--- 🚀 Začetek procesa z Imgur URL [ID: ${obrokId}] ---`);
 
     if (!compressedData || !obrokId || !width || !height) {
         return res.status(400).json({ error: 'Manjkajoči podatki' });
@@ -36,16 +61,18 @@ router.post('/uploadimg', async (req, res) => {
         const binaryBuffer = Buffer.from(compressedData, 'base64');
 
         // 1. REKONSTRUKCIJA SLIKE
-        console.time('⏱️ Dekompresija in Sharp');
+        console.time('⏱️ Dekompresija');
         const b64Image = await getJpegBase64(binaryBuffer, width, height);
-        console.timeEnd('⏱️ Dekompresija in Sharp');
+        const imageBuffer = Buffer.from(b64Image, 'base64');
+        console.timeEnd('⏱️ Dekompresija');
 
-        // Debug shranjevanje
-        const debugPath = path.join(__dirname, '..', `debug_${obrokId}.jpg`);
-        fs.writeFileSync(debugPath, Buffer.from(b64Image, 'base64'));
+        // 2. NALAGANJE NA IMGUR
+        console.log('☁️ Nalaganje na Imgur...');
+        const imgurUrl = await uploadToImgur(imageBuffer);
+        console.log('🔗 Imgur Link:', imgurUrl);
 
-        // 2. ANALIZA S POMOČJO OPENAI GPT-4o
-        console.log('🧠 Pošiljanje na OpenAI...');
+        // 3. ANALIZA S POMOČJO OPENAI GPT-4o PREKO URL
+        console.log('🧠 OpenAI analizira URL...');
         const completion = await openai.chat.completions.create({
             model: 'gpt-4o',
             messages: [
@@ -54,15 +81,12 @@ router.post('/uploadimg', async (req, res) => {
                     content: [
                         {
                             type: 'text',
-                            text: `Analiziraj sliko. 
-                            1. Če je na sliki hrana, vrni "isFood": true in oceni kalorije/proteine.
-                            2. Če na sliki NI hrane ali je slika nejasna, vrni "isFood": false, kalorije/proteine nastavi na 0.
-                            3. V VSAKEM PRIMERU v polju "aiDescription" podrobno opiši, kaj vidiš (npr. "vidi se krožnik s testeninami", "vidim samo barvne lise in kocke", "slika je popolnoma črna").
+                            text: `Analiziraj sliko na tem URL-ju. 
                             Vrni izključno JSON: { "isFood": boolean, "calories": št, "protein": št, "foodName": "ime", "aiDescription": "opis" }`
                         },
                         {
                             type: 'image_url',
-                            image_url: { url: `data:image/jpeg;base64,${b64Image}`, detail: "low" }
+                            image_url: { url: imgurUrl } // GPT zdaj dobi URL namesto b64
                         },
                     ],
                 },
@@ -71,17 +95,14 @@ router.post('/uploadimg', async (req, res) => {
         });
 
         const foodData = JSON.parse(completion.choices[0].message.content);
-        console.log('📝 OpenAI opis slike:', foodData.aiDescription);
+        console.log('📝 OpenAI opis:', foodData.aiDescription);
 
         if (!foodData.isFood) {
-            console.warn(`🚫 Hrana ni bila zaznana: ${foodData.aiDescription}`);
-            return res.status(400).json({
-                error: 'Na sliki ni bila zaznana hrana.',
-                details: foodData.aiDescription
-            });
+            return res.status(400).json({ error: 'Hrana ni zaznana.', details: foodData.aiDescription });
         }
 
-        // 3. SHRANJEVANJE V BAZO
+        // 4. SHRANJEVANJE V BAZO
+        // Shranimo surovo binarno DCT obliko (za arhiv) in Imgur link (za hiter prikaz)
         const novaSlika = new Image({ obrokId, compressedData: binaryBuffer, width, height });
         const shranjenaSlika = await novaSlika.save();
 
@@ -89,6 +110,7 @@ router.post('/uploadimg', async (req, res) => {
             obrokId,
             userEmail,
             imageId: shranjenaSlika._id,
+            imgLink: imgurUrl, // Dodamo polje za URL
             locX, locY,
             name: foodData.foodName,
             calories: foodData.calories,
@@ -96,19 +118,17 @@ router.post('/uploadimg', async (req, res) => {
         });
         await novObrok.save();
 
-        // 4. MQTT OBVESTILO
+        // 5. MQTT OBVESTILO
         if (mqttClient.connected) {
-            // Pomembno: JSON.stringify in uporaba MQTT_TOPIC konstante
             mqttClient.publish(MQTT_TOPIC, JSON.stringify(novObrok), { qos: 1 });
-            console.log('📡 MQTT sporočilo poslano na:', MQTT_TOPIC);
         }
 
         console.log(`✅ Uspešno končano v ${(Date.now() - startTime)/1000}s`);
         res.status(201).json({ success: true, obrok: novObrok });
 
     } catch (err) {
-        console.error('❌ Napaka v procesu:', err);
-        res.status(500).json({ error: 'Interna napaka pri obdelavi slike' });
+        console.error('❌ Napaka:', err);
+        res.status(500).json({ error: 'Interna napaka pri obdelavi' });
     }
 });
 
