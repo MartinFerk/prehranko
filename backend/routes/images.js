@@ -153,4 +153,39 @@ router.post('/uploadimg', async (req, res) => {
     }
 });
 
+
+// 🎯 GET /api/images/all - Pridobi vse obroke uporabnika
+router.get('/all', async (req, res) => {
+    const { email } = req.query;
+    if (!email) return res.status(400).json({ error: 'Manjkajoč email' });
+
+    try {
+        const obroki = await Obrok.find({ userEmail: email }).sort({ timestamp: -1 });
+        res.json(obroki);
+    } catch (err) {
+        res.status(500).json({ error: 'Napaka na strežniku' });
+    }
+});
+
+// 🎯 GET /api/images/last - Pridobi zadnji obrok (Dashboard)
+const { getZadnjiObrok } = require('../mqttListener');
+
+router.get('/last', async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+
+    // 1. Najprej poglej v MQTT (RAM)
+    let zadnji = getZadnjiObrok();
+
+    // 2. Če MQTT nima nič, poglej v bazo (Fallback, da ni 404)
+    if (!zadnji) {
+        zadnji = await Obrok.findOne().sort({ timestamp: -1 });
+    }
+
+    if (zadnji) {
+        res.json({ obrok: zadnji });
+    } else {
+        res.status(404).json({ error: 'Ni podatkov.' });
+    }
+});
+
 module.exports = router;
