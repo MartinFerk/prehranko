@@ -31,36 +31,51 @@ export default function CaptureFoodScreen({ navigation, route }) {
         }
     };
 
+    import { decode as decodeJpeg } from 'jpeg-js'; // To nujno potrebuješ za piksle
+
     const analyzeFoodImage = async (localUri) => {
         setLoading(true);
         setResult(null);
+        const startTime = Date.now();
 
         try {
-            // 1. Lokacija (tvoja stara logika)
+            console.log("--- 🚀 Začetek analize obroka ---");
+
+            // 1. LOKACIJA
+            console.log("📍 Pridobivam lokacijo...");
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') throw new Error('Dovoljenje za lokacijo ni odobreno');
             const location = await Location.getCurrentPositionAsync({});
+            console.log(`✅ Lokacija pridobljena: ${location.coords.latitude}, ${location.coords.longitude}`);
 
-            // 2. PRIPRAVA PIKSLOV ZA DCT
-            // Tvoja stara koda je brala Base64, mi pa rabimo surove piksle.
-            // ImageManipulator nam pomanjša sliko na 512x512, da DCT ne traja celo večnost.
-            const manipulated = await ImageManipulator.manipulateAsync(
+            // 2. MANIPULACIJA SLIKE (Resize na 512x512)
+            console.log("🖼️ Pripravljam sliko (resize na 512x512)...");
+            const manipResult = await ImageManipulator.manipulateAsync(
                 localUri,
                 [{ resize: { width: 512, height: 512 } }],
-                { format: 'png', base64: true }
+                { format: 'jpeg', quality: 0.8, base64: true }
             );
+            console.log(`✅ Slika pripravljena. Velikost JPEG Base64: ${(manipResult.base64.length / 1024).toFixed(2)} KB`);
 
-            // 3. DCT KOMPRESIJA (Tukaj se zgodi tvoja matematika)
-            console.log("📦 Začenjam DCT kompresijo na frontendu...");
+            // 3. DEKODIRANJE JPEG -> RAW PIKSLI
+            console.log("🔓 Dekodiram JPEG v surove piksle (RGB)...");
+            const buffer = Buffer.from(manipResult.base64, 'base64');
+            const decoded = decodeJpeg(buffer, { useTArray: true });
+            const pixels = decoded.data; // Uint8Array [R, G, B, A, ...]
+            console.log(`✅ Piksli pripravljeni. Skupaj bajtov: ${pixels.length}`);
 
-            // Ker React Native nima direktnega getPixels, uporabimo trik:
-            // Base64 iz manipulated.base64 pretvorimo v Buffer, ki ga tvoj DCT razume kot piksle.
-            const pixelBuffer = Buffer.from(manipulated.base64, 'base64');
+            // 4. DCT KOMPRESIJA (Tvoj algoritem)
+            console.log("📦 Začenjam DCT kompresijo na napravi...");
+            const dctStart = Date.now();
+            const compressedBinary = await compressImageDCT(pixels, 512, 512, 20);
+            const dctEnd = Date.now();
 
-            const compressedBinary = await compressImageDCT(pixelBuffer, 512, 512, 20);
             const base64DCT = Buffer.from(compressedBinary).toString('base64');
+            console.log(`✅ DCT končan v ${dctEnd - dctStart}ms.`);
+            console.log(`📊 Velikost DCT paketa za prenos: ${(base64DCT.length / 1024).toFixed(2)} KB`);
 
-            // 4. POŠILJANJE NA BACKEND (Brez Imgurja!)
+            // 5. POŠILJANJE NA BACKEND
+            console.log("📡 Pošiljam DCT podatke na backend...");
             const obrokId = uuid.v4();
             const response = await fetch(`${API_BASE_URL}/images/uploadimg`, {
                 method: 'POST',
@@ -68,26 +83,28 @@ export default function CaptureFoodScreen({ navigation, route }) {
                 body: JSON.stringify({
                     obrokId,
                     userEmail,
-                    compressedData: base64DCT, // Pošljemo DCT stisnjene podatke
+                    compressedData: base64DCT,
+                    width: 512,
+                    height: 512,
                     locX: location.coords.longitude,
                     locY: location.coords.latitude,
-                    width: 512,
-                    height: 512
                 }),
             });
 
             const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Napaka na strežniku');
+            if (!response.ok) throw new Error(data.error || 'Backend napaka');
+
+            console.log("✨ Backend uspešno obdelal DCT in vrnil rezultat!");
+            console.log(`⏱️ Celoten proces končan v ${(Date.now() - startTime) / 1000}s`);
 
             setResult(data.obrok);
         } catch (err) {
-            console.error('Napaka:', err.message);
-            Alert.alert('Napaka', err.message);
+            console.error('❌ NAPAKA v analyzeFoodImage:', err.message);
+            Alert.alert('Napaka pri obdelavi', err.message);
         } finally {
             setLoading(false);
         }
     };
-
     return (
         <View style={styles.container}>
             <Button title="Zajemi obrok" onPress={pickImage} color="orange" />

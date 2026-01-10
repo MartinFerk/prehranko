@@ -1,6 +1,6 @@
 const sharp = require('sharp');
 
-// Vnaprej izračunana tabela kosinusov za IDCT
+// Vnaprej izračunana tabela kosinusov ostane ista
 const COS_TABLE = Array.from({ length: 8 }, (_, u) =>
     Array.from({ length: 8 }, (_, x) => Math.cos(((2 * x + 1) * u * Math.PI) / 16))
 );
@@ -34,13 +34,10 @@ function idct8x8(F) {
     return block;
 }
 
-/**
- * @param {Buffer} binaryBuffer
- */
 async function getJpegBase64(binaryBuffer, width, height) {
     let i = 0;
     const channels = {};
-    const channelNames = ["B", "G", "R"];
+    const channelNames = ["R", "G", "B"]; // Standardni vrstni red
 
     try {
         while (i < binaryBuffer.length) {
@@ -52,69 +49,63 @@ async function getJpegBase64(binaryBuffer, width, height) {
             let blocks = [];
             for (let b = 0; b < blockCount; b++) {
                 if (i >= binaryBuffer.length) break;
-
-                let bTag = binaryBuffer.slice(i, i + 1).toString('ascii');
-                i += 1;
+                i += 1; // preskoči block tag
                 let blockLen = binaryBuffer.readUInt32LE(i);
                 i += 4;
 
                 let blockData = binaryBuffer.slice(i, i + blockLen);
                 i += blockLen;
 
-                // --- RLE DEKODIRANJE BLOKA ---
                 let j = 0;
-                let dc = blockData.readFloatLE(j);
-                j += 4;
-                let data = [dc];
+                let data = new Array(64).fill(0);
 
-                while (j < blockData.length) {
+                // DC koeficient
+                data[0] = blockData.readFloatLE(j);
+                j += 4;
+
+                let idx = 1;
+                while (j < blockData.length && idx < 64) {
                     let rule = blockData.readInt8(j);
                     j += 1;
 
-                    if (rule === 0) { // Rule 0: [rule, runLength, bitLen] + (opcijsko Float)
+                    if (rule === 0) {
                         let run = blockData.readUInt8(j);
-                        j += 1;
-                        j += 1; // Preskočimo bitLen (tisti ruleBuf.writeUInt8(0, 2))
-
-                        for (let r = 0; r < run; r++) data.push(0);
-
-                        // Če po ničlah sledi vrednost (ni konec bloka)
-                        if (j + 4 <= blockData.length) {
-                            data.push(blockData.readFloatLE(j));
+                        j += 2; // skip run + bitLen
+                        idx += run;
+                        if (j + 4 <= blockData.length && idx < 64) {
+                            data[idx++] = blockData.readFloatLE(j);
                             j += 4;
                         }
-                    } else if (rule === 1) { // Rule 1: [rule, bitLen] + Float
-                        j += 1; // Preskočimo bitLen
-                        if (j + 4 <= blockData.length) {
-                            data.push(blockData.readFloatLE(j));
+                    } else if (rule === 1) {
+                        j += 1; // skip bitLen
+                        if (j + 4 <= blockData.length && idx < 64) {
+                            data[idx++] = blockData.readFloatLE(j);
                             j += 4;
                         }
                     }
                 }
-                while (data.length < 64) data.push(0);
-                blocks.push(data.slice(0, 64));
+                blocks.push(data);
             }
             channels[channelName] = blocks;
         }
     } catch (e) {
-        console.error("Kritična napaka pri dekompresiji:", e);
+        console.error("Napaka pri branju stream-a:", e);
     }
 
-    // 2. REKONSTRUKCIJA SLIKE
+    // --- REKONSTRUKCIJA PIKSLOV ---
     const outBuffer = Buffer.alloc(width * height * 3);
 
-    channelNames.forEach((name, cIdx) => {
+    ["R", "G", "B"].forEach((name, cIdx) => {
         const blocks = channels[name];
         if (!blocks) return;
 
         let bIdx = 0;
         for (let r = 0; r < height; r += 8) {
             for (let c = 0; c < width; c += 8) {
-                if (bIdx >= blocks.length) break;
+                if (bIdx >= blocks.length) continue;
 
                 let zz = blocks[bIdx++];
                 let F = new Float32Array(64);
-
                 for (let k = 0; k < 64; k++) {
                     let [u, v] = ZIGZAG_INDICES[k];
                     F[u * 8 + v] = zz[k];
@@ -127,12 +118,8 @@ async function getJpegBase64(binaryBuffer, width, height) {
                         let val = Math.round(restored[x * 8 + y] + 128);
                         val = Math.max(0, Math.min(255, val));
 
-                        // FRONTEND: BGR vrstni red
-                        // Python kanal B (cIdx 0) -> SHARP kanal 2 (Blue)
-                        // Python kanal G (cIdx 1) -> SHARP kanal 1 (Green)
-                        // Python kanal R (cIdx 2) -> SHARP kanal 0 (Red)
-                        let targetChannel = 2 - cIdx;
-                        let pixelPos = ((r + x) * width + (c + y)) * 3 + targetChannel;
+                        // POPRAVEK: PixelPos izračun mora biti (vrstica * širina + stolpec)
+                        let pixelPos = ((r + x) * width + (c + y)) * 3 + cIdx;
 
                         if (pixelPos < outBuffer.length) {
                             outBuffer[pixelPos] = val;
