@@ -27,21 +27,53 @@ const mqttClient = mqtt.connect(MQTT_URL, {
  * Pomožna funkcija za upload na Imgur
  */
 async function uploadToImgur(imageBuffer) {
+    console.log('--- 🛠️ Debug: Imgur Upload Start ---');
+
+    // Debug logi za velikost
+    const sizeInKb = (imageBuffer.length / 1024).toFixed(2);
+    console.log(`original Buffer size: ${imageBuffer.length} bytes (${sizeInKb} KB)`);
+
+    // Pretvorba v Base64 za debug in alternativo
+    const base64Sample = imageBuffer.toString('base64').slice(0, 50);
+    console.log(`Base64 Sample: ${base64Sample}...`);
+
     const formData = new FormData();
-    formData.append('image', imageBuffer);
-    formData.append('type', 'buffer');
+
+    // POMEMBNO: Bufferju dodamo ime in tip, da ga Imgur prepozna
+    formData.append('image', imageBuffer, {
+        filename: 'upload.jpg',
+        contentType: 'image/jpeg',
+    });
 
     try {
+        console.log('📡 Pošiljanje zahtevka na Imgur API...');
         const response = await axios.post('https://api.imgur.com/3/image', formData, {
             headers: {
                 ...formData.getHeaders(),
                 'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
-            }
+            },
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity
         });
+
+        console.log('✅ Imgur odgovor prejet!');
+        console.log('🔗 Link:', response.data.data.link);
         return response.data.data.link;
+
     } catch (error) {
-        console.error('❌ Imgur Upload Error:', error.response?.data || error.message);
-        throw new Error('Nalaganje slike na Imgur ni uspelo.');
+        console.error('❌ --- Imgur Error Debug ---');
+        if (error.response) {
+            // Strežnik je odgovoril z napako (npr. 400, 403, 500)
+            console.error('Status:', error.response.status);
+            console.error('Data:', JSON.stringify(error.response.data, null, 2));
+        } else if (error.request) {
+            // Zahtevek je bil poslan, a odgovora ni bilo
+            console.error('No response received. Check internet connection or API URL.');
+        } else {
+            console.error('Error Message:', error.message);
+        }
+
+        throw new Error(`Nalaganje na Imgur ni uspelo: ${error.response?.data?.data?.error || error.message}`);
     }
 }
 
