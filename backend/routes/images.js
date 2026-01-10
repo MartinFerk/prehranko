@@ -27,56 +27,46 @@ const mqttClient = mqtt.connect(MQTT_URL, {
  * Pomožna funkcija za upload na Imgur
  */
 async function uploadToImgur(imageBuffer) {
-    console.log('--- 🛠️ Debug: Imgur Upload Start ---');
+    console.log('--- 🛠️ Debug: Imgur Upload Start (Base64 Mode) ---');
 
-    // Debug logi za velikost
+    // 1. Izračun velikosti in priprava Base64
     const sizeInKb = (imageBuffer.length / 1024).toFixed(2);
-    console.log(`original Buffer size: ${imageBuffer.length} bytes (${sizeInKb} KB)`);
+    const base64Image = imageBuffer.toString('base64');
 
-    // Pretvorba v Base64 za debug in alternativo
-    const base64Sample = imageBuffer.toString('base64').slice(0, 50);
-    console.log(`Base64 Sample: ${base64Sample}...`);
+    console.log(`📦 Buffer size: ${sizeInKb} KB`);
+    console.log(`🔤 Base64 string length: ${base64Image.length} characters`);
+    console.log(`🔍 Base64 Start: ${base64Image.slice(0, 50)}...`);
 
-    const formData = new FormData();
-
-    // POMEMBNO: Bufferju dodamo ime in tip, da ga Imgur prepozna
-    formData.append('image', imageBuffer, {
-        filename: 'upload.jpg',
-        contentType: 'image/jpeg',
-    });
+    // 2. Priprava telesa (body) - točno tako, kot si imel na frontendu
+    // Uporabimo URLSearchParams, da simuliramo x-www-form-urlencoded
+    const params = new URLSearchParams();
+    params.append('image', base64Image);
+    params.append('type', 'base64');
 
     try {
-        console.log('📡 Pošiljanje zahtevka na Imgur API...');
-        const response = await axios.post('https://api.imgur.com/3/image', formData, {
+        console.log('📡 Pošiljanje na Imgur kot URL-encoded Base64...');
+        const response = await axios.post('https://api.imgur.com/3/image', params, {
             headers: {
-                ...formData.getHeaders(),
-                'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
-            },
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity
+                'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
         });
 
-        console.log('✅ Imgur odgovor prejet!');
+        console.log('✅ Imgur Success!');
         console.log('🔗 Link:', response.data.data.link);
         return response.data.data.link;
 
     } catch (error) {
         console.error('❌ --- Imgur Error Debug ---');
         if (error.response) {
-            // Strežnik je odgovoril z napako (npr. 400, 403, 500)
             console.error('Status:', error.response.status);
             console.error('Data:', JSON.stringify(error.response.data, null, 2));
-        } else if (error.request) {
-            // Zahtevek je bil poslan, a odgovora ni bilo
-            console.error('No response received. Check internet connection or API URL.');
         } else {
             console.error('Error Message:', error.message);
         }
-
-        throw new Error(`Nalaganje na Imgur ni uspelo: ${error.response?.data?.data?.error || error.message}`);
+        throw new Error(`Imgur upload failed: ${error.response?.data?.data?.error || error.message}`);
     }
 }
-
 // 🎯 POST /api/images/uploadimg
 router.post('/uploadimg', async (req, res) => {
     const startTime = Date.now();
