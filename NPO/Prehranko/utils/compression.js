@@ -139,9 +139,10 @@ export const compressImageDCT = async (pixelData, width, height, factor = 20) =>
 
             // Zapis preostalih ničel na koncu bloka
             if (runLength > 0) {
-                let endBuf = Buffer.alloc(2);
+                let endBuf = Buffer.alloc(3); // 3 namesto 2
                 endBuf.writeInt8(0, 0);
                 endBuf.writeUInt8(runLength, 1);
+                endBuf.writeUInt8(0, 2);
                 blockDataParts.push(endBuf);
             }
 

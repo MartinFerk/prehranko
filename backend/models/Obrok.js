@@ -23,10 +23,15 @@ const obrokSchema = new mongoose.Schema({
         type: Number,
         default: null,
     },
-    // Shranjujemo referenco (ID) na dokument v zbirki 'Image'
+    // Shranjujemo referenco (ID) na binarno sliko (v tvoji Image zbirki)
     imageId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Image',
+        default: null,
+    },
+    // NOVO: Direktna povezava do slike na Imgurju (za hiter prikaz v aplikaciji)
+    imgLink: {
+        type: String,
         default: null,
     },
     calories: {
@@ -41,6 +46,11 @@ const obrokSchema = new mongoose.Schema({
         type: String,
         default: 'Nov obrok',
     },
+    // DODATNO: Opis, ki ga generira AI (pomaga razumeti zakaj takšne kalorije)
+    aiDescription: {
+        type: String,
+        default: '',
+    }
 });
 
 module.exports = mongoose.model('Obrok', obrokSchema);
