@@ -3,6 +3,7 @@ import { View, Text, Button, Image, ActivityIndicator, Alert, StyleSheet } from 
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Location from 'expo-location';
+import { decode as decodeJpeg } from 'jpeg-js'; // To nujno potrebuješ za piksle
 import * as ImageManipulator from 'expo-image-manipulator';
 import uuid from 'react-native-uuid';
 import { Buffer } from 'buffer';
@@ -30,9 +31,6 @@ export default function CaptureFoodScreen({ navigation, route }) {
             analyzeFoodImage(pickedUri);
         }
     };
-
-    import { decode as decodeJpeg } from 'jpeg-js'; // To nujno potrebuješ za piksle
-
     const analyzeFoodImage = async (localUri) => {
         setLoading(true);
         setResult(null);
