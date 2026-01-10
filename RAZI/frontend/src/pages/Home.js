@@ -23,7 +23,7 @@ const Home = () => {
   const [showMineOnly, setShowMineOnly] = useState(false);
   const [userName, setUserName] = useState('');
   const navigate = useNavigate();
-  const [zadnjiObrok, setZadnjiObrok] = useState('');
+  const [zadnjiObrok, setZadnjiObrok] = useState(null); // Spremenjeno v null namesto ''
 
   const userEmail = localStorage.getItem('userEmail');
   const isLoggedIn = localStorage.getItem('loggedIn') === 'true';
@@ -47,28 +47,41 @@ const Home = () => {
 
     fetchUserName();
   }, [isLoggedIn, userEmail, navigate]);
-  
+
+  // POPRAVLJENO: Dodan email v klic in odvisnost v useEffect
   useEffect(() => {
     const fetchObroki = async () => {
+      if (!userEmail) return; // Preprečimo klic, če ni emaila
+
       try {
-        const data = await getAllObroki();
-        const validObroki = data.filter(
-          (o) => !isNaN(parseFloat(o.locY)) && !isNaN(parseFloat(o.locX))
-        );
-        setObroki(validObroki);
+        // NUJNO: Podajamo userEmail, da backend vrne /all?email=...
+        const data = await getAllObroki(userEmail);
+
+        if (Array.isArray(data)) {
+          const validObroki = data.filter(
+              (o) => !isNaN(parseFloat(o.locY)) && !isNaN(parseFloat(o.locX))
+          );
+          setObroki(validObroki);
+        }
       } catch (err) {
         console.error('❌ Napaka pri pridobivanju obrokov:', err);
       }
     };
 
     fetchObroki();
-  }, []);
+    // Osvežimo vsakih 30 sekund, da vidimo nove obroke drugih uporabnikov
+    const interval = setInterval(fetchObroki, 30000);
+    return () => clearInterval(interval);
+  }, [userEmail]);
 
   useEffect(() => {
     const fetchZadnjiObrok = async () => {
       try {
         const data = await getLastObrok();
-        setZadnjiObrok(data.obrok);
+        // Backend vrne { obrok: { ... } }
+        if (data && data.obrok) {
+          setZadnjiObrok(data.obrok);
+        }
       } catch (err) {
         console.error("Napaka pri nalaganju zadnjega obroka:", err);
       }
@@ -86,89 +99,90 @@ const Home = () => {
   const filteredObroki = obroki.filter((o) => {
     const isMine = !showMineOnly || o.userEmail === userEmail;
     const obrokDate = new Date(o.timestamp);
+    // Filtriranje za zadnjih 7 dni
     return isMine && obrokDate >= sevenDaysAgo && obrokDate <= now;
   });
 
   return (
-  <div className="home-layout">
-    <div className="left-panel">
-        {isLoggedIn && (
-        <h2 className="welcome-text">Pozdravljen, {userName}!</h2>
-        )}
-      {zadnjiObrok && typeof zadnjiObrok === 'object' && (
-        <div className="latest-obrok">
-          <h3>Nedavno dodan obrok:</h3>
-          <p><strong>Ime:</strong> {zadnjiObrok.name}</p>
-          <p><strong>Email:</strong> {zadnjiObrok.userEmail}</p>
-          <p><strong>Kcal:</strong> {zadnjiObrok.calories} kcal</p>
-          <p><strong>Beljakovine:</strong> {zadnjiObrok.protein} g</p>
-          <p>
-            <strong>Lokacija:</strong>{' '}
-            Lat {zadnjiObrok.locY?.toFixed(3)}, Long {zadnjiObrok.locX?.toFixed(3)}
-          </p>
+      <div className="home-layout">
+        <div className="left-panel">
+          {isLoggedIn && (
+              <h2 className="welcome-text">Pozdravljen, {userName}!</h2>
+          )}
+          {zadnjiObrok && typeof zadnjiObrok === 'object' && (
+              <div className="latest-obrok">
+                <h3>Nedavno dodan obrok:</h3>
+                <p><strong>Ime:</strong> {zadnjiObrok.name}</p>
+                <p><strong>Email:</strong> {zadnjiObrok.userEmail}</p>
+                <p><strong>Kcal:</strong> {zadnjiObrok.calories} kcal</p>
+                <p><strong>Beljakovine:</strong> {zadnjiObrok.protein} g</p>
+                <p>
+                  <strong>Lokacija:</strong>{' '}
+                  Lat {zadnjiObrok.locY?.toFixed(3)}, Long {zadnjiObrok.locX?.toFixed(3)}
+                </p>
+              </div>
+          )}
         </div>
-      )}
-    </div>
 
-    <div className="right-panel">
-      <div className="map-container">
-        <MapContainer
-          center={[46.55472, 15.64667]}
-          zoom={13}
-          scrollWheelZoom={true}
-          style={{ height: '100%', width: '100%' }}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> prispevalci'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {filteredObroki.map((obrok) => {
-            const lat = parseFloat(obrok.locY);
-            const lng = parseFloat(obrok.locX);
-            if (isNaN(lat) || isNaN(lng)) return null;
+        <div className="right-panel">
+          <div className="map-container">
+            <MapContainer
+                center={[46.55472, 15.64667]}
+                zoom={13}
+                scrollWheelZoom={true}
+                style={{ height: '100%', width: '100%' }}
+            >
+              <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> prispevalci'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {filteredObroki.map((obrok) => {
+                const lat = parseFloat(obrok.locY);
+                const lng = parseFloat(obrok.locX);
+                if (isNaN(lat) || isNaN(lng)) return null;
 
-            return (
-              <Marker
-                key={obrok.obrokId}
-                position={[lat, lng]}
-                icon={goldMarkerIcon}
-              >
-                <Popup>
-                  <div className="popup-card">
-                    <img
-                      src={obrok.imgLink}
-                      alt={obrok.name}
-                      className="popup-image"
-                    />
-                    <div className="popup-info">
-                      <h4>🍽️ {obrok.name}</h4>
-                      <p>🕒 <strong>{new Date(obrok.timestamp).toLocaleString()}</strong></p>
-                      <p>📧 {obrok.userEmail}</p>
-                      <p>🔥 {obrok.calories} kcal</p>
-                      <p>💪 {obrok.protein}g protein</p>
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
-        </MapContainer>
+                return (
+                    <Marker
+                        key={obrok.obrokId}
+                        position={[lat, lng]}
+                        icon={goldMarkerIcon}
+                    >
+                      <Popup>
+                        <div className="popup-card">
+                          <img
+                              src={obrok.imgLink}
+                              alt={obrok.name}
+                              className="popup-image"
+                              style={{ width: '100%', borderRadius: '8px' }}
+                          />
+                          <div className="popup-info">
+                            <h4>🍽️ {obrok.name}</h4>
+                            <p>🕒 <strong>{new Date(obrok.timestamp).toLocaleString()}</strong></p>
+                            <p>📧 {obrok.userEmail}</p>
+                            <p>🔥 {obrok.calories} kcal</p>
+                            <p>💪 {obrok.protein}g protein</p>
+                          </div>
+                        </div>
+                      </Popup>
+                    </Marker>
+                );
+              })}
+            </MapContainer>
+          </div>
+
+          <div className="checkbox-wrapper">
+            <label>
+              <input
+                  type="checkbox"
+                  checked={showMineOnly}
+                  onChange={() => setShowMineOnly(!showMineOnly)}
+              />{' '}
+              Pokaži samo moje obroke
+            </label>
+          </div>
+        </div>
       </div>
-
-      <div className="checkbox-wrapper">
-        <label>
-            <input
-            type="checkbox"
-            checked={showMineOnly}
-            onChange={() => setShowMineOnly(!showMineOnly)}
-            />{' '}
-            Pokaži samo moje obroke
-        </label>
-        </div>
-    </div>
-  </div>
-);
-
+  );
 };
 
 export default Home;
