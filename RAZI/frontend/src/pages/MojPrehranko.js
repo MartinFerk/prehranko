@@ -12,7 +12,8 @@ import {
     ResponsiveContainer,
     ReferenceLine,
     CartesianGrid,
-    Area
+    Area,
+    AreaChart // Dodano za pravilno delovanje Area elementa
 } from 'recharts';
 
 const MojPrehranko = () => {
@@ -23,25 +24,31 @@ const MojPrehranko = () => {
     const navigate = useNavigate();
 
     const userEmail = localStorage.getItem('userEmail');
-     const isLoggedIn = localStorage.getItem('loggedIn') === 'true';
+    const isLoggedIn = localStorage.getItem('loggedIn') === 'true';
 
     useEffect(() => {
-    if (!isLoggedIn || !userEmail) {
-      alert('⚠️ Nisi prijavljen – preusmerjam na prijavo.');
-      navigate('/login');
-      return;
-     }
-    });
+        if (!isLoggedIn || !userEmail) {
+            alert('⚠️ Nisi prijavljen – preusmerjam na prijavo.');
+            navigate('/login');
+        }
+    }, [isLoggedIn, userEmail, navigate]);
 
     useEffect(() => {
-        
+        // Preprečimo izvajanje, če ni emaila
+        if (!userEmail) return;
+
         const fetchAndCalculate = async () => {
             try {
-                const allObroki = await getAllObroki();
+                // POPRAVLJENO: Dodan email v klic funkcije
+                const allObroki = await getAllObroki(userEmail);
+
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
-                const myObroki = allObroki.filter((o) => o.userEmail === userEmail);
+                // Filtriramo samo svoje obroke (varnostni popravek)
+                const myObroki = Array.isArray(allObroki)
+                    ? allObroki.filter((o) => o.userEmail === userEmail)
+                    : [];
 
                 const myTodayObroki = myObroki.filter((o) => {
                     const date = new Date(o.timestamp);
@@ -55,15 +62,19 @@ const MojPrehranko = () => {
                 setTodayCalories(caloriesSum);
                 setTodayProtein(proteinSum);
 
+                // Pridobivanje ciljev uporabnika
                 const userData = await getUserByEmail(userEmail);
-                const caloricGoal = parseInt(userData.user.caloricGoal);
-                const proteinGoal = parseInt(userData.user.proteinGoal);
+                if (userData && userData.user) {
+                    const caloricGoal = parseInt(userData.user.caloricGoal);
+                    const proteinGoal = parseInt(userData.user.proteinGoal);
 
-                setGoals({
-                    calories: isNaN(caloricGoal) ? 2000 : caloricGoal,
-                    protein: isNaN(proteinGoal) ? 100 : proteinGoal,
-                });
+                    setGoals({
+                        calories: isNaN(caloricGoal) ? 2000 : caloricGoal,
+                        protein: isNaN(proteinGoal) ? 100 : proteinGoal,
+                    });
+                }
 
+                // Priprava podatkov za graf (zadnjih 7 dni)
                 const todayDate = new Date();
                 const past7 = Array.from({ length: 7 }, (_, i) => {
                     const d = new Date(todayDate);
@@ -148,26 +159,14 @@ const MojPrehranko = () => {
             </div>
 
             <h2>Tedenski pregled (kalorije)</h2>
-            <div style={{ width: '900px', margin: '0 auto' }}>
-                <ResponsiveContainer width="100%" height={200}>
+            <div style={{ width: '100%', maxWidth: '900px', margin: '0 auto' }}>
+                <ResponsiveContainer width="100%" height={250}>
                     <LineChart data={weeklyStats} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                        <defs>
-                            <linearGradient id="colorCalories" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#8884d8" stopOpacity={0.4}/>
-                                <stop offset="100%" stopColor="#8884d8" stopOpacity={0}/>
-                            </linearGradient>
-                        </defs>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" />
-                        <YAxis domain={[0, goals.calories * 1.1]}  tickFormatter={(value) => Math.round(value)} />
+                        <YAxis domain={[0, goals.calories * 1.2]} tickFormatter={(value) => Math.round(value)} />
                         <Tooltip formatter={(value) => `${value} kcal`} />
-                        <ReferenceLine y={goals.calories} stroke="gray" strokeDasharray="3 3" />
-                        <Area
-                            type="monotone"
-                            dataKey="calories"
-                            stroke="none"
-                            fill="url(#colorCalories)"
-                        />
+                        <ReferenceLine y={goals.calories} label="Cilj" stroke="red" strokeDasharray="3 3" />
                         <Line
                             type="monotone"
                             dataKey="calories"
@@ -176,7 +175,8 @@ const MojPrehranko = () => {
                             dot={{
                                 stroke: '#000',
                                 strokeWidth: 1,
-                                fill: (entry) => entry.calories >= goals.calories ? 'green' : 'red',
+                                r: 5,
+                                fill: (entry) => entry.calories >= goals.calories ? '#28a745' : '#dc3545',
                             }}
                         />
                     </LineChart>
@@ -184,26 +184,14 @@ const MojPrehranko = () => {
             </div>
 
             <h2 style={{ marginTop: '40px' }}>Tedenski pregled (beljakovine)</h2>
-            <div style={{ width: '900px', margin: '0 auto' }}>
-                <ResponsiveContainer width="100%" height={200}>
+            <div style={{ width: '100%', maxWidth: '900px', margin: '0 auto' }}>
+                <ResponsiveContainer width="100%" height={250}>
                     <LineChart data={weeklyStats} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                        <defs>
-                            <linearGradient id="colorProtein" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#82ca9d" stopOpacity={0.4} />
-                                <stop offset="100%" stopColor="#82ca9d" stopOpacity={0} />
-                            </linearGradient>
-                        </defs>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" />
-                        <YAxis domain={[0, goals.protein * 1.1]} tickFormatter={(value) => Math.round(value)} />
+                        <YAxis domain={[0, goals.protein * 1.2]} tickFormatter={(value) => Math.round(value)} />
                         <Tooltip formatter={(value) => `${value} g`} />
-                        <ReferenceLine y={goals.protein} stroke="gray" strokeDasharray="3 3" />
-                        <Area
-                            type="monotone"
-                            dataKey="protein"
-                            stroke="none"
-                            fill="url(#colorProtein)"
-                        />
+                        <ReferenceLine y={goals.protein} label="Cilj" stroke="red" strokeDasharray="3 3" />
                         <Line
                             type="monotone"
                             dataKey="protein"
@@ -212,13 +200,12 @@ const MojPrehranko = () => {
                             dot={{
                                 stroke: '#000',
                                 strokeWidth: 1,
-                                fill: (entry) => entry.protein >= goals.protein ? 'green' : 'red',
+                                r: 5,
+                                fill: (entry) => entry.protein >= goals.protein ? '#28a745' : '#dc3545',
                             }}
                         />
                     </LineChart>
                 </ResponsiveContainer>
-
-
             </div>
         </div>
     );
