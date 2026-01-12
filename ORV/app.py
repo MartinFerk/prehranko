@@ -10,6 +10,8 @@ from torchvision import models, transforms
 import os
 import urllib.request
 import gdown
+import json
+from datetime import datetime
 
 MODEL_PATH = "resnet50_face_trained.pt"
 MODEL_URL = "https://drive.google.com/uc?export=download&id=1ylu7N69oA5N5QhxsilIgtsCS6CUgjtK9"
@@ -189,6 +191,18 @@ def verify_face():
             return jsonify({"error": "Ni shranjenih značilk"}), 404
 
         logging.debug(f"📦 Pridobljenih {len(saved_embeddings)} shranjenih embeddingov")
+        
+        mpi_payload = {
+            "test_embedding": test_embedding,
+            "saved_embeddings": saved_embeddings,
+            "email": email,
+            "timestamp": datetime.now().isoformat()
+        }
+
+        with open("mpi_input.json", "w") as f:
+            json.dump(mpi_payload, f)
+
+        logging.info("📁 Embeddingi shranjeni v mpi_input.json")
 
         # ZAČASNO – dokler ne veževa MPI
         sim = 0.0
