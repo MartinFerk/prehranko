@@ -190,11 +190,10 @@ def verify_face():
 
         logging.debug(f"📦 Pridobljenih {len(saved_embeddings)} shranjenih embeddingov")
 
-        avg_embedding = np.mean(np.array(saved_embeddings), axis=0)
-        sim = cosine_similarity(test_embedding, avg_embedding)
+        # ZAČASNO – dokler ne veževa MPI
+        sim = 0.0
+        success = False
 
-        logging.info(f"▶️ Cosine similarity: {sim:.4f}")
-        success = bool(sim > 0.4)
 
         return jsonify({
             "success": success,
