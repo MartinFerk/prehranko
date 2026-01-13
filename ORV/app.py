@@ -214,23 +214,26 @@ def verify_face():
         with open(input_filename, "w") as f:
             json.dump(mpi_payload, f)
 
-        # Tukaj so bili zamiki popravljeni
-        logging.info(f"📁 Podatki shranjeni v {input_filename}. Zaganjam MPI...")
+        logging.info(f"📁 Podatki shranjeni v {input_filename}")
 
-        # Zaženemo MPI in prestrežemo stdout/stderr
-        process = subprocess.run(
-            ["mpiexec", "--allow-run-as-root", "-n", "4", "python", "mpi_verify.py", input_filename],
-            capture_output=True, # To zajame izpis
-            text=True,           # Da dobimo string namesto bajtov
-            check=True
-        )
+        # Zagon MPI
+        try:
+            process = subprocess.run(
+                ["mpiexec", "--allow-run-as-root", "-n", "4", "python", "mpi_verify.py", input_filename],
+                capture_output=True,  # Zajame stdout in stderr
+                text=True,            # Pretvori bajte v string
+                check=True
+            )
 
-        # To bo dejansko poslalo MPI izpise v tvojo konzolo (Railway logs)
-        if process.stdout:
-            print(process.stdout, flush=True)
+            # Izpiši MPI loge v Flask loge (Railway jih bo videl)
+            if process.stdout:
+                print(f"--- MPI STDOUT ---\n{process.stdout}", flush=True)
+            if process.stderr:
+                print(f"--- MPI STDERR ---\n{process.stderr}", flush=True)
 
-        if process.stderr:
-            print(f"MPI Error Log: {process.stderr}", flush=True)
+        except subprocess.CalledProcessError as e:
+            logging.error(f"MPI napaka: {e.stderr}")
+            return jsonify({"error": "MPI izvajanje spodletelo"}), 500
 
         # Kratek premor, da MPI zaključi pisanje
         time.sleep(0.3)
@@ -259,7 +262,6 @@ def verify_face():
         return jsonify({ "error": str(e) }), 500
 
 if __name__ == "__main__":
-    # Railway uporablja PORT okoljsko spremenljivko
-    import os
+    # Railway uporablja okoljsko spremenljivko PORT
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
