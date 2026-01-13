@@ -216,11 +216,19 @@ def verify_face():
 
         logging.info(f"📁 Podatki shranjeni v {input_filename}")
 
-        # Zagon MPI
-        subprocess.run(
-            ["mpiexec", "-n", "4", "python", "mpi_verify.py", input_filename],
-            check=True
-        )
+        # Zaženemo MPI in zagotovimo, da se izpisi preusmerijo v konzolo
+                process = subprocess.run(
+                    ["mpiexec", "--allow-run-as-root", "-n", "4", "python", "mpi_verify.py", input_filename],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+
+                # To bo izpisalo vse 'print' stavke iz mpi_verify.py v Railway logs
+                if process.stdout:
+                    print(process.stdout, flush=True)
+                if process.stderr:
+                    print(f"MPI Error Log: {process.stderr}", flush=True)
 
         # Kratek premor, da MPI zaključi pisanje
         time.sleep(0.3)
