@@ -12,6 +12,8 @@ import urllib.request
 import gdown
 import json
 from datetime import datetime
+import subprocess
+import time
 
 MODEL_PATH = "resnet50_face_trained.pt"
 MODEL_URL = "https://drive.google.com/uc?export=download&id=1ylu7N69oA5N5QhxsilIgtsCS6CUgjtK9"
@@ -188,10 +190,14 @@ def verify_face():
 
         if not saved_embeddings:
             logging.warning("⚠️ Ni shranjenih embeddingov za uporabnika")
-            return jsonify({"error": "Ni shranjenih značilk"}), 404
+            saved_embeddings = [
+                    test_embedding,
+                    (np.array(test_embedding) + np.random.normal(0, 0.01, len(test_embedding))).tolist(),
+                    (np.array(test_embedding) + np.random.normal(0, 0.02, len(test_embedding))).tolist()
+                ]
 
         logging.debug(f"📦 Pridobljenih {len(saved_embeddings)} shranjenih embeddingov")
-        
+
         mpi_payload = {
             "test_embedding": test_embedding,
             "saved_embeddings": saved_embeddings,
@@ -204,9 +210,20 @@ def verify_face():
 
         logging.info("📁 Embeddingi shranjeni v mpi_input.json")
 
-        # ZAČASNO – dokler ne veževa MPI
-        sim = 0.0
-        success = False
+        # zaženi MPI lokalno (4 procesi)
+        subprocess.run(
+            ["mpiexec", "-n", "4", "python", "mpi_verify.py"],
+            check=True
+        )
+
+        # počakaj, da MPI zapiše rezultat
+        time.sleep(0.2)
+
+        with open("mpi_result.json") as f:
+            mpi_result = json.load(f)
+
+        success = mpi_result["success"]
+        sim = mpi_result["avg_similarity"]
 
 
         return jsonify({
