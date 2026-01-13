@@ -14,6 +14,7 @@ import json
 from datetime import datetime
 import subprocess
 import time
+import uuid
 
 MODEL_PATH = "resnet50_face_trained.pt"
 MODEL_URL = "https://drive.google.com/uc?export=download&id=1ylu7N69oA5N5QhxsilIgtsCS6CUgjtK9"
@@ -180,6 +181,7 @@ def verify_face():
             logging.warning(f"❌ Obraz ni bil zaznan: {e}")
             return jsonify({"error": "Obraz ni bil zaznan"}), 400
 
+        # Pridobivanje shranjenih embeddingov
         response = requests.get(f"https://prehranko-production.up.railway.app/api/auth/embeddings?email={email}")
         if response.status_code != 200:
             logging.error(f"❌ Napaka pri pridobivanju značilk: {response.status_code}")
@@ -190,47 +192,57 @@ def verify_face():
 
         if not saved_embeddings:
             logging.warning("⚠️ Ni shranjenih embeddingov za uporabnika")
+            # Demo/fallback podatki (za testiranje)
             saved_embeddings = [
-                    test_embedding,
-                    (np.array(test_embedding) + np.random.normal(0, 0.01, len(test_embedding))).tolist(),
-                    (np.array(test_embedding) + np.random.normal(0, 0.02, len(test_embedding))).tolist()
-                ]
+                test_embedding,
+                (np.array(test_embedding) + np.random.normal(0, 0.01, len(test_embedding))).tolist()
+            ]
 
-        logging.debug(f"📦 Pridobljenih {len(saved_embeddings)} shranjenih embeddingov")
+        # --- MPI DEL Z UNIKATNIMI DATOTEKAMI ---
+        unique_id = str(uuid.uuid4())
+        input_filename = f"mpi_input_{unique_id}.json"
+        result_filename = f"mpi_result_{unique_id}.json"
 
         mpi_payload = {
             "test_embedding": test_embedding,
             "saved_embeddings": saved_embeddings,
             "email": email,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "result_file": result_filename
         }
 
-        with open("mpi_input.json", "w") as f:
+        with open(input_filename, "w") as f:
             json.dump(mpi_payload, f)
 
-        logging.info("📁 Embeddingi shranjeni v mpi_input.json")
+        logging.info(f"📁 Podatki shranjeni v {input_filename}")
 
-        # zaženi MPI lokalno (4 procesi)
+        # Zagon MPI
         subprocess.run(
-            ["mpiexec", "-n", "4", "python", "mpi_verify.py"],
+            ["mpiexec", "-n", "4", "python", "mpi_verify.py", input_filename],
             check=True
         )
 
-        # počakaj, da MPI zapiše rezultat
-        time.sleep(0.2)
+        # Kratek premor, da MPI zaključi pisanje
+        time.sleep(0.3)
 
-        with open("mpi_result.json") as f:
-            mpi_result = json.load(f)
+        if os.path.exists(result_filename):
+            with open(result_filename) as f:
+                mpi_result = json.load(f)
 
-        success = mpi_result["success"]
-        sim = mpi_result["avg_similarity"]
+            # Čiščenje datotek takoj po branju
+            try:
+                os.remove(input_filename)
+                os.remove(result_filename)
+            except Exception as e:
+                logging.warning(f"Ni bilo mogoče izbrisati začasnih datotek: {e}")
 
-
-        return jsonify({
-            "success": success,
-            "similarity": float(sim),
-            "message": "Obraz ustreza" if success else "Obraz se ne ujema"
-        })
+            return jsonify({
+                "success": mpi_result["success"],
+                "similarity": float(mpi_result["avg_similarity"]),
+                "message": "Obraz ustreza" if mpi_result["success"] else "Obraz se ne ujema"
+            })
+        else:
+            raise FileNotFoundError(f"Rezultat {result_filename} ni bil najden.")
 
     except Exception as e:
         logging.exception("❌ Nepričakovana napaka pri preverjanju")

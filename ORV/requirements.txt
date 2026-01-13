@@ -9,3 +9,4 @@ requests
 torchvision
 gdown
 pytest
+mpi4py
