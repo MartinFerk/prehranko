@@ -214,23 +214,23 @@ def verify_face():
         with open(input_filename, "w") as f:
             json.dump(mpi_payload, f)
 
-       # V app.py spremeni klic MPI-ja
-               logging.info(f"📁 Podatki shranjeni v {input_filename}. Zaganjam MPI...")
+        # Tukaj so bili zamiki popravljeni
+        logging.info(f"📁 Podatki shranjeni v {input_filename}. Zaganjam MPI...")
 
-               # Zaženemo MPI in prestrežemo stdout/stderr
-               process = subprocess.run(
-                   ["mpiexec", "--allow-run-as-root", "-n", "4", "python", "mpi_verify.py", input_filename],
-                   capture_output=True, # To zajame izpis
-                   text=True,           # Da dobimo string namesto bajtov
-                   check=True
-               )
+        # Zaženemo MPI in prestrežemo stdout/stderr
+        process = subprocess.run(
+            ["mpiexec", "--allow-run-as-root", "-n", "4", "python", "mpi_verify.py", input_filename],
+            capture_output=True, # To zajame izpis
+            text=True,           # Da dobimo string namesto bajtov
+            check=True
+        )
 
-               # To bo dejansko poslalo MPI izpise v tvojo konzolo (Railway logs)
-               if process.stdout:
-                   print(process.stdout, flush=True)
+        # To bo dejansko poslalo MPI izpise v tvojo konzolo (Railway logs)
+        if process.stdout:
+            print(process.stdout, flush=True)
 
-               if process.stderr:
-                   print(f"MPI Error Log: {process.stderr}", flush=True)
+        if process.stderr:
+            print(f"MPI Error Log: {process.stderr}", flush=True)
 
         # Kratek premor, da MPI zaključi pisanje
         time.sleep(0.3)
@@ -259,4 +259,7 @@ def verify_face():
         return jsonify({ "error": str(e) }), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    # Railway uporablja PORT okoljsko spremenljivko
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
