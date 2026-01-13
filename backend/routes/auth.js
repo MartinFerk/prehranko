@@ -245,33 +245,68 @@ router.post("/verify-face", upload.single("image"), async (req, res) => {
   const { email } = req.body;
   const file = req.file;
 
+  // 1. Preverjanje vhodnih podatkov
   if (!email || !file) {
+    console.log("⚠️ Manjka slika ali email v zahtevi.");
     return res.status(400).json({ message: "Manjka slika ali email" });
   }
 
   try {
+    // 2. Priprava podatkov za Python strežnik
     const form = new FormData();
     form.append("email", email);
     form.append("image", fs.createReadStream(file.path));
 
+    console.log(`Sending face verification request for: ${email}`);
+
+    // 3. Klic na Python strežnik (kjer teče ResNet + MPI)
     const response = await axios.post(
-      "https://prehranko-production.up.railway.app/api/auth/verify",
-      form,
-      {
-        headers: form.getHeaders(),
-      }
+        "https://prehranko-production.up.railway.app/api/auth/verify",
+        form,
+        {
+          headers: form.getHeaders(),
+        }
     );
 
-    fs.unlinkSync(file.path);
+    // LOG ZA RAILWAY: Tukaj boš videl, kaj Python dejansko vrne
+    console.log("🐍 Odgovor iz Python strežnika:", response.data);
 
-    if (response.data.success) {
-      return res.json({ message: "Obraz preverjen, 2FA uspešna" });
-    } else {
-      return res.status(401).json({ message: "Obraz ni prepoznan" });
+    // 4. Brisanje začasne slike iz Node.js strežnika
+    if (fs.existsSync(file.path)) {
+      fs.unlinkSync(file.path);
     }
+
+    // 5. VRRAČANJE REZULTATA MOBILNI APLIKACIJI
+    // Pomembno: response.data vsebuje 'success' in 'similarity' iz Pythona
+    if (response.data.success) {
+      return res.json({
+        success: true,
+        message: "Obraz preverjen, 2FA uspešna",
+        similarity: response.data.similarity // Tole je prej manjkalo!
+      });
+    } else {
+      return res.status(401).json({
+        success: false,
+        message: response.data.error || "Obraz ni prepoznan",
+        similarity: response.data.similarity || 0 // Tole je prej manjkalo!
+      });
+    }
+
   } catch (err) {
-    console.error("❌ Napaka pri preverjanju obraza:", err.message);
-    return res.status(500).json({ message: "Napaka pri preverjanju" });
+    // Če pride do napake, poskrbi, da se slika vseeno izbriše
+    if (file && fs.existsSync(file.path)) {
+      fs.unlinkSync(file.path);
+    }
+
+    console.error("❌ Napaka pri preverjanju obraza (Node.js -> Python):", err.message);
+
+    // Če je Axios javil napako (npr. Python vrnil 500)
+    if (err.response) {
+      console.error("Podrobnosti napake Pythona:", err.response.data);
+      return res.status(err.response.status).json(err.response.data);
+    }
+
+    return res.status(500).json({ message: "Napaka pri komunikaciji s prepoznavo obraza" });
   }
 });
 
