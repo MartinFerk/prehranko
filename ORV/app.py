@@ -15,6 +15,7 @@ from datetime import datetime
 import subprocess
 import time
 import uuid
+import sys
 
 MODEL_PATH = "resnet50_face_trained.pt"
 MODEL_URL = "https://drive.google.com/uc?export=download&id=1ylu7N69oA5N5QhxsilIgtsCS6CUgjtK9"
@@ -217,23 +218,12 @@ def verify_face():
         logging.info(f"📁 Podatki shranjeni v {input_filename}")
 
         # Zagon MPI
-        try:
-            process = subprocess.run(
-                ["mpiexec", "--allow-run-as-root", "-n", "4", "python", "mpi_verify.py", input_filename],
-                capture_output=True,  # Zajame stdout in stderr
-                text=True,            # Pretvori bajte v string
-                check=True
-            )
-
-            # Izpiši MPI loge v Flask loge (Railway jih bo videl)
-            if process.stdout:
-                print(f"--- MPI STDOUT ---\n{process.stdout}", flush=True)
-            if process.stderr:
-                print(f"--- MPI STDERR ---\n{process.stderr}", flush=True)
-
-        except subprocess.CalledProcessError as e:
-            logging.error(f"MPI napaka: {e.stderr}")
-            return jsonify({"error": "MPI izvajanje spodletelo"}), 500
+        subprocess.run(
+            ["mpiexec", "-n", "4", "python", "mpi_verify.py", input_filename],
+            check=True,
+            stdout=sys.stdout,  # Preusmeri standardni izhod v konzolo Flaska
+            stderr=sys.stderr
+        )
 
         # Kratek premor, da MPI zaključi pisanje
         time.sleep(0.3)
@@ -262,6 +252,4 @@ def verify_face():
         return jsonify({ "error": str(e) }), 500
 
 if __name__ == "__main__":
-    # Railway uporablja okoljsko spremenljivko PORT
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=5000)
