@@ -214,13 +214,23 @@ def verify_face():
         with open(input_filename, "w") as f:
             json.dump(mpi_payload, f)
 
-        logging.info(f"📁 Podatki shranjeni v {input_filename}")
+       # V app.py spremeni klic MPI-ja
+               logging.info(f"📁 Podatki shranjeni v {input_filename}. Zaganjam MPI...")
 
-        # Zagon MPI
-        subprocess.run(
-            ["mpiexec", "-n", "4", "python", "mpi_verify.py", input_filename],
-            check=True
-        )
+               # Zaženemo MPI in prestrežemo stdout/stderr
+               process = subprocess.run(
+                   ["mpiexec", "--allow-run-as-root", "-n", "4", "python", "mpi_verify.py", input_filename],
+                   capture_output=True, # To zajame izpis
+                   text=True,           # Da dobimo string namesto bajtov
+                   check=True
+               )
+
+               # To bo dejansko poslalo MPI izpise v tvojo konzolo (Railway logs)
+               if process.stdout:
+                   print(process.stdout, flush=True)
+
+               if process.stderr:
+                   print(f"MPI Error Log: {process.stderr}", flush=True)
 
         # Kratek premor, da MPI zaključi pisanje
         time.sleep(0.3)
