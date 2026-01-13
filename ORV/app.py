@@ -228,20 +228,34 @@ def verify_face():
 
         logging.info(f"📁 Podatki shranjeni v {input_filename}")
 
-        process = subprocess.run(
-            [
-                "mpiexec",
-                "--allow-run-as-root",
-                "-n",
-                "4",
-                "python",
-                "mpi_verify.py",
-                input_filename
-            ],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        try:
+            process = subprocess.run(
+                ["mpiexec", "--allow-run-as-root", "-n", "4", "python", "mpi_verify.py", input_filename],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+
+            if process.stdout:
+                print(process.stdout, flush=True)
+            if process.stderr:
+                print(f"MPI stderr: {process.stderr}", flush=True)
+
+        except FileNotFoundError as e:
+            logging.error("❌ mpiexec ni na voljo v okolju")
+            return jsonify({
+                "success": False,
+                "error": "MPI ni podprt na strežniku"
+            }), 501
+
+        except subprocess.CalledProcessError as e:
+            logging.error("❌ MPI proces se je sesul")
+            logging.error(e.stderr)
+            return jsonify({
+                "success": False,
+                "error": "Napaka pri MPI obdelavi"
+            }), 500
+
 
         if process.stdout:
             print(process.stdout, flush=True)
@@ -276,4 +290,5 @@ def verify_face():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
