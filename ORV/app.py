@@ -288,7 +288,16 @@ def verify_face():
         logging.exception("❌ Nepričakovana napaka")
         return jsonify({"error": str(e)}), 500
 
+@app.route("/check-mpi")
+def check_mpi():
+    import shutil
+    path = shutil.which("mpiexec")
+    if path:
+        return f"✅ MPI je nameščen na: {path}"
+    else:
+        return "❌ MPI NI NAJDEN. Preveri Dockerfile in Nixpacks nastavitve."
 
 if __name__ == "__main__":
+    # Railway poda port preko okoljske spremenljivke PORT
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
