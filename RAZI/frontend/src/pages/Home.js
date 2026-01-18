@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility';
 import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
 import '../styles.css';
-import { getAllObroki, getLastObrok } from '../api/obroki';
+import { getAllObroki, getLastObrok, getFullObroki } from '../api/obroki';
 import { getUserByEmail } from '../api/auth';
 import L from 'leaflet';
 
@@ -51,11 +51,9 @@ const Home = () => {
   // POPRAVLJENO: Dodan email v klic in odvisnost v useEffect
   useEffect(() => {
     const fetchObroki = async () => {
-      if (!userEmail) return; // Preprečimo klic, če ni emaila
-
       try {
-        // NUJNO: Podajamo userEmail, da backend vrne /all?email=...
-        const data = await getAllObroki(userEmail);
+        // 🚀 Zdaj kličemo novo pot, ki ne rabi emaila in vrne vse
+        const data = await getFullObroki();
 
         if (Array.isArray(data)) {
           const validObroki = data.filter(
@@ -69,10 +67,9 @@ const Home = () => {
     };
 
     fetchObroki();
-    // Osvežimo vsakih 30 sekund, da vidimo nove obroke drugih uporabnikov
     const interval = setInterval(fetchObroki, 30000);
     return () => clearInterval(interval);
-  }, [userEmail]);
+  }, []); // userEmail ni več potreben tukaj
 
   useEffect(() => {
     const fetchZadnjiObrok = async () => {
