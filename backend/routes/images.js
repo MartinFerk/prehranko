@@ -167,6 +167,19 @@ router.get('/all', async (req, res) => {
     }
 });
 
+
+// 🌍 GET /api/images/full - Pridobi VSE obroke VSEH uporabnikov (za zemljevid)
+router.get('/full', async (req, res) => {
+    try {
+        // Find brez filtra {} vrne vse zapise v zbirki Obrok
+        const obroki = await Obrok.find({}).sort({ timestamp: -1 });
+        res.json(obroki);
+    } catch (err) {
+        console.error('❌ Napaka pri pridobivanju vseh obrokov:', err);
+        res.status(500).json({ error: 'Napaka na strežniku pri branju vseh obrokov' });
+    }
+});
+
 // 🎯 GET /api/images/last - Pridobi zadnji obrok (Dashboard)
 const { getZadnjiObrok } = require('../mqttListener');
 

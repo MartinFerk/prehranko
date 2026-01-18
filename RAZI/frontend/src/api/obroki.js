@@ -11,6 +11,16 @@ export const getAllObroki = async (email) => {
     return res.json();
 };
 
+// Pridobi vse obroke vseh uporabnikov (za zemljevid)
+export const getFullObroki = async () => {
+    const res = await fetch(`${API_BASE_URL}/images/full`);
+
+    if (!res.ok) {
+        throw new Error('Napaka pri pridobivanju vseh obrokov iz baze');
+    }
+    return res.json();
+};
+
 // Pridobi zadnji obrok za dashboard
 export const getLastObrok = async () => {
     // Pot spremenjena v /images/last, da ustreza novemu backendu
