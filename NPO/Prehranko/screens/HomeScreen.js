@@ -177,10 +177,12 @@ export default function HomeScreen({ navigation, route }) {
           width: '90%', marginVertical: 12, elevation: 4, shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4,
         }}>
-          <Text style={{ fontSize: 11, color: '#999', letterSpacing: 1.5, marginBottom: 5 }}>STATUS SENZORJA STM32</Text>
-          <Text style={{ fontSize: 42, fontWeight: 'bold', color: theme.colors.secondary }}>
-            {temperature !== undefined && temperature !== null ? `${temperature.toFixed(1)}°C` : '--.-°C'}
-          </Text>
+          <Text style={{ fontSize: 11, color: '#999', letterSpacing: 1.5, marginBottom: 5 }}>TEMPERATURA</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={{ fontSize: 42, fontWeight: 'bold', color: theme.colors.secondary }}>
+              {temperature !== undefined && temperature !== null ? `${temperature.toFixed(1)}°C` : '--.-°C'}
+            </Text>
+          </View>
           <Text style={{ fontSize: 12, color: theme.colors.primary, marginTop: 4 }}>
             {temperature ? 'Podatek posodobljen v živo' : 'Čakam na meritev...'}
           </Text>
