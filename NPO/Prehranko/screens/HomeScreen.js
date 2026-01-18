@@ -236,7 +236,7 @@ export default function HomeScreen({ navigation, route }) {
           shadowOpacity: 0.15,
           shadowRadius: 4,
         }}>
-          <Text style={{ fontSize: 11, color: '#999', letterSpacing: 1.5, marginBottom: 5 }}>STATUS SENZORJA STM32</Text>
+          <Text style={{ fontSize: 11, color: '#999', letterSpacing: 1.5, marginBottom: 5 }}>TEMPERATURA</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={{ fontSize: 42, fontWeight: 'bold', color: theme.colors.secondary }}>
               {temperature !== undefined && temperature !== null ? `${temperature.toFixed(1)}°C` : '--.-°C'}
