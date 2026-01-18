@@ -23,6 +23,7 @@ export default function HomeScreen({ navigation, route }) {
   const [proteinGoal, setProteinGoal] = useState(null);
   const [temperature, setTemperature] = useState(null);
   const [vsiObroki, setVsiObroki] = useState([]);
+  
   const [todayCalories, setTodayCalories] = useState(0);
   const [todayProtein, setTodayProtein] = useState(0);
 
