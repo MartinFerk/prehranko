@@ -11,6 +11,15 @@ const userSchema = new mongoose.Schema({
   },
   caloricGoal: { type: Number, default: 2000 }, // Polje za trajni kalorični cilj - PT
   proteinGoal: { type: Number, default: 200 }, // Polje za trajni kalorični cilj - PT
+// Tvoj dodatek za temperaturo
+  temperature: {
+    type: Number,
+    default: 0
+  },
+  lastTempUpdate: {
+    type: Date,
+    default: Date.now
+  },
   devices: [
     {
       deviceId: { type: String, required: true}, // Edinstven ID naprave, npr. UUID

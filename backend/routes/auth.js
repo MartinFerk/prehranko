@@ -68,6 +68,36 @@ router.post("/update-goals", async (req, res) => {
   }
 });
 
+// ✅ Posodobi temperaturo (prejeto iz STM32/Python)
+router.post("/update-temp", async (req, res) => {
+  const { email, temperature } = req.body;
+
+  if (!email) return res.status(400).json({ message: "Email je obvezen" });
+  if (temperature === undefined) return res.status(400).json({ message: "Temperatura ni podana" });
+
+  try {
+    const user = await User.findOneAndUpdate(
+        { email: email.toLowerCase() },
+        {
+          temperature: temperature,
+          lastTempUpdate: new Date() // Nastavi trenutni čas
+        },
+        { new: true }
+    );
+
+    if (!user) return res.status(404).json({ message: "Uporabnik ni najden" });
+
+    res.json({
+      message: "Temperatura uspešno posodobljena",
+      temperature: user.temperature,
+      lastTempUpdate: user.lastTempUpdate
+    });
+  } catch (err) {
+    console.error("❌ Napaka pri posodabljanju temperature:", err);
+    res.status(500).json({ message: "Napaka na strežniku" });
+  }
+});
+
 // ✅ Prijava
 router.post("/login", async (req, res) => {
   let { email, password, from, deviceId, deviceName, clientId } = req.body;
