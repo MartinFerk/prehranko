@@ -444,11 +444,18 @@ router.get("/check-2fa", async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
-
     if (!user) return res.status(404).json({ message: "Uporabnik ne obstaja" });
 
+    // 1. Preberemo trenutni status
     const trigger = pending2FA.get(email) || false;
     const is2faVerified = user.is2faVerified || false;
+
+    // 2. KLJUČNI POPRAVEK: Če je trigger true, ga takoj resetiramo na false
+    // Tako bo naslednji klic (čez 5 sekund) vrnil false.
+    if (trigger === true) {
+      console.log(`🔄 Resetiram 2FA trigger za ${email}`);
+      pending2FA.set(email, false);
+    }
 
     res.json({ trigger, is2faVerified });
   } catch (err) {
