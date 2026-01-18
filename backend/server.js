@@ -179,6 +179,7 @@ app.post('/api/goals/set', async (req, res) => {
 });
 
 // GET: Pridobi cilje uporabnika
+// GET: Pridobi cilje in temperaturo uporabnika
 app.get('/api/goals/get', async (req, res) => {
   const { email } = req.query;
 
@@ -190,24 +191,25 @@ app.get('/api/goals/get', async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ email }, 'caloricGoal proteinGoal');
-    console.log('🔍 Najden uporabnik:', user);
+    // KLJUČNI POPRAVEK: Dodana 'temperature' v projekcijo (drugi argument)
+    const user = await User.findOne({ email }, 'caloricGoal proteinGoal temperature');
+    console.log('🔍 Najden uporabnik in podatki:', user);
 
     if (!user) {
       console.log('🚫 Uporabnik ni najden:', email);
       return res.status(404).json({ message: 'Uporabnik ni najden' });
     }
 
-    res.status(200).json({ 
+    res.status(200).json({
       caloricGoal: user.caloricGoal || null,
-      proteinGoal: user.proteinGoal || null // Vključite proteinGoal
+      proteinGoal: user.proteinGoal || null,
+      temperature: user.temperature || null // 🌡️ Zdaj pošljemo še temperaturo v React Native
     });
   } catch (err) {
-    console.error('❌ Napaka pri pridobivanju ciljev:', err);
-    res.status(500).json({ error: 'Napaka pri pridobivanju ciljev' });
+    console.error('❌ Napaka pri pridobivanju podatkov:', err);
+    res.status(500).json({ error: 'Napaka pri pridobivanju podatkov' });
   }
 });
-
 // Zagon strežnika
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, '0.0.0.0', () => {
