@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import '../styles.css';
-import { getAllObroki } from '../api/obroki';
+// 1. Zamenjamo uvoz: namesto getAllObroki uvozimo getFullObroki
+import { getFullObroki } from '../api/obroki';
 
 const rankIcons = ['🥇', '🥈', '🥉'];
 
@@ -9,23 +10,15 @@ const Lestvica = () => {
     const [timeFilter, setTimeFilter] = useState('danes');
     const [loading, setLoading] = useState(true);
 
-    // Pridobimo email iz localStoraga (enako kot na Home)
-    const userEmail = localStorage.getItem('userEmail');
-
+    // Na lestvici emaila ne rabimo več kot parameter za fetch,
+    // ker fetchamo vse (Full)
     useEffect(() => {
         const fetchObroki = async () => {
-            if (!userEmail) {
-                console.warn("⚠️ Ni emaila za pridobivanje lestvice.");
-                setLoading(false);
-                return;
-            }
-
             try {
                 setLoading(true);
-                // NUJNO: Podamo userEmail v funkcijo
-                const data = await getAllObroki(userEmail);
+                // 2. Pokličemo novo funkcijo, ki vrne VSE obroke iz baze
+                const data = await getFullObroki();
 
-                // Preverimo, če smo dobili seznam
                 if (Array.isArray(data)) {
                     setAllObroki(data);
                 }
@@ -36,7 +29,7 @@ const Lestvica = () => {
             }
         };
         fetchObroki();
-    }, [userEmail]); // Osveži, če se email spremeni
+    }, []); // Prazen array, ker fetchamo globalne podatke
 
     const filterByTime = (obroki) => {
         if (!Array.isArray(obroki)) return [];
@@ -53,6 +46,7 @@ const Lestvica = () => {
             } else if (timeFilter === 'teden') {
                 const weekAgo = new Date(startOfToday);
                 weekAgo.setDate(startOfToday.getDate() - 6);
+                // Vključimo vse od pred 6 dnevi do danes
                 return mealDate >= weekAgo && mealDate <= startOfToday;
             } else {
                 return true; // Lifetime
@@ -84,11 +78,11 @@ const Lestvica = () => {
 
     return (
         <div className="container">
-            <h1 className="title">🏆 Lestvica</h1>
+            <h1 className="title">🏆 Globalna Lestvica</h1>
 
             <div className="radio-buttons">
                 {['danes', 'teden', 'lifetime'].map(option => (
-                    <label key={option} style={{ marginRight: '15px', cursor: 'pointer' }}>
+                    <label key={option} style={{ marginRight: '15px', cursor: 'pointer', fontWeight: timeFilter === option ? 'bold' : 'normal' }}>
                         <input
                             type="radio"
                             value={option}
@@ -101,30 +95,30 @@ const Lestvica = () => {
             </div>
 
             {loading ? (
-                <p>Nalagam podatke...</p>
+                <p>Nalagam podatke iz baze...</p>
             ) : filtered.length === 0 ? (
                 <p style={{ marginTop: '20px' }}>Ni podatkov za izbrano obdobje.</p>
             ) : (
                 <div className="leaderboard-section">
-                    <h2>🍽️ Top 3 obroki po kalorijah</h2>
+                    <h2>🍽️ Najbolj kalorični obroki</h2>
                     <ol>
                         {topByCalories.map((o, idx) => (
-                            <li key={o.obrokId} style={{ marginBottom: '10px' }}>
-                                {rankIcons[idx]} <strong>{o.name}</strong> ({o.userEmail}) – {o.calories} kcal
+                            <li key={`${o.obrokId}-${idx}`} style={{ marginBottom: '10px' }}>
+                                {rankIcons[idx]} <strong>{o.name}</strong> <span style={{fontSize: '0.8em', color: '#666'}}>({o.userEmail})</span> – {o.calories} kcal
                             </li>
                         ))}
                     </ol>
 
-                    <h2>💪 Top 3 obroki po beljakovinah</h2>
+                    <h2>💪 Največ beljakovin v obroku</h2>
                     <ol>
                         {topByProtein.map((o, idx) => (
-                            <li key={o.obrokId} style={{ marginBottom: '10px' }}>
-                                {rankIcons[idx]} <strong>{o.name}</strong> ({o.userEmail}) – {o.protein}g
+                            <li key={`${o.obrokId}-${idx}`} style={{ marginBottom: '10px' }}>
+                                {rankIcons[idx]} <strong>{o.name}</strong> <span style={{fontSize: '0.8em', color: '#666'}}>({o.userEmail})</span> – {o.protein}g
                             </li>
                         ))}
                     </ol>
 
-                    <h2>👤 Top 3 uporabniki po skupnih kalorijah</h2>
+                    <h2>👤 Top uporabniki (Skupaj kcal)</h2>
                     <ol>
                         {topUsers.map(([email, calSum], idx) => (
                             <li key={email} style={{ marginBottom: '10px' }}>
